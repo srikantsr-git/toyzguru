@@ -2881,7 +2881,25 @@ img {
   }
   
   .checkout-grid {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+  
+  .checkout-steps {
+    display: contents;
+  }
+  
+  .checkout-steps > .checkout-step:nth-child(1) {
+    order: 1;
+  }
+  
+  .order-summary-panel {
+    order: 2;
+  }
+  
+  .checkout-steps > .checkout-step:nth-child(2) {
+    order: 3;
   }
   
   .admin-layout {
