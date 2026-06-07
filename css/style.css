@@ -2878,33 +2878,89 @@ img {
 }
 
 @media (max-width: 768px) {
+  .top-alert-bar {
+    display: none;
+  }
+
   .header-inner {
     padding: 1rem;
+    gap: 0.5rem;
+    position: relative;
   }
   
+  .logo {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .logo-img {
+    height: 40px;
+  }
+
   .nav-links {
     display: none; /* We can add toggle logic in app.js */
   }
   
   .menu-toggle {
-    display: block;
+    display: flex;
     cursor: pointer;
+    order: -1; /* Move hamburger to the left of the logo */
   }
   
+  .search-box {
+    display: none; /* Hide search bar on mobile header to save space */
+  }
+
+  .header-actions {
+    gap: 0.5rem;
+  }
+
+  .icon-btn {
+    width: 36px;
+    height: 36px;
+  }
+
   .main-content {
     padding: 1rem;
   }
   
   .hero-slider {
-    height: auto;
+    height: 65vh; /* Give proper height to hero section instead of auto */
+    aspect-ratio: unset;
+    border-radius: var(--border-radius-md);
   }
   
   .slide {
-    padding: 2rem;
+    padding: 1.5rem;
+    justify-content: center;
+    align-items: flex-end; /* Align content to bottom in mobile */
+  }
+
+  .slide-content {
+    margin-top: 0;
+    margin-bottom: 2rem;
+    text-align: center;
+  }
+
+  .slide-tag {
+    margin-bottom: 0.75rem;
   }
   
   .slide-title {
     font-size: 2rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .slide-desc {
+    font-size: 0.95rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .slider-controls {
+    right: 50%;
+    transform: translateX(50%);
+    bottom: 1rem;
   }
   
   .categories-container {
