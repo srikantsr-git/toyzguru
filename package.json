@@ -1,0 +1,13 @@
+{
+  "name": "toyzguru-premium-store",
+  "version": "1.0.0",
+  "description": "ToyzGuru Premium eCommerce Website",
+  "main": "index.html",
+  "scripts": {
+    "dev": "npx -y serve .",
+    "start": "npx -y serve ."
+  },
+  "keywords": [],
+  "author": "ToyzGuru",
+  "license": "ISC"
+}

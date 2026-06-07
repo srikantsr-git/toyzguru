@@ -1,0 +1,2253 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ToyzGuru | Premium Pop-Culture Figures & Collectibles</title>
+  <meta name="description"
+    content="Shop premium Anime Figures, Diecast Supercar Collectibles, and Imported Mechanical Watches at ToyzGuru. Premium pop-culture and collector showcase boutique.">
+  <meta name="keywords" content="ToyzGuru, Anime Figures, Diecast Cars, Imported Watches, Collectibles, Statues">
+
+  <!-- CSS Styling -->
+  <link rel="stylesheet" href="css/style.css">
+
+  <!-- Feather Icons CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</head>
+
+<body>
+
+  <div class="app-container">
+
+    <!-- Top Alert bar -->
+    <div
+      style="background: var(--color-brand-gradient); color: #fff; text-align: center; font-size: 0.8rem; font-weight: 700; padding: 0.4rem; letter-spacing: 0.05em; text-transform: uppercase;">
+      Online sellers of Anime figures, katanas, premium Hotwheels cars, Imported watches and more.... Free Shipping on
+      Orders Above ₹7,000 • <span style="text-decoration: underline;"></span>
+    </div>
+
+    <!-- Navigation Header -->
+    <header class="header">
+      <div class="header-inner">
+        <!-- Logo -->
+        <a href="#home" class="logo" id="header-logo-btn">
+          <img src="assets/images/logo.png" alt="ToyzGuru Logo" class="logo-img">
+        </a>
+
+        <!-- Menu Toggle for Mobile -->
+        <button class="menu-toggle icon-btn" id="mobile-menu-btn" aria-label="Open Menu">
+          <i data-feather="menu"></i>
+        </button>
+
+        <!-- Navigation Links -->
+        <nav class="nav-links" id="main-nav-menu">
+          <a href="#home" class="nav-link active" data-view="home">Home</a>
+          <a href="#catalog" class="nav-link" data-view="catalog">Shop</a>
+          <a href="#about" class="nav-link" data-view="about">About Us</a>
+          <a href="#faqs" class="nav-link" data-view="faqs">FAQs</a>
+          <a href="#contact" class="nav-link" data-view="contact">Contact Us</a>
+        </nav>
+
+        <!-- Header Actions -->
+        <div class="header-actions">
+          <!-- Search Box -->
+          <div class="search-box">
+            <input type="text" placeholder="Search products..." class="search-input" id="global-search-input">
+            <i data-feather="search" class="search-icon"></i>
+          </div>
+
+          <!-- Account Icon -->
+          <button class="icon-btn" id="profile-icon-btn" title="View Profile">
+            <i data-feather="user"></i>
+          </button>
+
+          <!-- Cart Icon -->
+          <button class="icon-btn" id="cart-icon-btn" title="Open Cart">
+            <i data-feather="shopping-bag"></i>
+            <span class="icon-badge" id="cart-badge-count">0</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Panels (Only one active at a time) -->
+    <main class="main-content">
+
+      <!-- ================= HOMEPAGE VIEW ================= -->
+      <section id="home-view" class="view-panel" style="display: block;">
+
+        <!-- Hero Slider Banner -->
+        <div class="hero-slider" id="hero-carousel">
+
+          <!-- Slide 1: Anime Figures -->
+          <div class="slide active" data-slide="0">
+            <video autoplay loop muted playsinline class="slide-img">
+              <source src="assets/images/anime.mp4" type="video/mp4">
+            </video>
+            <div class="slide-overlay"></div>
+            <div class="slide-content">
+              <span class="slide-tag tag-anime">New Drop</span>
+              <h1 class="slide-title">Anime Collectibles</h1>
+              <p class="slide-desc">Crafted for the legends, designed for the fans,Every stunning detail brings your
+                world to your hands.</p>
+              <a href="#catalog?category=anime" class="cta-btn cta-btn-anime">Shop Figures <i
+                  data-feather="arrow-right"></i></a>
+            </div>
+          </div>
+
+          <!-- Slide 2: Premium Toy Cars -->
+          <div class="slide" data-slide="1">
+            <video autoplay loop muted playsinline class="slide-img">
+              <source src="assets/images/hotwheels.mp4" type="video/mp4">
+            </video>
+            <div class="slide-overlay"></div>
+            <div class="slide-content">
+              <span class="slide-tag tag-cars">Collector Spec</span>
+              <h1 class="slide-title">Best Hotwheels Collections</h1>
+              <p class="slide-desc">Fueled by passion and styled for the chase,Every sleek casting sets the speed of the
+                race.</p>
+              <a href="#catalog?category=toy-cars" class="cta-btn cta-btn-cars">Explore Cars <i
+                  data-feather="arrow-right"></i></a>
+            </div>
+          </div>
+
+          <!-- Slide 3: Imported Watches -->
+          <div class="slide" data-slide="2">
+            <img src="assets/images/hero_watches.png" alt="Imported Watches collection" class="slide-img">
+            <div class="slide-overlay"></div>
+            <div class="slide-content">
+              <span class="slide-tag tag-watches">Imported Luxury</span>
+              <h1 class="slide-title">Luxary Watches</h1>
+              <p class="slide-desc">GWorld-class craftsmanship meets impeccable style,Bringing global luxury straight to
+                your wrist!</p>
+              <a href="#catalog?category=watches" class="cta-btn cta-btn-watches">View Watches <i
+                  data-feather="arrow-right"></i></a>
+            </div>
+          </div>
+
+          <!-- Slider Indicators -->
+          <div class="slider-controls">
+            <div class="slider-dot active" data-slide-to="0"></div>
+            <div class="slider-dot" data-slide-to="1"></div>
+            <div class="slider-dot" data-slide-to="2"></div>
+          </div>
+        </div>
+
+        <!-- Categories Visual Section -->
+        <section style="margin-bottom: 4.5rem;">
+          <div class="section-title-wrap">
+            <div>
+              <h2 class="section-title">Exclusive Collections</h2>
+              <p class="section-subtitle">Curated categories engineered with premium aesthetic standards</p>
+            </div>
+          </div>
+
+          <div class="categories-container">
+            <!-- Anime Card -->
+            <div class="category-card cat-anime">
+              <img src="assets/images/hero_figures.png" alt="Anime Figures Category" class="category-card-img">
+              <div class="category-card-overlay"></div>
+              <div class="category-card-content">
+                <h3 class="category-card-title">Anime Figures</h3>
+                <p class="category-card-desc">Limited run showpieces, Best quality figures</p>
+                <a href="#catalog?category=anime" class="category-card-btn">Explore <i
+                    data-feather="chevron-right"></i></a>
+              </div>
+            </div>
+
+            <!-- Toy Cars Card -->
+            <div class="category-card cat-cars">
+              <img src="assets/images/hero_cars.png" alt="Toy Cars Category" class="category-card-img">
+              <div class="category-card-overlay"></div>
+              <div class="category-card-content">
+                <h3 class="category-card-title">Collectible Cars</h3>
+                <p class="category-card-desc">Elite 1:18, 1:24 scales & custom metallic diecasts as wellas best
+                  Hotwheels Collections</p>
+                <a href="#catalog?category=toy-cars" class="category-card-btn">Explore <i
+                    data-feather="chevron-right"></i></a>
+              </div>
+            </div>
+
+            <!-- Watches Card -->
+            <div class="category-card cat-watches">
+              <img src="assets/images/hero_watches.png" alt="Watches Category" class="category-card-img">
+              <div class="category-card-overlay"></div>
+              <div class="category-card-content">
+                <h3 class="category-card-title">Imported Watches</h3>
+                <p class="category-card-desc">Premium automatic mechanicals & world class latest designs!</p>
+                <a href="#catalog?category=watches" class="category-card-btn">Explore <i
+                    data-feather="chevron-right"></i></a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Featured / Trending Products Grid -->
+        <section style="margin-bottom: 4.5rem;">
+          <div class="section-title-wrap">
+            <div>
+              <h2 class="section-title">Trending Now</h2>
+              <p class="section-subtitle">Exclusive collections of world class products selling exclusively in Toyzguru!
+              </p>
+            </div>
+            <a href="#catalog" class="view-all-link">Browse Full Catalog <i data-feather="arrow-right"></i></a>
+          </div>
+
+          <div class="products-grid" id="featured-products-container">
+            <!-- Dynamically populated via app.js -->
+          </div>
+        </section>
+
+        <!-- Instagram Feed Section -->
+        <section style="margin-bottom: 4.5rem;">
+          <div class="section-title-wrap">
+            <div>
+              <h2 class="section-title">Follow Us on Instagram!</h2>
+              <p class="section-subtitle"> Follow @Toyz_Guruofficial to see whats really happening @Toyzguru!
+              </p>
+            </div>
+            <a href="https://instagram.com/toyz_guruofficial" target="_blank" rel="noopener noreferrer"
+              class="view-all-link">
+              Follow Us <i data-feather="instagram"
+                style="vertical-align: middle; margin-left: 0.25rem; width: 16px; height: 16px;"></i>
+            </a>
+          </div>
+          <script src="https://elfsightcdn.com/platform.js" async></script>
+          <div class="elfsight-app-23082e8f-5fcd-4ae5-8f3a-b6270a9f9965" data-elfsight-app-lazy></div>
+        </section>
+
+
+      </section>
+
+      <!-- ================= PRODUCT CATALOG VIEW ================= -->
+      <section id="catalog-view" class="view-panel" style="display: none;">
+        <div class="catalog-layout">
+
+          <!-- Filter Sidebar -->
+          <aside class="glass-panel catalog-sidebar">
+            <!-- Search Filter -->
+            <div class="filter-section">
+              <h4 class="filter-title">Keyword Search</h4>
+              <div class="filter-search-box">
+                <input type="text" placeholder="Search shop..." class="filter-search-input" id="sidebar-search">
+                <i data-feather="search" class="filter-search-icon"></i>
+              </div>
+            </div>
+
+            <!-- Category Selector -->
+            <div class="filter-section">
+              <h4 class="filter-title">Collections</h4>
+              <div class="filter-categories" id="filter-categories-list">
+                <button class="filter-cat-btn active" data-cat="all">All Items <span class="filter-cat-count"
+                    id="count-all">0</span></button>
+                <button class="filter-cat-btn" data-cat="anime">Anime Figures <span class="filter-cat-count"
+                    id="count-anime">0</span></button>
+                <button class="filter-cat-btn" data-cat="toy-cars">Collectible Cars <span class="filter-cat-count"
+                    id="count-toy-cars">0</span></button>
+                <button class="filter-cat-btn" data-cat="watches">Imported Watches <span class="filter-cat-count"
+                    id="count-watches">0</span></button>
+              </div>
+            </div>
+
+            <!-- Price Range Filter -->
+            <div class="filter-section">
+              <h4 class="filter-title">Max Price</h4>
+              <div class="price-range-wrap">
+                <input type="range" min="1000" max="50000" value="50000" class="price-slider" id="filter-price-slider">
+                <div class="price-labels">
+                  <span>₹1,000</span>
+                  <span id="price-slider-value">₹50,000</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Clear Button -->
+            <button class="checkout-btn" style="padding: 0.75rem; margin-top: 0.5rem;" id="clear-filters-btn">
+              <i data-feather="refresh-cw"
+                style="width: 14px; height: 14px; vertical-align: middle; margin-right: 0.25rem;"></i> Reset Filters
+            </button>
+          </aside>
+
+          <!-- Catalog Main Grid -->
+          <div>
+            <div class="catalog-header">
+              <div class="results-count" id="catalog-results-text">Showing all products</div>
+
+              <!-- Sorting dropdown -->
+              <div class="sort-select-wrap">
+                <span class="sort-select-label">Sort By:</span>
+                <select class="sort-select" id="catalog-sort-select">
+                  <option value="featured">Featured Items</option>
+                  <option value="price-low">Price: Low to High</option>
+                  <option value="price-high">Price: High to Low</option>
+                  <option value="rating">Top Customer Rated</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="products-grid" id="catalog-grid-container">
+              <!-- Dynamically populated via app.js -->
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ================= BRAND STORY VIEW ================= -->
+      <section id="about-view" class="view-panel" style="display: none;">
+        <div class="about-hero">
+          <h1 class="about-hero-title">About ToyzGuru</h1>
+          <p class="about-hero-subtitle">Discover a world of passion, rarity, and imagination.</p>
+        </div>
+
+        <div
+          style="max-width: 1000px; margin: 0 auto; padding: 0 1.5rem 3rem; display: flex; flex-direction: column; gap: 2rem;">
+          <div class="glass-panel" style="padding: 2rem; text-align: center; border-radius: 12px;">
+            <p style="font-size: 1.1rem; line-height: 1.6; color: var(--text-primary); font-weight: 500; margin: 0;">
+              Welcome to Toyzguru, your ultimate destination for die-cast collectibles, anime treasures, and uniquely
+              curated toys. Whether you’re a passionate collector or a casual enthusiast, we bring you a world of
+              excitement, creativity, and nostalgia—all in one place.
+            </p>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+            <!-- Card 1: Die-cast -->
+            <div class="glass-panel"
+              style="padding: 2rem; border-radius: 12px; display: flex; flex-direction: column; gap: 1rem;">
+              <div
+                style="display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; background: var(--color-brand-gradient); color: #fff;">
+                <i data-feather="truck" style="width: 20px; height: 20px;"></i>
+              </div>
+              <h3 style="font-size: 1.25rem; color: var(--text-primary); margin: 0;">Premium Die-Cast</h3>
+              <p style="font-size: 0.9rem; line-height: 1.5; color: var(--text-secondary); margin: 0;">
+                At Toyzguru, we take pride in offering one of the most diverse and sought-after collections of Hot
+                Wheels, premium die-cast cars, automotive miniatures, and rare limited-edition collectibles. From iconic
+                classics to elusive grail pieces, our collection is designed to thrill car lovers and collectors alike.
+              </p>
+            </div>
+
+            <!-- Card 2: Anime -->
+            <div class="glass-panel"
+              style="padding: 2rem; border-radius: 12px; display: flex; flex-direction: column; gap: 1rem;">
+              <div
+                style="display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; background: var(--color-brand-gradient); color: #fff;">
+                <i data-feather="star" style="width: 20px; height: 20px;"></i>
+              </div>
+              <h3 style="font-size: 1.25rem; color: var(--text-primary); margin: 0;">Anime & Collectibles</h3>
+              <p style="font-size: 0.9rem; line-height: 1.5; color: var(--text-secondary); margin: 0;">
+                Anime fans can dive into our vibrant selection of anime figures, statues, model kits, and licensed
+                merchandise, featuring beloved characters from top series. We continuously update our lineup to bring
+                you both mainstream hits and rare, exclusive releases that elevate your collection.
+              </p>
+            </div>
+
+            <!-- Card 3: Toys & Plush -->
+            <div class="glass-panel"
+              style="padding: 2rem; border-radius: 12px; display: flex; flex-direction: column; gap: 1rem;">
+              <div
+                style="display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; background: var(--color-brand-gradient); color: #fff;">
+                <i data-feather="smile" style="width: 20px; height: 20px;"></i>
+              </div>
+              <h3 style="font-size: 1.25rem; color: var(--text-primary); margin: 0;">Toys & Playtime</h3>
+              <p style="font-size: 0.9rem; line-height: 1.5; color: var(--text-secondary); margin: 0;">
+                Beyond collectibles, Toyzguru is also home to a wide assortment of toys, games, and soft toys perfect
+                for kids and kids-at-heart. From educational toys to cuddly plush companions, we make playtime joyful
+                and meaningful.
+              </p>
+            </div>
+
+            <!-- Card 4: Gifts & Lifestyle -->
+            <div class="glass-panel"
+              style="padding: 2rem; border-radius: 12px; display: flex; flex-direction: column; gap: 1rem;">
+              <div
+                style="display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; background: var(--color-brand-gradient); color: #fff;">
+                <i data-feather="gift" style="width: 20px; height: 20px;"></i>
+              </div>
+              <h3 style="font-size: 1.25rem; color: var(--text-primary); margin: 0;">Gifts & Lifestyle</h3>
+              <p style="font-size: 0.9rem; line-height: 1.5; color: var(--text-secondary); margin: 0;">
+                We also offer a charming selection of gifts and lifestyle articles, crafted for special occasions,
+                celebrations, or thoughtful surprises.
+              </p>
+            </div>
+
+            <!-- Card 5: Women & Girls -->
+            <div class="glass-panel"
+              style="padding: 2rem; border-radius: 12px; display: flex; flex-direction: column; gap: 1rem;">
+              <div
+                style="display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; background: var(--color-brand-gradient); color: #fff;">
+                <i data-feather="heart" style="width: 20px; height: 20px;"></i>
+              </div>
+              <h3 style="font-size: 1.25rem; color: var(--text-primary); margin: 0;">Inspired Self-Expression</h3>
+              <p style="font-size: 0.9rem; line-height: 1.5; color: var(--text-secondary); margin: 0;">
+                Our store proudly features girls’ and women’s articles—including fashion accessories, creative sets,
+                décor items, and more—chosen to inspire self-expression, creativity, and delight for all ages.
+              </p>
+            </div>
+
+            <!-- Card 6: Delivery & Care -->
+            <div class="glass-panel"
+              style="padding: 2rem; border-radius: 12px; display: flex; flex-direction: column; gap: 1rem;">
+              <div
+                style="display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; background: var(--color-brand-gradient); color: #fff;">
+                <i data-feather="shield" style="width: 20px; height: 20px;"></i>
+              </div>
+              <h3 style="font-size: 1.25rem; color: var(--text-primary); margin: 0;">Convenience & Care</h3>
+              <p style="font-size: 0.9rem; line-height: 1.5; color: var(--text-secondary); margin: 0;">
+                With Toyzguru, every purchase comes with a commitment to convenience and care. We provide reliable, fast
+                delivery services to ensure your items arrive safely and on time. Our dedicated customer service team is
+                always ready to assist, offering responsive support and a smooth, worry-free shopping experience.
+              </p>
+            </div>
+          </div>
+
+          <div class="glass-panel" style="padding: 2.5rem; text-align: center; border-radius: 12px; margin-top: 1rem;">
+            <p
+              style="font-size: 1.1rem; line-height: 1.6; color: var(--text-primary); font-weight: 500; margin-bottom: 0.75rem;">
+              At Toyzguru, we believe collecting and gifting should be joyful, memorable, and personal.
+            </p>
+            <p style="font-size: 1.2rem; font-weight: 700; color: var(--color-brand); margin: 0;">
+              Discover a world of passion, rarity, and imagination—only at Toyzguru.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= FAQS VIEW ================= -->
+      <section id="faqs-view" class="view-panel" style="display: none;">
+        <div class="about-hero" style="margin-bottom: 2rem;">
+          <h1 class="about-hero-title">Frequently Asked Questions</h1>
+          <p class="about-hero-subtitle"
+            style="max-width: 800px; margin: 0 auto; line-height: 1.6; font-size: 0.95rem;">At Toyzguru, we’re dedicated
+            to helping you find the perfect collectible, toy, gift, or specialty item with ease. Whether you're curious
+            about our Hot Wheels range, anime merchandise, rare collectibles, soft toys, or girls’ and women’s products,
+            our team is always here to assist. We believe in smooth communication, quick responses, and reliable support
+            to make your shopping experience enjoyable and hassle-free. Explore the FAQs below for answers to common
+            questions—or reach out to us anytime for personalized guidance.</p>
+        </div>
+
+        <div class="faq-container">
+          <!-- General category -->
+          <div class="faq-category">
+            <h3 class="faq-category-title"><i data-feather="help-circle"
+                style="vertical-align: middle; margin-right: 0.5rem; color: var(--color-brand);"></i> General Info</h3>
+
+            <div class="glass-panel faq-item">
+              <button class="faq-question">
+                <span>What is ToyzGuru?</span>
+                <i data-feather="plus" class="faq-icon"></i>
+              </button>
+              <div class="faq-answer">
+                <p>Toyzguru, your ultimate destination for die-cast cars collectibles, anime treasures, imported
+                  wahtches and uniquely curated toys. Whether you’re a passionate collector or a casual enthusiast, we
+                  bring you a world of excitement, creativity, and nostalgia—all in one place.</p>
+              </div>
+            </div>
+
+            <div class="glass-panel faq-item">
+              <button class="faq-question">
+                <span>Are all model cars authorized and licensed?</span>
+                <i data-feather="plus" class="faq-icon"></i>
+              </button>
+              <div class="faq-answer">
+                <p>Yes, all scale machinery models sold on ToyzGuru are officially licensed scale replicas authorized by
+                  their respective auto manufacturers (e.g. Lamborghini, Lykan, Nissan). They feature authentic logos,
+                  chassis configurations, and accurate brand specs.</p>
+              </div>
+            </div>
+
+            <div class="glass-panel faq-item">
+              <button class="faq-question">
+                <span>What makes your streetwear apparel premium?</span>
+                <i data-feather="plus" class="faq-icon"></i>
+              </button>
+              <div class="faq-answer">
+                <p>Unlike standard pop-culture merchandise, our apparel operates as luxury streetwear. We utilize
+                  heavyweight 280-350GSM French Terry cotton, drop-shoulder shapes, custom-engraved metal aglets, and
+                  durable screen printing/embroidering that won't crack or fade.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Shipping category -->
+          <div class="faq-category">
+            <h3 class="faq-category-title"><i data-feather="truck"
+                style="vertical-align: middle; margin-right: 0.5rem; color: var(--color-brand);"></i> Shipping & Vault
+              Delivery</h3>
+
+            <div class="glass-panel faq-item">
+              <button class="faq-question">
+                <span>What is Vault Delivery Insurance?</span>
+                <i data-feather="plus" class="faq-icon"></i>
+              </button>
+              <div class="faq-answer">
+                <p>Due to the high collector value of our mechanical watches and detailed diecasts, all items are
+                  shipped in heavily padded structural vault cases. Vault Delivery Insurance covers 100% of damage or
+                  loss in transit, guaranteeing a replacement or full refund.</p>
+              </div>
+            </div>
+
+            <div class="glass-panel faq-item">
+              <button class="faq-question">
+                <span>How long does delivery take?</span>
+                <i data-feather="plus" class="faq-icon"></i>
+              </button>
+              <div class="faq-answer">
+                <p>Standard processing takes 1-2 business days. Shipping usually takes 5-8 business days
+                  internationally. You can track your shipment live using the Order Tracking page with your unique
+                  tracking ID.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Payments & Security -->
+          <div class="faq-category">
+            <h3 class="faq-category-title"><i data-feather="lock"
+                style="vertical-align: middle; margin-right: 0.5rem; color: var(--color-brand);"></i> Security & Payment
+            </h3>
+
+            <div class="glass-panel faq-item">
+              <button class="faq-question">
+                <span>What payment methods do you accept?</span>
+                <i data-feather="plus" class="faq-icon"></i>
+              </button>
+              <div class="faq-answer">
+                <p>We accept all major credit and debit cards (Visa, Mastercard, American Express, Discover), as well as
+                  encrypted payment solutions through our secure transaction simulator.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Returns & Guarantees -->
+          <div class="faq-category">
+            <h3 class="faq-category-title"><i data-feather="shield"
+                style="vertical-align: middle; margin-right: 0.5rem; color: var(--color-brand);"></i> Returns &
+              Guarantees</h3>
+
+            <div class="glass-panel faq-item">
+              <button class="faq-question">
+                <span>What is your return policy?</span>
+                <i data-feather="plus" class="faq-icon"></i>
+              </button>
+              <div class="faq-answer">
+                <p>ToyzGuru has a strict No Refunds policy across the website, but an option for replace/exchange is
+                  available only if the reason is genuine. This also means that all the products you receive are –
+                  Original, Unopened and of High quality.</p>
+              </div>
+            </div>
+
+            <div class="glass-panel faq-item">
+              <button class="faq-question">
+                <span>How do I claim the Lifetime Guarantee?</span>
+                <i data-feather="plus" class="faq-icon"></i>
+              </button>
+              <div class="faq-answer">
+                <p>Our imported automatic watches and premium diecast models include a lifetime warranty against
+                  manufacturing and assembly defects. Keep your Order ID safe and present it to our support agents to
+                  file a claim.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= CONTACT VIEW ================= -->
+      <section id="contact-view" class="view-panel" style="display: none;">
+        <div class="about-hero" style="margin-bottom: 2rem;">
+          <h1 class="about-hero-title">Contact Support</h1>
+          <p class="about-hero-subtitle"
+            style="max-width: 800px; margin: 0 auto; line-height: 1.6; font-size: 0.95rem;">At Toyzguru, we’re always
+            here to help you find the perfect collectible, toy, gift, or special item. Whether you have questions about
+            our Hot Wheels collection, anime merchandise, rare collectibles, soft toys, or girls’ and women’s articles,
+            our team is ready to assist with friendly and reliable support. We take pride in offering smooth
+            communication, quick responses, and guidance to ensure a seamless shopping experience. For order inquiries,
+            delivery updates, product details, or personalized recommendations, feel free to reach out to us anytime.
+            Your satisfaction matters to us—and we’re committed to making every interaction with Toyzguru easy,
+            enjoyable, and hassle-free.</p>
+        </div>
+
+        <div class="contact-grid">
+          <!-- Contact Form Panel -->
+          <div class="glass-panel contact-form-card">
+            <h3 style="font-size: 1.5rem; margin-bottom: 1.5rem; color: var(--text-primary);"><i data-feather="mail"
+                style="vertical-align: middle; margin-right: 0.5rem; color: var(--color-brand);"></i> Send Us a Message
+            </h3>
+
+            <form id="contact-support-form">
+              <div class="checkout-form-grid" style="grid-template-columns: 1fr 1fr; gap: 1rem; display: grid;">
+                <div class="form-group">
+                  <label class="form-label">Your Name *</label>
+                  <input type="text" required class="form-input" id="contact-name" placeholder="Srikant SR">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Email Address *</label>
+                  <input type="email" required class="form-input" id="contact-email" placeholder="srikantsr@gmail.com">
+                </div>
+              </div>
+
+              <div class="form-group" style="margin-top: 1rem;">
+                <label class="form-label">Subject *</label>
+                <input type="text" required class="form-input" id="contact-subject"
+                  placeholder="Order issue / General query">
+              </div>
+
+              <div class="form-group" style="margin-top: 1rem;">
+                <label class="form-label">Message *</label>
+                <textarea required class="form-input" id="contact-message" rows="5"
+                  placeholder="Write your message here..."></textarea>
+              </div>
+
+              <button type="submit" class="checkout-btn"
+                style="padding: 0.85rem; font-size: 1rem; margin-top: 1.5rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                Send Message <i data-feather="send" style="width: 16px;"></i>
+              </button>
+            </form>
+          </div>
+
+          <!-- Contact Details and Map Settings Card -->
+          <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+            <!-- Info panel -->
+            <div class="glass-panel contact-info-card">
+              <h3 style="font-size: 1.3rem; margin-bottom: 1.25rem; color: var(--text-primary);">Office Headquarters
+              </h3>
+
+              <div style="display: flex; flex-direction: column; gap: 1rem;">
+                <div style="display: flex; align-items: flex-start; gap: 0.75rem;">
+                  <i data-feather="map-pin"
+                    style="color: var(--color-brand); width: 20px; flex-shrink: 0; margin-top: 0.15rem;"></i>
+                  <div>
+                    <h5 style="margin: 0; font-size: 0.95rem; font-weight: 700;">Address</h5>
+                    <p style="margin: 0.25rem 0 0; color: var(--text-secondary); font-size: 0.85rem;"
+                      id="contact-display-address">601, Street 4, TNR Gradilla, Road no. 29, Alkapoor Township,
+                      Neknampur, Hyderabad – 500089 Telangana</p>
+                  </div>
+                </div>
+
+                <div style="display: flex; align-items: flex-start; gap: 0.75rem;">
+                  <i data-feather="phone"
+                    style="color: var(--color-brand); width: 20px; flex-shrink: 0; margin-top: 0.15rem;"></i>
+                  <div>
+                    <h5 style="margin: 0; font-size: 0.95rem; font-weight: 700;">Call Us</h5>
+                    <p style="margin: 0.25rem 0 0; color: var(--text-secondary); font-size: 0.85rem;">+91 9527652118</p>
+                  </div>
+                </div>
+
+                <div style="display: flex; align-items: flex-start; gap: 0.75rem;">
+                  <i data-feather="clock"
+                    style="color: var(--color-brand); width: 20px; flex-shrink: 0; margin-top: 0.15rem;"></i>
+                  <div>
+                    <h5 style="margin: 0; font-size: 0.95rem; font-weight: 700;">Office Hours</h5>
+                    <p style="margin: 0.25rem 0 0; color: var(--text-secondary); font-size: 0.85rem;">Monday - Friday:
+                      10:00 AM - 5:00 PM JST</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Google Map Container -->
+        <div class="glass-panel" style="margin-top: 2rem; padding: 0.5rem; border-radius: 8px;">
+          <div
+            style="position: relative; width: 100%; height: 400px; border-radius: 6px; overflow: hidden; background: var(--bg-tertiary);">
+            <iframe id="contact-google-map" width="100%" height="100%" style="border: 0;" allowfullscreen=""
+              loading="lazy" referrerpolicy="no-referrer-when-downgrade"
+              src="https://maps.google.com/maps?q=601,%20Street%204,%20TNR%20Gradilla,%20Road%20no.%2029,%20Alkapoor%20Township,%20Neknampur,%20Hyderabad%20%E2%80%93%20500089%20Telangana&t=&z=14&ie=UTF8&iwloc=&output=embed">
+            </iframe>
+          </div>
+      </section>
+
+      <!-- ================= SHIPPING POLICY VIEW ================= -->
+      <section id="shipping-policy-view" class="view-panel" style="display: none;">
+        <div class="about-hero" style="margin-bottom: 2rem;">
+          <h1 class="about-hero-title">Shipping Policy</h1>
+          <p class="about-hero-subtitle">Our courier partners and delivery logistics.</p>
+        </div>
+
+        <div class="glass-panel" style="padding: 2.5rem; max-width: 800px; margin: 0 auto; margin-bottom: 2rem;">
+          <p style="color: var(--text-secondary); line-height: 1.6; font-size: 0.95rem; margin-bottom: 0;">
+            ToyzGuru ships within India only and uses reputable courier companies such as Delhivery, Xpressbees, DTDC,
+            Bluedart, etc. You can reach us at support@toyzguru.in anytime, which will be considered between
+            Monday-Saturday, 11am-7pm in case of any queries. You will receive an email and/or text message with
+            tracking details once your order has been dispatched.
+          </p>
+        </div>
+      </section>
+
+      <!-- ================= REFUND POLICY VIEW ================= -->
+      <section id="refund-policy-view" class="view-panel" style="display: none;">
+        <div class="about-hero" style="margin-bottom: 2rem;">
+          <h1 class="about-hero-title">Refund Policy</h1>
+          <p class="about-hero-subtitle">Our commitment to authentic quality and exchange options.</p>
+        </div>
+
+        <div class="glass-panel" style="padding: 2.5rem; max-width: 800px; margin: 0 auto; margin-bottom: 2rem;">
+          <p style="color: var(--text-secondary); line-height: 1.6; font-size: 0.95rem; margin-bottom: 0;">
+            ToyzGuru has a strict No Refunds policy across the website, but an option for replace/exchange is available
+            only if the reason is genuine. This also means that all the products you receive are – Original, Unopened
+            and of High quality. This is an unparalleled commitment in an eCommerce driven by returns and exchanges.
+          </p>
+        </div>
+      </section>
+
+      <!-- ================= PRIVACY POLICY VIEW ================= -->
+      <section id="privacy-view" class="view-panel" style="display: none;">
+        <div class="about-hero" style="margin-bottom: 2rem;">
+          <h1 class="about-hero-title">Privacy Policy</h1>
+          <p class="about-hero-subtitle">Your data integrity and transaction security are our highest priorities.</p>
+        </div>
+
+        <div class="glass-panel" style="padding: 2.5rem; max-width: 800px; margin: 0 auto; margin-bottom: 2rem;">
+          <h3 style="margin-bottom: 1rem; color: var(--color-brand);">1. Information We Collect</h3>
+          <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.95rem;">
+            To process checkout drops, we collect essential customer coordinates: full name, email address, delivery
+            shipping address, telephone number, and secure payment tokens. We do not store full credit card credentials
+            on our servers.
+          </p>
+
+          <h3 style="margin-bottom: 1rem; color: var(--color-brand);">2. How We Protect Your Coordinates</h3>
+          <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.95rem;">
+            All transactions undergo 256-bit Secure Socket Layer (SSL) encryption protocols. Your data is stored on
+            sandboxed localized systems (`localStorage` during prototype review) and is isolated from third-party
+            networks.
+          </p>
+
+          <h3 style="margin-bottom: 1rem; color: var(--color-brand);">3. Cookies & Tracking</h3>
+          <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.95rem;">
+            We utilize cookies solely to maintain active sessions, track shopping cart inventories, and save user
+            account credentials locally. We do not load advertising networks or cross-site behavioral tracking scripts.
+          </p>
+
+          <h3 style="margin-bottom: 1rem; color: var(--color-brand);">4. User Rights & Data Deletion</h3>
+          <p style="color: var(--text-secondary); font-size: 0.95rem;">
+            You maintain absolute sovereignty over your profile. You may edit your data in your profile settings
+            dashboard at any time or request complete erasure of your transaction histories by contacting our vault
+            desk.
+          </p>
+        </div>
+      </section>
+
+      <!-- ================= TERMS & CONDITIONS VIEW ================= -->
+      <section id="terms-view" class="view-panel" style="display: none;">
+        <div class="about-hero" style="margin-bottom: 2rem;">
+          <h1 class="about-hero-title">Terms & Conditions</h1>
+          <p class="about-hero-subtitle">Governing access to our luxury subculture catalog and order fulfillments.</p>
+        </div>
+
+        <div class="glass-panel" style="padding: 2.5rem; max-width: 800px; margin: 0 auto; margin-bottom: 2rem;">
+          <h3 style="margin-bottom: 1rem; color: var(--color-brand);">1. Agreement to Terms</h3>
+          <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.95rem;">
+            By browsing our website, creating customer profiles, or placing orders on the ToyzGuru store, you consent to
+            compile with these Terms and Conditions. Our products are sold strictly for personal collector use and are
+            not authorized for immediate commercial resale.
+          </p>
+
+          <h3 style="margin-bottom: 1rem; color: var(--color-brand);">2. Product Representations & Stock drops</h3>
+          <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.95rem;">
+            We work to represent colors, models, and specifications of mechanical gears in absolute high fidelity.
+            However, as items are handcrafted and limited, drop availability is subject to change. Placing an item in
+            your cart does not lock or reserve the inventory.
+          </p>
+
+          <h3 style="margin-bottom: 1rem; color: var(--color-brand);">3. Payment Authorization</h3>
+          <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.95rem;">
+            All transactions undergo real-time simulation checks. By submitting payment forms, you affirm that the
+            credentials entered belong to you and have sufficient limits. Invalid authorizations will trigger immediate
+            transaction cancellations.
+          </p>
+
+          <h3 style="margin-bottom: 1rem; color: var(--color-brand);">4. Limitation of Liability</h3>
+          <p style="color: var(--text-secondary); font-size: 0.95rem;">
+            ToyzGuru represents our collectibles in standard working status. We are not liable for incidental damage
+            resulting from misuse of mechanical watches or scale diecast structures, nor are we liable for local system
+            service issues.
+          </p>
+        </div>
+      </section>
+
+      <!-- ================= CHECKOUT VIEW ================= -->
+      <section id="checkout-view" class="view-panel" style="display: none;">
+        <div class="checkout-grid">
+
+          <!-- Steps Form -->
+          <div class="checkout-steps">
+
+            <!-- Step 1: Shipping Address -->
+            <div class="glass-panel checkout-step">
+              <div class="checkout-step-header">
+                <div class="checkout-step-num">1</div>
+                <h3 class="checkout-step-title">Shipping & Contact Info</h3>
+              </div>
+
+              <!-- Address Selection Options -->
+              <div style="padding: 1rem 1.25rem 0.5rem;" id="checkout-address-selection-area">
+                <h5
+                  style="margin: 0 0 0.75rem; font-size: 0.9rem; font-weight: 700; color: var(--color-brand); font-family: 'Space Grotesk', sans-serif;">
+                  Delivery Address Options</h5>
+                <div
+                  style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 1rem;"
+                  id="checkout-addresses-container">
+                  <!-- Dynamically populated via app.js -->
+                </div>
+              </div>
+
+              <form id="shipping-form" style="margin-top: 0.5rem;">
+                <div class="checkout-form-grid" id="checkout-address-fields-wrapper">
+                  <div class="form-group">
+                    <label class="form-label">First Name *</label>
+                    <input type="text" required class="form-input" id="ship-first-name" placeholder="John">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Last Name *</label>
+                    <input type="text" required class="form-input" id="ship-last-name" placeholder="Doe">
+                  </div>
+                  <div class="form-group full-width">
+                    <label class="form-label">Email Address *</label>
+                    <input type="email" required class="form-input" id="ship-email" placeholder="srikantsr@gmail.com">
+                  </div>
+                  <div class="form-group full-width">
+                    <label class="form-label">Delivery Street Address *</label>
+                    <input type="text" required class="form-input" id="ship-address"
+                      placeholder="123 Neon Cyber Blvd, Suite 4B (Different from membership address)">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">City *</label>
+                    <input type="text" required class="form-input" id="ship-city" placeholder="Neo-Tokyo">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Zip / Postal Code *</label>
+                    <input type="text" required class="form-input" id="ship-zip" placeholder="100-0001">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Country</label>
+                    <input type="text" readonly class="form-input" value="India"
+                      style="background: rgba(255, 255, 255, 0.03); color: var(--text-secondary); cursor: not-allowed;">
+                    <input type="hidden" id="ship-country" value="IN">
+                  </div>
+                  <div class="form-group" id="ship-state-group">
+                    <label class="form-label">State *</label>
+                    <select required class="form-select" id="ship-state">
+                      <!-- Dynamically populated via app.js -->
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Phone Number *</label>
+                    <input type="tel" required class="form-input" id="ship-phone" placeholder="+91 90123-45678">
+                  </div>
+                  <div class="form-group full-width" style="margin-top: 1rem; margin-bottom: 0.5rem;">
+                    <button type="button" id="checkout-save-address-btn" class="checkout-btn"
+                      style="width: auto; padding: 0.6rem 1.5rem; background: var(--color-watches); font-size: 0.9rem; font-weight: 700; border-radius: 6px; box-shadow: 0 0 10px rgba(0, 180, 216, 0.2); cursor: pointer; display: flex; align-items: center; gap: 0.35rem;">
+                      <i data-feather="save" style="width: 15px; height: 15px; vertical-align: middle;"></i> Save
+                      Address
+                    </button>
+                  </div>
+                </div>
+                <div class="checkout-form-grid">
+                  <div class="form-group full-width" id="shipping-mode-group"
+                    style="border-top: 1px dashed var(--glass-border); padding-top: 1rem; margin-top: 0.5rem;">
+                    <label class="form-label">Shipping Mode *</label>
+                    <div style="display: flex; gap: 2rem; margin-top: 0.25rem;">
+                      <label
+                        style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.9rem;">
+                        <input type="radio" name="shipping-mode" value="normal" checked
+                          style="accent-color: var(--color-brand);">
+                        <span>Normal Delivery (<span id="checkout-normal-cost-lbl">₹150.00</span>)</span>
+                      </label>
+                      <label
+                        style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.9rem;">
+                        <input type="radio" name="shipping-mode" value="express"
+                          style="accent-color: var(--color-brand);">
+                        <span>Express Delivery (<span id="checkout-express-cost-lbl">₹350.00</span>)</span>
+                      </label>
+                    </div>
+                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.5rem;"
+                      id="checkout-assigned-courier-msg">
+                      Delivered via: Delhivery
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            <!-- Step 2: Payment Simulator -->
+            <div class="glass-panel checkout-step">
+              <div class="checkout-step-header">
+                <div class="checkout-step-num">2</div>
+                <h3 class="checkout-step-title">Secure Payment Gateway</h3>
+              </div>
+
+              <div class="payment-tabs" style="display: flex; gap: 0.5rem; margin: 1.25rem; margin-bottom: 1.5rem;">
+                <button type="button" class="payment-tab-btn active" data-method="razorpay"
+                  style="flex: 1; padding: 0.75rem; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--color-brand); border-radius: 6px; color: var(--text-primary); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-weight: 600; font-family: 'Space Grotesk', sans-serif; transition: all 0.2s ease;">
+                  <i data-feather="credit-card" style="width: 16px;"></i> Online Payment
+                </button>
+              </div>
+
+              <!-- Input Forms & Payment Containers -->
+              <form id="payment-details-form" style="padding: 0 1.25rem 1.25rem;">
+                <input type="hidden" id="selected-payment-method" value="razorpay">
+
+                <!-- Razorpay Payment Panel -->
+                <div id="razorpay-payment-panel" class="payment-panel-content">
+                  <p
+                    style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.25rem; line-height: 1.4;">
+                    Clicking Proceed to Checkout will open the secure Razorpay payment gateway where you can pay via
+                    UPI, Credit/Debit Card, or Netbanking.
+                  </p>
+                </div>
+
+
+
+                <div
+                  style="max-width: 320px; margin: 1.25rem auto 0; display: flex; flex-direction: column; gap: 0.75rem;">
+                  <div
+                    style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 0.8rem; color: var(--text-secondary); background: rgba(255, 255, 255, 0.03); padding: 0.5rem; border-radius: 4px; border: 1px solid var(--glass-border);">
+                    <i data-feather="lock" style="width: 14px; height: 14px; color: var(--color-watches);"></i> Secured
+                    via SSL 256-bit Encryption
+                  </div>
+                </div>
+
+                <button type="submit" class="checkout-btn" style="padding: 1rem; font-size: 1.1rem; margin-top: 1.5rem;"
+                  id="submit-order-btn">
+                  Verify & Process Payment
+                </button>
+              </form>
+
+              <!-- Payment processing state loader -->
+              <div class="payment-loader" id="payment-status-loader">
+                <div class="spinner"></div>
+                <h4 id="payment-loader-title" style="font-size: 1.25rem;">Verifying Payment...</h4>
+                <p id="payment-loader-desc" style="color: var(--text-secondary); font-size: 0.9rem;">Polling transaction
+                  status from central gateway. Do not close this page.</p>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Checkout Order Summary -->
+          <aside class="glass-panel order-summary-panel">
+            <h3 class="order-summary-title">Purchase Summary</h3>
+
+            <div class="summary-items-list" id="checkout-summary-items">
+              <!-- Dynamically populated via app.js -->
+            </div>
+
+            <!-- Promo Codes -->
+            <div class="coupon-section">
+              <input type="text" placeholder="Promo code" class="coupon-input" id="coupon-code-input">
+              <button class="coupon-btn" id="apply-coupon-btn">Apply</button>
+            </div>
+
+            <!-- Financial Calculation Rows -->
+            <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem;">
+              <div class="cart-summary-row">
+                <span>Subtotal</span>
+                <span id="checkout-subtotal">₹0.00</span>
+              </div>
+              <div class="cart-summary-row" id="checkout-discount-row" style="display: none;">
+                <span>Discount Applied (10%)</span>
+                <span style="color: var(--color-success);" id="checkout-discount-val">-₹0.00</span>
+              </div>
+              <div class="cart-summary-row">
+                <span>Shipping</span>
+                <span id="checkout-shipping">₹0.00</span>
+              </div>
+              <div class="cart-summary-row">
+                <span id="checkout-tax-label">Estimated Tax</span>
+                <span id="checkout-tax">₹0.00</span>
+              </div>
+              <div class="cart-summary-row total">
+                <span>Total Amount Due</span>
+                <span id="checkout-total-due">₹0.00</span>
+              </div>
+            </div>
+          </aside>
+
+        </div>
+      </section>
+
+      <!-- ================= ORDER SUCCESS SCREEN ================= -->
+      <section id="success-view" class="view-panel" style="display: none;">
+        <div class="success-screen glass-panel">
+          <div class="success-icon-wrap">
+            <i data-feather="check" style="width: 40px; height: 40px;"></i>
+          </div>
+          <h1 class="success-title">Order Authenticated!</h1>
+          <p class="success-text">Thank you for shopping at ToyzGuru. Your order payment has cleared, and your items are
+            being prepared for vaulted shipment.</p>
+
+          <div class="success-details">
+            <div class="success-details-row">
+              <span>Order Tracking ID:</span>
+              <strong id="success-order-id"
+                style="font-family: 'Space Grotesk', sans-serif; color: var(--color-brand);">TG-12345-6789</strong>
+            </div>
+            <div class="success-details-row">
+              <span>Fulfillment Status:</span>
+              <span class="order-status-badge status-processing">Processing</span>
+            </div>
+            <div class="success-details-row">
+              <span>Estimated Delivery:</span>
+              <strong id="success-est-delivery">June 10, 2026</strong>
+            </div>
+            <div class="success-details-row">
+              <span>Shipping Address:</span>
+              <span id="success-shipping-address">123 Neon Cyber Blvd, Suite 4B, Neo-Tokyo</span>
+            </div>
+            <div class="success-details-row">
+              <span>Total Paid:</span>
+              <strong id="success-total-paid">₹0.00</strong>
+            </div>
+          </div>
+
+          <div class="success-actions">
+            <a href="#tracking" class="cta-btn cta-btn-anime" id="success-track-link">Track Your Order <i
+                data-feather="compass"></i></a>
+            <a href="#catalog" class="cta-btn cta-btn-cars"
+              style="background: var(--bg-tertiary); border: 1px solid var(--glass-border);">Continue Shopping <i
+                data-feather="shopping-bag"></i></a>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= ORDER TRACKING VIEW ================= -->
+      <section id="tracking-view" class="view-panel" style="display: none;">
+        <div class="tracking-container">
+
+          <div class="tracking-search-wrap">
+            <h1 class="tracking-title">Fulfillment Terminal</h1>
+            <p class="tracking-desc">Input your ToyzGuru Vault Tracking ID to view real-time authentication and transit
+              timelines.</p>
+
+            <div class="tracking-search-form">
+              <input type="text" placeholder="Format: TG-XXXXX-XXXX" class="tracking-input" id="tracking-search-id">
+              <button class="tracking-btn" id="tracking-search-btn">Search Status</button>
+            </div>
+          </div>
+
+          <!-- Timeline panel, shown only after searching -->
+          <div class="glass-panel tracking-card" id="tracking-results-panel" style="display: none;">
+            <div class="tracking-card-header">
+              <div>
+                <div class="track-id-lbl">Active Tracking ID</div>
+                <div class="track-id-val" id="track-panel-order-id">TG-98214-7261</div>
+              </div>
+              <div>
+                <div class="track-est-lbl">Estimated Transit Arrival</div>
+                <div class="track-est-val" id="track-panel-delivery-date">Pending</div>
+              </div>
+            </div>
+
+            <!-- Timeline Diagram -->
+            <div class="tracking-timeline">
+              <div class="tracking-timeline-progress" id="tracking-progress-bar"></div>
+
+              <!-- Step 1: Received -->
+              <div class="timeline-step completed" id="track-step-received">
+                <div class="timeline-dot"><i data-feather="file-text" style="width: 14px; height: 14px;"></i></div>
+                <div class="timeline-label">Order Received</div>
+                <div class="timeline-time" id="track-time-received">--:--</div>
+              </div>
+
+              <!-- Step 2: Processing -->
+              <div class="timeline-step" id="track-step-processing">
+                <div class="timeline-dot"><i data-feather="package" style="width: 14px; height: 14px;"></i></div>
+                <div class="timeline-label">Processing</div>
+                <div class="timeline-time" id="track-time-processing">--:--</div>
+              </div>
+
+              <!-- Step 3: Shipped -->
+              <div class="timeline-step" id="track-step-shipped">
+                <div class="timeline-dot"><i data-feather="truck" style="width: 14px; height: 14px;"></i></div>
+                <div class="timeline-label">Shipped (Vault Transit)</div>
+                <div class="timeline-time" id="track-time-shipped">--:--</div>
+              </div>
+
+              <!-- Step 4: Delivered -->
+              <div class="timeline-step" id="track-step-delivered">
+                <div class="timeline-dot"><i data-feather="check-square" style="width: 14px; height: 14px;"></i></div>
+                <div class="timeline-label">Delivered</div>
+                <div class="timeline-time" id="track-time-delivered">--:--</div>
+              </div>
+            </div>
+
+            <div style="margin-top: 3rem; border-top: 1px solid var(--glass-border); padding-top: 1.5rem;">
+              <h4 style="margin-bottom: 0.5rem;"><i data-feather="info"
+                  style="width: 14px; height: 14px; vertical-align: middle;"></i> Vault Shipment Details</h4>
+              <p style="color: var(--text-secondary); font-size: 0.85rem;" id="track-panel-desc">Your order is being
+                assembled. A team member is authenticating custom scale parts / apparel packaging before transport
+                container hand-off.</p>
+            </div>
+          </div>
+
+          <!-- Not Found message -->
+          <div id="tracking-error-message"
+            style="display: none; text-align: center; color: var(--color-danger); padding: 2rem;">
+            <i data-feather="alert-triangle" style="width: 40px; height: 40px; margin-bottom: 1rem;"></i>
+            <h3>Tracking ID Not Found</h3>
+            <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.25rem;">Verify the formatting
+              (TG-XXXXX-XXXX) and retry. Contact custom vault service if issue persists.</p>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ================= AUTHENTICATION VIEW (SIGN IN / SIGN UP) ================= -->
+      <section id="auth-view" class="view-panel" style="display: none;">
+        <div style="max-width: 480px; margin: 2rem auto;">
+          <div class="glass-panel" style="padding: 2.5rem; position: relative;">
+
+            <!-- Tab Headers -->
+            <div style="display: flex; border-bottom: 1px solid var(--glass-border); margin-bottom: 2rem; gap: 1.5rem;">
+              <button class="profile-nav-btn active" id="auth-tab-signin"
+                style="border: none; padding-bottom: 0.75rem; border-radius: 0; background: none; font-weight: 700; width: 50%; font-family: 'Space Grotesk', sans-serif;">Sign
+                In</button>
+              <button class="profile-nav-btn" id="auth-tab-signup"
+                style="border: none; padding-bottom: 0.75rem; border-radius: 0; background: none; font-weight: 700; width: 50%; font-family: 'Space Grotesk', sans-serif;">Create
+                Account</button>
+            </div>
+
+            <!-- Sign In Form -->
+            <form id="auth-signin-form">
+              <h3 style="margin-bottom: 1.5rem; font-size: 1.5rem;">Sign In to your Vault</h3>
+              <div class="checkout-form-grid" style="grid-template-columns: 1fr; gap: 1.25rem; display: grid;">
+                <div class="form-group">
+                  <label class="form-label">Email Address *</label>
+                  <input type="email" required class="form-input" id="auth-signin-email"
+                    placeholder="email@example.com">
+                </div>
+                <div class="form-group">
+                  <div style="display: flex; justify-content: space-between;">
+                    <label class="form-label">Password *</label>
+                    <a href="#" id="forgot-password-link"
+                      style="font-size: 0.8rem; color: var(--color-brand); text-decoration: none;">Forgot Password?</a>
+                  </div>
+                  <input type="password" required class="form-input" id="auth-signin-password" placeholder="••••••••">
+                </div>
+              </div>
+              <button type="submit" class="checkout-btn" style="margin-top: 2rem; width: 100%;">Sign In <i
+                  data-feather="log-in" style="width: 16px; vertical-align: middle; margin-left: 0.25rem;"></i></button>
+            </form>
+
+            <!-- Sign Up Form -->
+            <form id="auth-signup-form" style="display: none;">
+              <h3 style="margin-bottom: 1.5rem; font-size: 1.5rem;">Register New Account</h3>
+              <div class="checkout-form-grid" style="grid-template-columns: 1fr; gap: 1.25rem; display: grid;">
+                <div class="form-group">
+                  <label class="form-label">Full Name *</label>
+                  <input type="text" required class="form-input" id="auth-signup-name" placeholder="Srikant SR">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Email Address *</label>
+                  <input type="email" required class="form-input" id="auth-signup-email"
+                    placeholder="email@example.com">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Password *</label>
+                  <input type="password" required class="form-input" id="auth-signup-password"
+                    placeholder="Min 6 characters">
+                </div>
+              </div>
+              <button type="submit" class="checkout-btn" style="margin-top: 2rem; width: 100%;">Create Account <i
+                  data-feather="user-plus"
+                  style="width: 16px; vertical-align: middle; margin-left: 0.25rem;"></i></button>
+            </form>
+
+            <!-- Forgot Password Form -->
+            <form id="auth-forgot-password-form" style="display: none;">
+              <h3 style="margin-bottom: 1.5rem; font-size: 1.5rem;">Reset Password</h3>
+              <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1.5rem;">Enter your email
+                address and we'll send you a link to reset your password.</p>
+              <div class="checkout-form-grid" style="grid-template-columns: 1fr; gap: 1.25rem; display: grid;">
+                <div class="form-group">
+                  <label class="form-label">Email Address *</label>
+                  <input type="email" required class="form-input" id="auth-forgot-email"
+                    placeholder="email@example.com">
+                </div>
+              </div>
+              <button type="submit" class="checkout-btn" style="margin-top: 2rem; width: 100%;">Send Reset Link <i
+                  data-feather="mail" style="width: 16px; vertical-align: middle; margin-left: 0.25rem;"></i></button>
+              <div style="text-align: center; margin-top: 1rem;">
+                <a href="#" id="back-to-signin-link"
+                  style="font-size: 0.85rem; color: var(--text-secondary); text-decoration: none;"><i
+                    data-feather="arrow-left" style="width: 14px; vertical-align: middle;"></i> Back to Sign In</a>
+              </div>
+            </form>
+
+
+            <!-- Divider -->
+            <div
+              style="display: flex; align-items: center; text-align: center; margin: 1.5rem 0; color: var(--text-secondary); font-size: 0.85rem;">
+              <div style="flex: 1; height: 1px; background: var(--glass-border);"></div>
+              <span style="padding: 0 0.75rem; font-weight: 500;">OR</span>
+              <div style="flex: 1; height: 1px; background: var(--glass-border);"></div>
+            </div>
+
+            <!-- Google Authentication Button -->
+            <button type="button" id="google-auth-btn"
+              style="width: 100%; padding: 0.85rem; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--glass-border); border-radius: 6px; color: var(--text-primary); font-size: 0.95rem; font-weight: 600; font-family: 'Space Grotesk', sans-serif; display: flex; align-items: center; justify-content: center; gap: 0.5rem; cursor: pointer; transition: all 0.2s ease;">
+              <svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align: middle;">
+                <path fill="#4285F4"
+                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                <path fill="#34A853"
+                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                <path fill="#FBBC05"
+                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                <path fill="#EA4335"
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+              </svg>
+              Continue with Google
+            </button>
+
+            <p
+              style="font-size: 0.75rem; color: var(--text-secondary); text-align: center; margin-top: 1.5rem; line-height: 1.4;">
+              Secured by Supabase Cryptographic Session Management. By accessing your vault, you agree to our terms.
+            </p>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= RESET PASSWORD VIEW ================= -->
+      <section id="reset-password-view" class="view-panel" style="display: none;">
+        <div style="max-width: 480px; margin: 4rem auto;">
+          <div class="glass-panel" style="padding: 2.5rem; position: relative;">
+            <form id="auth-reset-password-form">
+              <h3 style="margin-bottom: 1.5rem; font-size: 1.5rem;">Create New Password</h3>
+              <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1.5rem;">Please enter your new
+                password below to regain access to your vault.</p>
+              <div class="checkout-form-grid" style="grid-template-columns: 1fr; gap: 1.25rem; display: grid;">
+                <div class="form-group">
+                  <label class="form-label">New Password *</label>
+                  <input type="password" required class="form-input" id="auth-reset-new-password"
+                    placeholder="Min 6 characters">
+                </div>
+              </div>
+              <button type="submit" class="checkout-btn" style="margin-top: 2rem; width: 100%;">Update Password <i
+                  data-feather="lock" style="width: 16px; vertical-align: middle; margin-left: 0.25rem;"></i></button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= MY ACCOUNT VIEW ================= -->
+      <section id="profile-view" class="view-panel" style="display: none;">
+        <div class="profile-grid">
+
+          <!-- Profile sidebar -->
+          <aside class="glass-panel profile-sidebar">
+            <div class="profile-user-card">
+              <div class="profile-avatar-wrap" id="avatar-upload-trigger" title="Click to upload profile image">
+                <img src="assets/images/product_anime_figure.png" alt="User Profile Image" class="profile-avatar-img"
+                  id="profile-card-avatar">
+                <div class="profile-avatar-overlay">
+                  <i data-feather="camera" style="width: 20px; height: 20px;"></i>
+                </div>
+                <input type="file" id="user-setting-avatar-input" accept="image/*" style="display: none;">
+              </div>
+              <h3 class="profile-name" id="profile-card-name">Srikant SR</h3>
+              <span class="profile-points-badge"><i data-feather="award"
+                  style="width: 12px; height: 12px; vertical-align: middle; margin-right: 0.15rem;"></i> <span
+                  id="profile-card-points">120</span> Loyalty Points</span>
+            </div>
+
+            <nav class="profile-nav">
+              <button class="profile-nav-btn active" data-panel="profile-orders"><i data-feather="list"
+                  style="width: 18px;"></i> Order History</button>
+              <button class="profile-nav-btn" data-panel="profile-settings"><i data-feather="settings"
+                  style="width: 18px;"></i> Account Settings</button>
+              <button class="profile-nav-btn" id="profile-signout-btn" style="color: var(--color-danger);"><i
+                  data-feather="log-out" style="width: 18px; color: var(--color-danger);"></i> Sign Out</button>
+            </nav>
+          </aside>
+
+          <!-- Profile Info Panels -->
+          <div>
+            <!-- Order History Panel -->
+            <div class="glass-panel profile-panel active" id="profile-orders">
+              <h3 class="profile-panel-title">Your Order History</h3>
+
+              <div class="orders-table-wrap">
+                <table class="orders-table">
+                  <thead>
+                    <tr>
+                      <th>Order ID</th>
+                      <th>Date</th>
+                      <th>Items</th>
+                      <th>Total Cost</th>
+                      <th>Fulfillment</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="profile-orders-list">
+                    <!-- Dynamically populated via app.js -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Account Settings Panel -->
+            <div class="glass-panel profile-panel" id="profile-settings">
+              <h3 class="profile-panel-title">Account Settings</h3>
+
+              <form id="profile-settings-form">
+                <h4 style="color: var(--color-brand); margin-bottom: 1rem; font-family: 'Space Grotesk', sans-serif;">
+                  Saved Delivery Addresses</h4>
+                <div
+                  style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 2rem;"
+                  id="member-addresses-container">
+                  <!-- Dynamically populated via app.js -->
+                </div>
+
+                <h4
+                  style="color: var(--color-brand); margin-bottom: 1rem; font-family: 'Space Grotesk', sans-serif; border-top: 1px solid var(--glass-border); padding-top: 1.5rem;">
+                  Home Address</h4>
+                <div class="checkout-form-grid"
+                  style="grid-template-columns: 1fr 1fr; gap: 1.25rem; display: grid; margin-bottom: 2rem;">
+                  <div class="form-group">
+                    <label class="form-label">Full Name *</label>
+                    <input type="text" required class="form-input" id="user-setting-name" value="Srikant SR">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Email Address *</label>
+                    <input type="email" required class="form-input" id="user-setting-email" value="srikantsr@gmail.com">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Phone Number *</label>
+                    <input type="tel" required class="form-input" id="user-setting-phone" placeholder="+91 XXXXX XXXXX">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">State *</label>
+                    <select required class="form-select" id="user-setting-state">
+                      <!-- Dynamically populated via app.js -->
+                    </select>
+                  </div>
+                  <div class="form-group" style="grid-column: span 2;">
+                    <label class="form-label">Address *</label>
+                    <input type="text" required class="form-input" id="user-setting-address"
+                      placeholder="123 Street name, Apt / Suite">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">City *</label>
+                    <input type="text" required class="form-input" id="user-setting-city" placeholder="Neo-Tokyo">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">PinCode *</label>
+                    <input type="text" required class="form-input" id="user-setting-zip" placeholder="400001">
+                  </div>
+                  <div class="form-group" style="grid-column: span 2;">
+                    <label class="form-label">Country</label>
+                    <input type="text" id="user-setting-country" class="form-input" value="India" readonly
+                      style="background: rgba(255,255,255,0.03); color: var(--text-muted); cursor: not-allowed;">
+                  </div>
+                </div>
+
+
+                <button type="submit" class="checkout-btn"
+                  style="width: auto; padding: 0.75rem 2rem; margin-top: 1.5rem;">Save Settings</button>
+              </form>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ================= ADMIN DASHBOARD VIEW ================= -->
+      <section id="admin-view" class="view-panel" style="display: none;">
+
+        <!-- Admin Login Panel -->
+        <div id="admin-login-wrapper" style="max-width: 420px; margin: 4rem auto; display: block;">
+          <div class="glass-panel" style="padding: 2.5rem; position: relative;">
+            <div style="text-align: center; margin-bottom: 2rem;">
+              <div
+                style="display: inline-flex; align-items: center; justify-content: center; width: 60px; height: 60px; border-radius: 50%; background: var(--color-brand-gradient); margin-bottom: 1rem; box-shadow: 0 0 20px rgba(255, 0, 128, 0.3);">
+                <i data-feather="shield" style="width: 28px; height: 28px; color: #fff;"></i>
+              </div>
+              <h3
+                style="font-size: 1.5rem; color: var(--text-primary); margin: 0 0 0.25rem; font-family: 'Space Grotesk', sans-serif;">
+                Admin Terminal</h3>
+              <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0;">Authorized Operations Access Only
+              </p>
+            </div>
+
+            <form id="admin-login-form">
+              <div class="checkout-form-grid" style="grid-template-columns: 1fr; gap: 1.25rem; display: grid;">
+                <div class="form-group">
+                  <label class="form-label">Access Key ID (Email) *</label>
+                  <input type="email" required class="form-input" id="admin-login-email"
+                    placeholder="admin@toyzguru.com">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Security Passcode *</label>
+                  <input type="password" required class="form-input" id="admin-login-password" placeholder="••••••••">
+                </div>
+              </div>
+              <button type="submit" class="checkout-btn" style="margin-top: 2rem; width: 100%; padding: 0.95rem;">
+                Decrypt & Enter <i data-feather="key"
+                  style="width: 16px; vertical-align: middle; margin-left: 0.25rem;"></i>
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <div class="admin-layout" id="admin-main-layout" style="display: none;">
+
+          <!-- Admin Sidebar -->
+          <aside class="glass-panel admin-sidebar">
+            <div
+              style="padding-bottom: 1rem; margin-bottom: 1rem; border-bottom: 1px solid var(--glass-border); text-align: center;">
+              <h3
+                style="color: var(--color-brand); font-size: 1.1rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                Admin Control</h3>
+              <p style="font-size: 0.75rem; color: var(--text-secondary);">ToyzGuru Central Engine</p>
+            </div>
+
+            <nav class="admin-nav">
+              <button class="admin-nav-btn active" data-panel="admin-dashboard-panel"><i data-feather="activity"
+                  style="width: 18px;"></i> Analytics Overview</button>
+              <button class="admin-nav-btn" data-panel="admin-products-panel"><i data-feather="grid"
+                  style="width: 18px;"></i> Product Inventory</button>
+              <button class="admin-nav-btn" data-panel="admin-orders-panel"><i data-feather="truck"
+                  style="width: 18px;"></i> Order Operations</button>
+              <button class="admin-nav-btn" data-panel="admin-members-panel"><i data-feather="users"
+                  style="width: 18px;"></i> Member Registry</button>
+              <button class="admin-nav-btn" data-panel="admin-feedback-panel"><i data-feather="mail"
+                  style="width: 18px;"></i> Customer Feedback</button>
+              <button class="admin-nav-btn" data-panel="admin-delivery-panel"><i data-feather="map-pin"
+                  style="width: 18px;"></i> Delivery Settings</button>
+              <button class="admin-nav-btn" data-panel="admin-coupons-panel"><i data-feather="tag"
+                  style="width: 18px;"></i> Coupon Management</button>
+              <button class="admin-nav-btn" data-panel="admin-tax-panel"><i data-feather="percent"
+                  style="width: 18px;"></i> Tax & Finance</button>
+              <button class="admin-nav-btn" id="admin-signout-btn"
+                style="color: var(--color-danger); margin-top: 1.5rem; border-top: 1px solid var(--glass-border); border-radius: 0; padding-top: 1rem;"><i
+                  data-feather="log-out" style="width: 18px; color: var(--color-danger);"></i> Exit Terminal</button>
+            </nav>
+          </aside>
+
+          <!-- Admin Panels -->
+          <div>
+
+            <!-- Dashboard / Analytics Panel -->
+            <div class="admin-panel active" id="admin-dashboard-panel">
+              <!-- Grid Stats -->
+              <div class="admin-stats-grid">
+                <!-- Stat 1: Total Sales -->
+                <div class="glass-panel admin-stat-card">
+                  <div class="admin-stat-icon-wrap"><i data-feather="indian-rupee"></i></div>
+                  <div class="admin-stat-info">
+                    <span class="admin-stat-lbl">Gross Sales</span>
+                    <span class="admin-stat-val" id="admin-stat-sales">₹3,00,000.00</span>
+                  </div>
+                </div>
+                <!-- Stat 2: Total Orders -->
+                <div class="glass-panel admin-stat-card">
+                  <div class="admin-stat-icon-wrap"><i data-feather="shopping-cart"></i></div>
+                  <div class="admin-stat-info">
+                    <span class="admin-stat-lbl">Orders Placed</span>
+                    <span class="admin-stat-val" id="admin-stat-orders">14</span>
+                  </div>
+                </div>
+                <!-- Stat 3: Avg Order Value -->
+                <div class="glass-panel admin-stat-card">
+                  <div class="admin-stat-icon-wrap"><i data-feather="trending-up"></i></div>
+                  <div class="admin-stat-info">
+                    <span class="admin-stat-lbl">Avg Order Value</span>
+                    <span class="admin-stat-val" id="admin-stat-avg-value">₹21,000.00</span>
+                  </div>
+                </div>
+                <!-- Stat 4: Inventory Items -->
+                <div class="glass-panel admin-stat-card">
+                  <div class="admin-stat-icon-wrap"><i data-feather="package"></i></div>
+                  <div class="admin-stat-info">
+                    <span class="admin-stat-lbl">Unique Items</span>
+                    <span class="admin-stat-val" id="admin-stat-items">9</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Sales Trend Chart Panel -->
+              <div class="glass-panel admin-chart-panel">
+                <h3 class="admin-chart-title">Weekly Sales Performance (₹)</h3>
+                <div class="admin-chart-canvas-wrap" id="admin-weekly-chart">
+                  <!-- Custom CSS-based dynamic chart bars, drawn via JS -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Product Inventory CRUD Management Panel -->
+            <div class="admin-panel" id="admin-products-panel">
+              <div class="admin-action-bar">
+                <div class="admin-search-box">
+                  <input type="text" placeholder="Search inventory..." class="admin-search-input"
+                    id="admin-inventory-search">
+                  <i data-feather="search"
+                    style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); width: 14px; pointer-events: none;"></i>
+                </div>
+
+                <button class="admin-primary-btn" id="admin-add-product-btn">
+                  <i data-feather="plus"></i> Add New Product
+                </button>
+                <button class="admin-primary-btn" id="admin-download-excel-btn"
+                  style="background: var(--color-watches); margin-left: 0.5rem;"
+                  title="Download Excel template containing catalog products">
+                  <i data-feather="download"></i> Excel Template
+                </button>
+                <button class="admin-primary-btn" id="admin-import-excel-btn"
+                  style="background: var(--color-brand-gradient); margin-left: 0.5rem;"
+                  title="Import/Merge products from Excel file">
+                  <i data-feather="upload"></i> Import Excel
+                </button>
+                <input type="file" id="admin-excel-import-input" accept=".xlsx, .xls" style="display: none;">
+              </div>
+
+              <div class="glass-panel admin-table-wrap">
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Image</th>
+                      <th>Product Title</th>
+                      <th>Category</th>
+                      <th>Price</th>
+                      <th>Stock</th>
+                      <th>Rating</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="admin-products-table-body">
+                    <!-- Dynamically populated via admin.js -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Order Operations Panel -->
+            <div class="admin-panel" id="admin-orders-panel">
+              <h3 style="font-size: 1.5rem; margin-bottom: 1.5rem;">Fulfillment & Operations Queue</h3>
+
+              <div class="glass-panel admin-table-wrap">
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Order ID</th>
+                      <th>Customer Email</th>
+                      <th>Purchase Date</th>
+                      <th>Items Purchased</th>
+                      <th>Total Paid</th>
+                      <th>Fulfillment State</th>
+                      <th>Fulfillment Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="admin-orders-table-body">
+                    <!-- Dynamically populated via admin.js -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Member Registry Panel -->
+            <div class="admin-panel" id="admin-members-panel">
+              <h3 style="font-size: 1.5rem; margin-bottom: 1.5rem;">Registered Member Registry</h3>
+
+              <div class="glass-panel admin-table-wrap">
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Profile ID</th>
+                      <th>Name</th>
+                      <th>Email</th>
+                      <th>Location</th>
+                      <th>Loyalty Points</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="admin-members-table-body">
+                    <!-- Dynamically populated via admin.js -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Customer Feedback Panel -->
+            <div class="admin-panel" id="admin-feedback-panel">
+              <h3 style="font-size: 1.5rem; margin-bottom: 1.5rem;">Customer Feedback Support Inbox</h3>
+
+              <div class="glass-panel admin-table-wrap">
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Date Received</th>
+                      <th>Sender</th>
+                      <th>Subject</th>
+                      <th>Message Details</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="admin-feedback-table-body">
+                    <!-- Dynamically populated via admin.js -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Delivery & Courier Settings Panel -->
+            <div class="admin-panel" id="admin-delivery-panel">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <div>
+                  <h3 style="font-size: 1.5rem;">Delivery & Courier Operations</h3>
+                  <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem;">Configure Indian
+                    state-wise delivery charges and assign shipping courier partners.</p>
+                </div>
+                <button class="admin-primary-btn" id="admin-add-courier-btn">
+                  <i data-feather="plus" style="width: 16px; height: 16px; vertical-align: middle;"></i> Add Courier
+                  Agency
+                </button>
+              </div>
+
+              <!-- Grid configuration -->
+              <div style="display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 1.5rem;">
+
+                <!-- Left: State-wise charges -->
+                <div class="glass-panel" style="padding: 1.5rem; display: flex; flex-direction: column;">
+                  <div
+                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+                    <h4 style="font-size: 1.1rem; color: var(--color-brand);"><i data-feather="map"
+                        style="width: 16px; height: 16px; vertical-align: middle; margin-right: 0.25rem;"></i> Shipping
+                      Charges per State</h4>
+                    <input type="text" id="admin-state-search" placeholder="Search state..." class="form-input"
+                      style="padding: 0.35rem 0.75rem; font-size: 0.8rem; width: 160px; border-radius: 20px; background: var(--bg-tertiary); border: 1px solid var(--glass-border);">
+                  </div>
+
+                  <div class="admin-table-wrap" style="max-height: 480px; overflow-y: auto;">
+                    <table class="admin-table">
+                      <thead>
+                        <tr>
+                          <th>State Name</th>
+                          <th>Normal Fee</th>
+                          <th>Express Fee</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody id="admin-delivery-states-body">
+                        <!-- Dynamically populated via admin.js -->
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <!-- Right: Courier Agencies -->
+                <div class="glass-panel" style="padding: 1.5rem; display: flex; flex-direction: column;">
+                  <h4 style="font-size: 1.1rem; color: var(--color-brand); margin-bottom: 1rem;"><i data-feather="truck"
+                      style="width: 16px; height: 16px; vertical-align: middle; margin-right: 0.25rem;"></i> Registered
+                    Courier Agencies</h4>
+
+                  <div class="admin-table-wrap" style="max-height: 480px; overflow-y: auto;">
+                    <table class="admin-table">
+                      <thead>
+                        <tr>
+                          <th>Agency Name</th>
+                          <th>Status</th>
+                          <th>Assigned States</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody id="admin-couriers-body">
+                        <!-- Dynamically populated via admin.js -->
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- Coupon Management Panel -->
+            <div class="admin-panel" id="admin-coupons-panel">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <div>
+                  <h3 style="font-size: 1.5rem;">Coupon Management</h3>
+                  <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem;">Create, edit, delete,
+                    and toggle active status of promotional coupon codes.</p>
+                </div>
+                <button class="admin-primary-btn" id="admin-add-coupon-btn">
+                  <i data-feather="plus" style="width: 16px; height: 16px; vertical-align: middle;"></i> Add New Coupon
+                </button>
+              </div>
+
+              <div class="glass-panel admin-table-wrap">
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Code</th>
+                      <th>Type</th>
+                      <th>Value</th>
+                      <th>Min Order</th>
+                      <th>Max Discount</th>
+                      <th>Usage Limit</th>
+                      <th>Expires At</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="admin-coupons-table-body">
+                    <!-- Dynamically populated via admin.js -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Tax & Finance Panel -->
+            <div class="admin-panel" id="admin-tax-panel">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <div>
+                  <h3 style="font-size: 1.5rem;">Tax & Finance Configuration</h3>
+                  <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem;">Manage tax
+                    calculations like SGST, CGST, and IGST dynamically.</p>
+                </div>
+              </div>
+
+              <div class="glass-panel" style="padding: 2rem;">
+                <form id="admin-tax-form">
+                  <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;">
+                    <label
+                      style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 1rem; font-weight: 600; color: var(--text-primary);">
+                      <input type="checkbox" id="admin-tax-enabled"
+                        style="accent-color: var(--color-brand); width: 18px; height: 18px; cursor: pointer;">
+                      <span>Enable Tax Calculation</span>
+                    </label>
+                  </div>
+
+                  <div class="checkout-form-grid"
+                    style="grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem; display: grid; margin-bottom: 2rem;">
+                    <div class="form-group">
+                      <label class="form-label">SGST Percentage (%)</label>
+                      <input type="number" step="0.01" min="0" required class="form-input" id="admin-tax-sgst"
+                        placeholder="4.0">
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">IGST Percentage (%)</label>
+                      <input type="number" step="0.01" min="0" required class="form-input" id="admin-tax-igst"
+                        placeholder="0.0">
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">CGST Percentage (%) [Auto: SGST+IGST]</label>
+                      <input type="number" step="0.01" min="0" required class="form-input" id="admin-tax-cgst"
+                        placeholder="4.0" readonly style="background: var(--bg-tertiary); opacity: 0.7;">
+                    </div>
+                  </div>
+
+                  <button type="submit" class="admin-primary-btn" style="width: auto; padding: 0.75rem 2rem;">
+                    <i data-feather="save" style="width: 16px; height: 16px; vertical-align: middle;"></i> Save Tax
+                    Settings
+                  </button>
+                </form>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="footer-inner">
+        <!-- Logo and About -->
+        <div class="footer-brand">
+          <a href="#home" class="logo" style="margin-bottom: 1.25rem; display: inline-flex;">
+            <img src="assets/images/logo.png" alt="ToyzGuru Logo" class="logo-img">
+          </a>
+          <p class="footer-desc">Toyzguru, your ultimate destination for die-cast cars collectibles, anime treasures,
+            imported wahtches and uniquely curated toys. Whether you’re a passionate collector or a casual enthusiast,
+            we bring you a world of excitement, creativity, and nostalgia—all in one place.</p>
+          <div class="social-links">
+            <a href="https://instagram.com/toyz_guruofficial" target="_blank" rel="noopener noreferrer" class="icon-btn"
+              aria-label="Instagram"><i data-feather="instagram"></i></a>
+            <a href="#" class="icon-btn" aria-label="Twitter"><i data-feather="twitter"></i></a>
+            <a href="#" class="icon-btn" aria-label="YouTube"><i data-feather="youtube"></i></a>
+            <a href="#" class="icon-btn" aria-label="Discord"><i data-feather="message-square"></i></a>
+          </div>
+        </div>
+
+        <!-- Links column 1 -->
+        <div>
+          <h4 class="footer-title">Browse Store</h4>
+          <ul class="footer-links">
+            <li><a href="#catalog?category=anime" class="footer-link">Anime Figures</a></li>
+            <li><a href="#catalog?category=toy-cars" class="footer-link">Diecast Toy Cars</a></li>
+            <li><a href="#catalog?category=watches" class="footer-link">Mechanical Watches</a></li>
+            <li><a href="#catalog" class="footer-link">New Arrivals</a></li>
+          </ul>
+        </div>
+
+        <!-- Links column 2 -->
+        <div>
+          <h4 class="footer-title">Help & Info</h4>
+          <ul class="footer-links">
+            <li><a href="#tracking" class="footer-link">Track Order</a></li>
+            <li><a href="#about" class="footer-link">About Us</a></li>
+            <li><a href="#faqs" class="footer-link">FAQs</a></li>
+            <li><a href="#profile" class="footer-link">My Account</a></li>
+            <li><a href="#contact" class="footer-link">Contact Us</a></li>
+            <li><a href="#admin" class="footer-link">Admin Dashboard</a></li>
+          </ul>
+        </div>
+
+        <!-- Newsletter Sub -->
+        <div>
+          <h4 class="footer-title">Subscribe for Drops</h4>
+          <p class="footer-desc" style="font-size: 0.85rem; margin-bottom: 1rem;">Join the ToyzGuru network to receive
+            exclusive notifications on highly limited edition item drops and preorder alerts.</p>
+          <form class="newsletter-form" id="newsletter-form">
+            <input type="email" placeholder="Enter email address" required class="newsletter-input">
+            <button type="submit" class="newsletter-btn">Join</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Footer Bottom -->
+      <div class="footer-bottom">
+        <div>&copy; 2026 Toyzguru.in All Rights Reserved.</div>
+        <div style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+          <a href="#shipping-policy" class="footer-link" style="margin:0;">Shipping Policy</a>
+          <a href="#refund-policy" class="footer-link" style="margin:0;">Refund Policy</a>
+          <a href="#privacy" class="footer-link" style="margin:0;">Privacy Policy</a>
+          <a href="#terms" class="footer-link" style="margin:0;">Terms & Conditions</a>
+        </div>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- ================= MODALS & OVERLAYS ================= -->
+
+  <!-- Shopping Cart Drawer Drawer Panel -->
+  <div class="cart-drawer-overlay" id="cart-drawer-overlay"></div>
+  <div class="cart-drawer" id="cart-drawer">
+    <div class="cart-drawer-header">
+      <h3 class="cart-drawer-title">Vault Cart (<span id="cart-drawer-badge-count">0</span>)</h3>
+      <button class="close-btn icon-btn" id="close-cart-btn" aria-label="Close Cart">
+        <i data-feather="x"></i>
+      </button>
+    </div>
+
+    <!-- Scrollable Items Area -->
+    <div class="cart-items-container" id="cart-items-list">
+      <!-- Dynamically populated via app.js -->
+    </div>
+
+    <!-- Summary / Cost Checkout Footer -->
+    <div class="cart-drawer-footer">
+      <div class="cart-summary-row">
+        <span>Cart Subtotal</span>
+        <strong id="cart-drawer-subtotal">₹0.00</strong>
+      </div>
+      <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 1rem; text-align: center;">Taxes and
+        shipping calculated at checkout stage.</p>
+
+      <button class="checkout-btn" id="proceed-checkout-btn">
+        Proceed to Secure Checkout <i data-feather="arrow-right"
+          style="width: 16px; height: 16px; vertical-align: middle; margin-left: 0.25rem;"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Product Details Modal -->
+  <div class="modal-overlay" id="product-detail-modal-overlay">
+    <div class="product-detail-modal">
+      <button class="modal-close" id="close-product-modal-btn">
+        <i data-feather="x"></i>
+      </button>
+
+      <div class="detail-grid">
+        <!-- Left: Image Box -->
+        <div class="detail-gallery">
+          <span class="detail-badge badge-new" id="modal-product-badge">New</span>
+          <img src="" alt="Product Detail Cover" class="detail-gallery-img" id="modal-product-image">
+        </div>
+
+        <!-- Right: Description Info -->
+        <div class="detail-info">
+          <span class="detail-cat" id="modal-product-category">Anime Figures</span>
+          <h2 class="detail-title" id="modal-product-title">Lykan Hypersport</h2>
+
+          <div class="detail-rating-wrap">
+            <div id="modal-product-stars-container" style="display: flex; gap: 0.1rem;">
+              <!-- Stars dynamically populated -->
+            </div>
+            <span class="detail-review-count" id="modal-product-reviews">(124 verified reviews)</span>
+          </div>
+
+          <div class="detail-price-wrap">
+            <span class="detail-price" id="modal-product-price">₹0.00</span>
+            <span class="detail-original-price" id="modal-product-original-price">₹0.00</span>
+          </div>
+
+          <p class="detail-desc" id="modal-product-desc">
+            Product long description description details.
+          </p>
+
+          <!-- Custom Category Options Selection (Sizes, Colors, Scales) -->
+          <div class="detail-options" id="modal-product-options-wrap">
+            <h4 class="detail-options-title" id="modal-product-options-title">Select Size</h4>
+            <div class="detail-selectors" id="modal-product-options-selectors">
+              <!-- Populated dynamic sizing buttons -->
+            </div>
+          </div>
+
+          <!-- Quantity selection and Purchase button -->
+          <div class="detail-qty-buy-wrap">
+            <div class="detail-qty-selector">
+              <button class="detail-qty-btn" id="modal-qty-dec">-</button>
+              <div class="detail-qty-val" id="modal-qty-val">1</div>
+              <button class="detail-qty-btn" id="modal-qty-inc">+</button>
+            </div>
+
+            <button class="detail-add-btn" id="modal-add-cart-btn">
+              Add to Cart <i data-feather="shopping-bag" style="width: 18px;"></i>
+            </button>
+          </div>
+
+          <!-- Specifications Section -->
+          <div>
+            <h4 class="detail-options-title">Product Specifications</h4>
+            <div class="detail-specs-list" id="modal-product-specs-list">
+              <!-- Dynamically populated spec key-value list -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin: Create / Edit Product Modal -->
+  <div class="modal-overlay" id="admin-product-modal-overlay">
+    <div class="product-detail-modal" style="max-width: 600px;">
+      <button class="modal-close" id="close-admin-modal-btn">
+        <i data-feather="x"></i>
+      </button>
+
+      <div class="admin-form-container">
+        <h2 style="margin-bottom: 1.5rem;" id="admin-modal-title">Create New Inventory Item</h2>
+
+        <form id="admin-product-form">
+          <input type="hidden" id="admin-form-product-id">
+
+          <div class="checkout-form-grid" style="grid-template-columns: 1fr;">
+
+            <div class="form-group">
+              <label class="form-label">Product Name *</label>
+              <input type="text" required class="form-input" id="admin-form-title"
+                placeholder="Goku Ultra Instinct Hoodie">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="form-group">
+                <label class="form-label">Category *</label>
+                <select required class="form-select" id="admin-form-category">
+                  <option value="anime">Anime Figures</option>
+                  <option value="toy-cars">Premium Toy Cars</option>
+                  <option value="watches">Imported Watches</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Badge Label (Optional)</label>
+                <select class="form-select" id="admin-form-badge">
+                  <option value="">None</option>
+                  <option value="new">New Drop</option>
+                  <option value="sale">Sale</option>
+                  <option value="hot">Hot Item</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="form-group">
+                <label class="form-label">Sales Price (₹) *</label>
+                <input type="number" required step="0.01" class="form-input" id="admin-form-price" placeholder="4999">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Retail Original Price (₹) (Optional)</label>
+                <input type="number" step="0.01" class="form-input" id="admin-form-original-price" placeholder="5999">
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="form-group">
+                <label class="form-label">Stock Inventory *</label>
+                <input type="number" required class="form-input" id="admin-form-stock" placeholder="25">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Product Image *</label>
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                  <input type="file" id="admin-form-image-file" accept="image/*" class="form-input"
+                    style="padding: 0.4rem;">
+                  <input type="hidden" id="admin-form-image">
+                  <div id="admin-form-image-preview-container"
+                    style="display: none; align-items: center; gap: 0.75rem; background: var(--bg-tertiary); padding: 0.5rem; border-radius: 4px; border: 1px dashed var(--glass-border);">
+                    <img id="admin-form-image-preview" src="" alt="Preview"
+                      style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">
+                    <span id="admin-form-image-name"
+                      style="font-size: 0.75rem; color: var(--text-secondary); word-break: break-all;"></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="form-group">
+                <label class="form-label">Customer Rating (0.0 to 5.0) *</label>
+                <input type="number" required step="0.1" min="0" max="5" class="form-input" id="admin-form-rating"
+                  placeholder="5.0" value="5.0">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Reviews Count *</label>
+                <input type="number" required min="0" class="form-input" id="admin-form-reviews-count" placeholder="1"
+                  value="1">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Product Options (Comma-separated, e.g. Standard PVC, Exclusive Edition)</label>
+              <input type="text" class="form-input" id="admin-form-options" placeholder="e.g. Standard, Deluxe Edition">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Detailed Description *</label>
+              <textarea required class="form-input" id="admin-form-desc" rows="3"
+                placeholder="Describe materials, build, styling features..."></textarea>
+            </div>
+
+            <div style="border-top: 1px solid var(--glass-border); padding-top: 1rem; margin-top: 0.5rem;">
+              <h4 style="margin-bottom: 0.75rem; font-size: 0.9rem;">Product Specifications (Technical)</h4>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 0.75rem;">
+                <input type="text" class="form-input" id="admin-form-spec-k1"
+                  placeholder="Spec Label 1 (e.g. Material)">
+                <input type="text" class="form-input" id="admin-form-spec-v1"
+                  placeholder="Spec Value 1 (e.g. 100% Cotton)">
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 0.75rem;">
+                <input type="text" class="form-input" id="admin-form-spec-k2" placeholder="Spec Label 2 (e.g. Scale)">
+                <input type="text" class="form-input" id="admin-form-spec-v2"
+                  placeholder="Spec Value 2 (e.g. 1:18 scale)">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Or Raw Specifications JSON (Optional, overrides inputs above)</label>
+                <textarea class="form-input" id="admin-form-specs-json" rows="2"
+                  placeholder='{"Material": "PVC", "Height": "25cm"}'
+                  style="font-family: monospace; font-size: 0.8rem;"></textarea>
+              </div>
+            </div>
+
+          </div>
+
+          <button type="submit" class="checkout-btn" style="padding: 0.85rem; font-size: 1rem; margin-top: 2rem;">
+            Save Product to Catalog
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin: Order Details Modal -->
+  <div class="modal-overlay" id="admin-order-modal-overlay">
+    <div class="product-detail-modal"
+      style="max-width: 600px; padding: 2.5rem; border-radius: 12px; background: var(--bg-secondary); border: 1px solid var(--glass-border); box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
+      <button class="modal-close" id="close-admin-order-modal-btn"
+        style="position: absolute; top: 1.25rem; right: 1.25rem; background: none; border: none; color: var(--text-secondary); cursor: pointer;">
+        <i data-feather="x" style="width: 20px; height: 20px;"></i>
+      </button>
+
+      <div class="admin-form-container">
+        <h2 style="margin-bottom: 1.5rem; color: var(--color-brand); font-family: 'Space Grotesk', sans-serif;"
+          id="admin-order-modal-title">Order Details</h2>
+
+        <div id="admin-order-modal-content"
+          style="display: flex; flex-direction: column; gap: 1.25rem; font-size: 0.9rem; color: var(--text-primary);">
+          <!-- Dynamically populated via admin.js -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin: Edit State Charges Modal -->
+  <div class="modal-overlay" id="admin-state-modal-overlay">
+    <div class="product-detail-modal"
+      style="max-width: 450px; padding: 2.5rem; border-radius: 12px; background: var(--bg-secondary); border: 1px solid var(--glass-border); box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
+      <button class="modal-close" id="close-admin-state-modal-btn"
+        style="position: absolute; top: 1.25rem; right: 1.25rem; background: none; border: none; color: var(--text-secondary); cursor: pointer;">
+        <i data-feather="x" style="width: 20px; height: 20px;"></i>
+      </button>
+      <div class="admin-form-container">
+        <h2 style="margin-bottom: 1.5rem; color: var(--color-brand); font-family: 'Space Grotesk', sans-serif;"
+          id="admin-state-modal-title">Configure Shipping</h2>
+        <form id="admin-state-form">
+          <input type="hidden" id="admin-form-state-name">
+          <div class="checkout-form-grid" style="grid-template-columns: 1fr; gap: 1.25rem;">
+            <div class="form-group">
+              <label class="form-label">Normal Delivery Price (₹) *</label>
+              <input type="number" required step="0.01" class="form-input" id="admin-form-state-normal"
+                placeholder="150.00">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Express Delivery Price (₹) *</label>
+              <input type="number" required step="0.01" class="form-input" id="admin-form-state-express"
+                placeholder="350.00">
+            </div>
+          </div>
+          <button type="submit" class="checkout-btn" style="padding: 0.85rem; font-size: 1rem; margin-top: 1.5rem;">
+            Save Shipping Charges
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin: Add/Edit Courier Modal -->
+  <div class="modal-overlay" id="admin-courier-modal-overlay">
+    <div class="product-detail-modal"
+      style="max-width: 650px; padding: 2.5rem; border-radius: 12px; background: var(--bg-secondary); border: 1px solid var(--glass-border); box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
+      <button class="modal-close" id="close-admin-courier-modal-btn"
+        style="position: absolute; top: 1.25rem; right: 1.25rem; background: none; border: none; color: var(--text-secondary); cursor: pointer;">
+        <i data-feather="x" style="width: 20px; height: 20px;"></i>
+      </button>
+      <div class="admin-form-container">
+        <h2 style="margin-bottom: 1.5rem; color: var(--color-brand); font-family: 'Space Grotesk', sans-serif;"
+          id="admin-courier-modal-title">Add Courier Agency</h2>
+        <form id="admin-courier-form">
+          <input type="hidden" id="admin-form-courier-id">
+
+          <div class="checkout-form-grid" style="grid-template-columns: 1.3fr 0.7fr; gap: 1.25rem; align-items: end;">
+            <div class="form-group">
+              <label class="form-label">Agency Name *</label>
+              <input type="text" required class="form-input" id="admin-form-courier-name"
+                placeholder="Delhivery Express">
+            </div>
+            <div class="form-group" style="padding-bottom: 0.5rem;">
+              <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.95rem;">
+                <input type="checkbox" id="admin-form-courier-active" checked
+                  style="accent-color: var(--color-brand); width: 18px; height: 18px;">
+                <span>Active Status</span>
+              </label>
+            </div>
+          </div>
+
+          <div style="margin-top: 1.25rem; border-top: 1px solid var(--glass-border); padding-top: 1rem;">
+            <h4 style="margin-bottom: 0.75rem; font-size: 0.95rem;">Assign States *</h4>
+            <div style="display: flex; gap: 1rem; margin-bottom: 0.75rem;">
+              <button type="button" class="product-card-add-btn" id="courier-select-all"
+                style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">Select All</button>
+              <button type="button" class="product-card-add-btn" id="courier-select-none"
+                style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: var(--bg-tertiary);">Clear All</button>
+            </div>
+            <div
+              style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; max-height: 200px; overflow-y: auto; padding: 0.5rem; background: rgba(0,0,0,0.2); border-radius: 6px; border: 1px solid var(--glass-border);"
+              id="admin-courier-states-checklist">
+              <!-- Dynamically populated checkboxes via admin.js -->
+            </div>
+          </div>
+
+          <button type="submit" class="checkout-btn" style="padding: 0.85rem; font-size: 1rem; margin-top: 1.5rem;">
+            Save Courier Agency
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin: Create / Edit Coupon Modal -->
+  <div class="modal-overlay" id="admin-coupon-modal-overlay">
+    <div class="product-detail-modal"
+      style="max-width: 500px; padding: 2.5rem; border-radius: 12px; background: var(--bg-secondary); border: 1px solid var(--glass-border); box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
+      <button class="modal-close" id="close-admin-coupon-modal-btn"
+        style="position: absolute; top: 1.25rem; right: 1.25rem; background: none; border: none; color: var(--text-secondary); cursor: pointer;">
+        <i data-feather="x" style="width: 20px; height: 20px;"></i>
+      </button>
+      <div class="admin-form-container" style="padding: 0;">
+        <h2 style="margin-bottom: 1.5rem; color: var(--color-brand); font-family: 'Space Grotesk', sans-serif;"
+          id="admin-coupon-modal-title">Create New Coupon</h2>
+        <form id="admin-coupon-form">
+          <div class="checkout-form-grid" style="grid-template-columns: 1fr; gap: 1.25rem;">
+
+            <div style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 1rem;">
+              <div class="form-group">
+                <label class="form-label">Coupon Code *</label>
+                <input type="text" required class="form-input" id="admin-coupon-code" placeholder="TOYZGURU15"
+                  style="text-transform: uppercase;">
+              </div>
+              <div class="form-group" style="justify-content: center; padding-bottom: 0.5rem;">
+                <label
+                  style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.95rem; margin-top: 1.5rem;">
+                  <input type="checkbox" id="admin-coupon-active" checked
+                    style="accent-color: var(--color-brand); width: 18px; height: 18px;">
+                  <span>Active</span>
+                </label>
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="form-group">
+                <label class="form-label">Discount Type *</label>
+                <select required class="form-select" id="admin-coupon-type">
+                  <option value="percentage">Percentage (%)</option>
+                  <option value="fixed">Fixed Amount (₹)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Discount Value *</label>
+                <input type="number" required step="0.01" min="0" class="form-input" id="admin-coupon-value"
+                  placeholder="10.00">
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="form-group">
+                <label class="form-label">Min Order Amount (₹)</label>
+                <input type="number" step="0.01" min="0" class="form-input" id="admin-coupon-min-order"
+                  placeholder="0.00" value="0.00">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Max Discount (₹) (For % type)</label>
+                <input type="number" step="0.01" min="0" class="form-input" id="admin-coupon-max-discount"
+                  placeholder="Unlimited">
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="form-group">
+                <label class="form-label">Usage Limit</label>
+                <input type="number" min="1" class="form-input" id="admin-coupon-usage-limit" placeholder="Unlimited">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Expiry Date</label>
+                <input type="datetime-local" class="form-input" id="admin-coupon-expires-at">
+              </div>
+            </div>
+
+          </div>
+          <button type="submit" class="checkout-btn" style="padding: 0.85rem; font-size: 1rem; margin-top: 1.5rem;"
+            id="admin-coupon-save-btn">
+            Save Coupon
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dynamic Global Toast Notifications Container -->
+  <div class="toast-container" id="global-toast-container"></div>
+
+  <!-- Core Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/products.js"></script>
+  <script src="js/admin.js?v=2"></script>
+  <script src="js/app.js?v=2"></script>
+</body>
+
+</html>

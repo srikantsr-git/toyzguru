@@ -1,0 +1,11 @@
+# Development
+scratch/
+node_modules/
+.env
+*.env
+.vscode/
+
+# Sensitive data
+maincreddata.txt
+toyzguru.txt
+*.xlsx
