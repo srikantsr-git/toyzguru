@@ -1254,10 +1254,10 @@
             </div>
 
             <nav class="profile-nav">
-              <button class="profile-nav-btn active" data-panel="profile-orders"><i data-feather="list"
-                  style="width: 18px;"></i> Order History</button>
-              <button class="profile-nav-btn" data-panel="profile-settings"><i data-feather="settings"
+              <button class="profile-nav-btn active" data-panel="profile-settings"><i data-feather="settings"
                   style="width: 18px;"></i> Account Settings</button>
+              <button class="profile-nav-btn" data-panel="profile-orders"><i data-feather="list"
+                  style="width: 18px;"></i> Order History</button>
               <button class="profile-nav-btn" id="profile-signout-btn" style="color: var(--color-danger);"><i
                   data-feather="log-out" style="width: 18px; color: var(--color-danger);"></i> Sign Out</button>
             </nav>
@@ -1266,7 +1266,7 @@
           <!-- Profile Info Panels -->
           <div>
             <!-- Order History Panel -->
-            <div class="glass-panel profile-panel active" id="profile-orders">
+            <div class="glass-panel profile-panel" id="profile-orders">
               <h3 class="profile-panel-title">Your Order History</h3>
 
               <div class="orders-table-wrap">
@@ -1289,7 +1289,7 @@
             </div>
 
             <!-- Account Settings Panel -->
-            <div class="glass-panel profile-panel" id="profile-settings">
+            <div class="glass-panel profile-panel active" id="profile-settings">
               <h3 class="profile-panel-title">Account Settings</h3>
 
               <form id="profile-settings-form">
@@ -1710,7 +1710,7 @@
               </div>
 
               <div class="glass-panel" style="padding: 2rem;">
-                <form id="admin-tax-form">
+                <form id="admin-tax-form" class="horizontal-scroll-form">
                   <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;">
                     <label
                       style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 1rem; font-weight: 600; color: var(--text-primary);">
@@ -1935,7 +1935,7 @@
       <div class="admin-form-container">
         <h2 style="margin-bottom: 1.5rem;" id="admin-modal-title">Create New Inventory Item</h2>
 
-        <form id="admin-product-form">
+        <form id="admin-product-form" class="horizontal-scroll-form">
           <input type="hidden" id="admin-form-product-id">
 
           <div class="checkout-form-grid" style="grid-template-columns: 1fr;">
@@ -2086,7 +2086,7 @@
       <div class="admin-form-container">
         <h2 style="margin-bottom: 1.5rem; color: var(--color-brand); font-family: 'Space Grotesk', sans-serif;"
           id="admin-state-modal-title">Configure Shipping</h2>
-        <form id="admin-state-form">
+        <form id="admin-state-form" class="horizontal-scroll-form">
           <input type="hidden" id="admin-form-state-name">
           <div class="checkout-form-grid" style="grid-template-columns: 1fr; gap: 1.25rem;">
             <div class="form-group">
@@ -2119,7 +2119,7 @@
       <div class="admin-form-container">
         <h2 style="margin-bottom: 1.5rem; color: var(--color-brand); font-family: 'Space Grotesk', sans-serif;"
           id="admin-courier-modal-title">Add Courier Agency</h2>
-        <form id="admin-courier-form">
+        <form id="admin-courier-form" class="horizontal-scroll-form">
           <input type="hidden" id="admin-form-courier-id">
 
           <div class="checkout-form-grid" style="grid-template-columns: 1.3fr 0.7fr; gap: 1.25rem; align-items: end;">
@@ -2171,7 +2171,7 @@
       <div class="admin-form-container" style="padding: 0;">
         <h2 style="margin-bottom: 1.5rem; color: var(--color-brand); font-family: 'Space Grotesk', sans-serif;"
           id="admin-coupon-modal-title">Create New Coupon</h2>
-        <form id="admin-coupon-form">
+        <form id="admin-coupon-form" class="horizontal-scroll-form">
           <div class="checkout-form-grid" style="grid-template-columns: 1fr; gap: 1.25rem;">
 
             <div style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 1rem;">

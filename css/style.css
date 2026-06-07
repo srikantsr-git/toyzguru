@@ -3224,4 +3224,15 @@ img {
   margin-bottom: 0;
 }
 
+/* Horizontal Scroll Forms for Mobile */
+.horizontal-scroll-form {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 0.5rem;
+}
 
+@media (max-width: 768px) {
+  .horizontal-scroll-form > div {
+    min-width: 600px;
+  }
+}
