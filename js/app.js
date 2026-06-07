@@ -544,6 +544,62 @@ function renderInstagramFeed(mediaList) {
 
 // ================= APP INITIALIZATION =================
 document.addEventListener("DOMContentLoaded", () => {
+
+  // -------------------------------------------------------
+  // CRITICAL: Detect Supabase password-recovery token FIRST
+  // Supabase email links arrive with the token in the URL
+  // hash fragment as: #access_token=...&type=recovery&...
+  // We must intercept this BEFORE the router parses the hash.
+  // -------------------------------------------------------
+  (function interceptRecoveryToken() {
+    const rawHash = window.location.hash;
+    if (!rawHash) return;
+
+    // Supabase v2 PKCE: tokens may be in hash OR search params
+    const hashContent = rawHash.substring(1); // strip leading '#'
+    const params = new URLSearchParams(hashContent);
+
+    const type        = params.get('type');
+    const accessToken = params.get('access_token');
+    const refreshToken= params.get('refresh_token');
+    const errorDesc   = params.get('error_description');
+    const error       = params.get('error');
+
+    if (error || errorDesc) {
+      // Supabase returned an error (e.g. link expired)
+      // Clear the hash so routing doesn't get confused
+      history.replaceState(null, '', window.location.pathname + '#reset-password');
+      // Show error modal after DOM is ready
+      setTimeout(() => {
+        const errModal = document.getElementById('pw-reset-error-modal');
+        const errMsg   = document.getElementById('pw-reset-error-msg');
+        if (errModal) {
+          if (errMsg) errMsg.textContent = decodeURIComponent((errorDesc || error || 'Invalid or expired reset link.')).replace(/\+/g, ' ');
+          errModal.style.display = 'flex';
+          if (window.feather) feather.replace();
+        }
+      }, 600);
+      return;
+    }
+
+    if (type === 'recovery' && accessToken) {
+      // Valid recovery token — set Supabase session from the token,
+      // then clean the URL and redirect to the reset-password view.
+      if (supabase) {
+        supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken || ''
+        }).then(({ error: sessErr }) => {
+          if (sessErr) {
+            console.error('Failed to set recovery session:', sessErr);
+          }
+        });
+      }
+      // Replace the messy token URL with a clean hash
+      history.replaceState(null, '', window.location.pathname + '#reset-password');
+    }
+  })();
+
   initDatabase();
   setupRouting();
   setupEventListeners();
@@ -559,6 +615,7 @@ document.addEventListener("DOMContentLoaded", () => {
     window.adminInit();
   }
 });
+
 
 // ================= TOAST SYSTEM =================
 function showToast(title, description, type = "info") {
@@ -2391,47 +2448,111 @@ function setupEventListeners() {
         return;
       }
 
+      const submitBtn = authForgotPasswordForm.querySelector('button[type="submit"]');
+      if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Sending...'; }
+
       try {
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: window.location.origin + window.location.pathname + '#reset-password',
-        });
+        // redirectTo must point back to THIS page so Supabase embeds the token in the hash
+        const redirectTo = window.location.origin + window.location.pathname;
+        const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
         if (error) throw error;
-        showToast("Reset Link Sent", "Check your email inbox for the password reset link.", "success");
+        showToast("Reset Link Sent ✓", `A password reset link has been sent to ${email}. Check your inbox (and spam folder).`, "success");
         authForgotPasswordForm.style.display = "none";
         authSigninForm.style.display = "block";
       } catch (err) {
         showToast("Reset Failed", err.message || "Failed to send reset link.", "danger");
+      } finally {
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Send Reset Link'; }
       }
     });
   }
 
-  // Auth Reset Password Submit
+  // Auth Reset Password Submit — full validation + Supabase update + success modal
   if (authResetPasswordForm) {
     authResetPasswordForm.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const newPassword = document.getElementById("auth-reset-new-password").value;
+      const newPassword     = document.getElementById("auth-reset-new-password").value;
+      const confirmPassword = document.getElementById("auth-reset-confirm-password");
+      const matchLabel      = document.getElementById("reset-pw-match-label");
+      const submitBtn       = document.getElementById("auth-reset-submit-btn");
+
+      // Validate password length
+      if (newPassword.length < 6) {
+        showToast("Too Short", "Password must be at least 6 characters long.", "warning");
+        return;
+      }
+
+      // Validate confirm password matches
+      if (confirmPassword && newPassword !== confirmPassword.value) {
+        if (matchLabel) {
+          matchLabel.textContent = '✗ Passwords do not match';
+          matchLabel.style.color = '#ef4444';
+        }
+        showToast("Passwords Don't Match", "Please make sure both passwords are identical.", "warning");
+        return;
+      }
 
       if (!supabase) {
         showToast("Database Offline", "Supabase client is not loaded. Cannot update password.", "danger");
         return;
       }
 
+      // Loading state
+      if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '<i data-feather="loader" style="width:15px;height:15px;vertical-align:middle;"></i> Updating...'; feather.replace(); }
+
       try {
         const { error } = await supabase.auth.updateUser({ password: newPassword });
         if (error) throw error;
-        showToast("Password Updated", "Your password has been changed successfully. You can now access your vault.", "success");
-        window.location.hash = "#profile";
+
+        // Sign the user out so they must log in fresh with the new password
+        await supabase.auth.signOut();
+        userState = null;
+
+        // Reset form
+        authResetPasswordForm.reset();
+        const bar = document.getElementById('reset-pw-strength-bar');
+        const lbl = document.getElementById('reset-pw-strength-label');
+        if (bar) { bar.style.width = '0%'; bar.className = ''; }
+        if (lbl) lbl.textContent = '';
+        if (matchLabel) { matchLabel.textContent = ''; }
+
+        // Show success modal
+        const successModal = document.getElementById('pw-reset-success-modal');
+        if (successModal) {
+          successModal.style.display = 'flex';
+          document.body.style.overflow = 'hidden';
+          if (window.feather) feather.replace();
+        }
       } catch (err) {
-        showToast("Update Failed", err.message || "Failed to update password.", "danger");
+        console.error('Password reset error:', err);
+        // Check for session/token errors specifically
+        if (err.message && (err.message.includes('session') || err.message.includes('token') || err.message.includes('expired'))) {
+          const errModal = document.getElementById('pw-reset-error-modal');
+          const errMsg   = document.getElementById('pw-reset-error-msg');
+          if (errModal) {
+            if (errMsg) errMsg.textContent = 'Your reset session has expired. Please request a new password reset link.';
+            errModal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            if (window.feather) feather.replace();
+          }
+        } else {
+          showToast("Update Failed", err.message || "Failed to update password. Please try again.", "danger");
+        }
+      } finally {
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '<i data-feather="shield" style="width:15px;height:15px;vertical-align:middle;margin-right:0.35rem;"></i> Update Password Securely'; feather.replace(); }
       }
     });
   }
 
-  // Supabase Auth State Change Listener for Password Recovery
+  // Supabase Auth State Change Listener — fallback for PASSWORD_RECOVERY event
+  // (fires when Supabase processes the token before our interceptor runs)
   if (supabase) {
     supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'PASSWORD_RECOVERY') {
-        window.location.hash = '#reset-password';
+        // Make sure we're on the reset-password view
+        if (window.location.hash !== '#reset-password') {
+          window.location.hash = '#reset-password';
+        }
       }
     });
   }
@@ -2780,12 +2901,44 @@ function setupEventListeners() {
     });
   }
 
-  // Brand Story Footer Newsletter signup simulation
-  document.getElementById("newsletter-form").addEventListener("submit", (e) => {
+  // Footer Newsletter signup — saves to Supabase newsletter_subscribers table
+  document.getElementById("newsletter-form").addEventListener("submit", async (e) => {
     e.preventDefault();
     const input = e.target.querySelector("input");
-    showToast("Subscription Confirmed", `Vault news and limited product drops will be sent to ${input.value}.`, "success");
-    input.value = "";
+    const email = (input.value || "").trim().toLowerCase();
+    if (!email) return;
+
+    const btn = e.target.querySelector("button[type='submit']");
+    if (btn) { btn.disabled = true; btn.textContent = "Joining..."; }
+
+    if (supabase) {
+      try {
+        const { error } = await supabase
+          .from('newsletter_subscribers')
+          .insert({ email });
+
+        if (error) {
+          // Unique violation = already subscribed
+          if (error.code === '23505') {
+            showToast("Already Subscribed", `${email} is already on our drops list!`, "info");
+          } else {
+            throw error;
+          }
+        } else {
+          showToast("Subscription Confirmed!", `Vault news and limited drops will be sent to ${email}.`, "success");
+          input.value = "";
+        }
+      } catch (err) {
+        console.error("Newsletter subscription error:", err);
+        showToast("Subscription Failed", "Could not save your email. Please try again later.", "danger");
+      }
+    } else {
+      // Offline / local fallback
+      showToast("Subscription Confirmed (Demo)", `Vault news and limited product drops will be sent to ${email}.`, "success");
+      input.value = "";
+    }
+
+    if (btn) { btn.disabled = false; btn.textContent = "Join"; }
   });
 
   // FAQ Accordion Toggle click handler
@@ -2924,7 +3077,97 @@ window.initDatabase = initDatabase;
     }
   });
 
+
   // Expose for debugging
   window._landscapeHint = { show: showHint, hide: () => hideHint(false), evaluate };
 })();
 
+
+// ================= PASSWORD RESET HELPERS =================
+
+/**
+ * updateResetPasswordStrength(value)
+ * Updates the visual strength indicator bar and label as user types.
+ */
+function updateResetPasswordStrength(value) {
+  const bar = document.getElementById('reset-pw-strength-bar');
+  const lbl = document.getElementById('reset-pw-strength-label');
+  if (!bar || !lbl) return;
+
+  const len = value.length;
+  let strength = 0;
+
+  if (len >= 6)  strength++;
+  if (len >= 10) strength++;
+  if (/[A-Z]/.test(value)) strength++;
+  if (/[0-9]/.test(value)) strength++;
+  if (/[^A-Za-z0-9]/.test(value)) strength++;
+
+  bar.className = '';
+  if (len === 0) {
+    bar.style.width = '0%';
+    lbl.textContent = '';
+    lbl.style.color = 'var(--text-muted)';
+  } else if (strength <= 2) {
+    bar.classList.add('pw-strength-weak');
+    lbl.textContent = 'Weak — add numbers, symbols, and uppercase';
+    lbl.style.color = '#ef4444';
+  } else if (strength <= 3) {
+    bar.classList.add('pw-strength-medium');
+    lbl.textContent = 'Medium — getting better!';
+    lbl.style.color = '#f59e0b';
+  } else {
+    bar.classList.add('pw-strength-strong');
+    lbl.textContent = 'Strong — great password!';
+    lbl.style.color = '#22c55e';
+  }
+}
+
+/**
+ * toggleResetPasswordVisibility(inputId, btn)
+ * Toggles between password/text type and swaps the eye icon.
+ */
+function toggleResetPasswordVisibility(inputId, btn) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  const isHidden = input.type === 'password';
+  input.type = isHidden ? 'text' : 'password';
+  // Swap feather icon
+  const icon = btn.querySelector('i[data-feather]');
+  if (icon) {
+    icon.setAttribute('data-feather', isHidden ? 'eye-off' : 'eye');
+    if (window.feather) feather.replace();
+  }
+}
+
+/**
+ * closePwResetSuccessModal()
+ * Called by the "Go to Login Page" button inside the success modal.
+ * Hides the modal, restores scroll, and navigates to the auth/login view.
+ */
+function closePwResetSuccessModal() {
+  const modal = document.getElementById('pw-reset-success-modal');
+  if (modal) modal.style.display = 'none';
+  document.body.style.overflow = '';
+  // Redirect to login page
+  window.location.hash = '#auth';
+}
+
+/**
+ * closePwResetErrorModal()
+ * Called by the "Request New Reset Link" button in the error modal.
+ * Redirects to the auth page so the user can trigger a new reset.
+ */
+function closePwResetErrorModal() {
+  const modal = document.getElementById('pw-reset-error-modal');
+  if (modal) modal.style.display = 'none';
+  document.body.style.overflow = '';
+  // Go to login where user can click "Forgot Password" again
+  window.location.hash = '#auth';
+}
+
+// Expose helpers globally
+window.updateResetPasswordStrength = updateResetPasswordStrength;
+window.toggleResetPasswordVisibility = toggleResetPasswordVisibility;
+window.closePwResetSuccessModal = closePwResetSuccessModal;
+window.closePwResetErrorModal = closePwResetErrorModal;

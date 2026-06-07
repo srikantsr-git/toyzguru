@@ -97,6 +97,8 @@ function setupAdminNavigation() {
         adminRenderCouponsPanel();
       } else if (adminCurrentPanel === "admin-tax-panel") {
         adminRenderTaxPanel();
+      } else if (adminCurrentPanel === "admin-newsletter-panel") {
+        adminRenderNewsletterPanel();
       }
     });
   });
@@ -2087,3 +2089,178 @@ function adminUpdateCGSTField() {
 }
 document.getElementById('admin-tax-sgst').addEventListener('input', adminUpdateCGSTField);
 document.getElementById('admin-tax-igst').addEventListener('input', adminUpdateCGSTField);
+
+
+// ================= NEWSLETTER SUBSCRIBERS MANAGEMENT =================
+
+let _newsletterAllRows = []; // cache for client-side search filter
+
+async function adminRenderNewsletterPanel() {
+  if (!adminAuthenticated) return;
+
+  const tableBody = document.getElementById('admin-newsletter-table-body');
+  const countEl = document.getElementById('admin-newsletter-count');
+  if (!tableBody) return;
+
+  // Loading state
+  tableBody.innerHTML = `
+    <tr>
+      <td colspan="4" style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+        <div style="display:inline-flex;align-items:center;gap:0.5rem;">
+          <div class="spinner" style="width:20px;height:20px;border-width:2px;"></div>
+          Loading subscribers...
+        </div>
+      </td>
+    </tr>`;
+
+  let subscribers = [];
+
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('newsletter_subscribers')
+        .select('*')
+        .order('subscribed_at', { ascending: false });
+      if (error) throw error;
+      subscribers = data || [];
+    } catch (err) {
+      console.error('Failed to load newsletter subscribers:', err);
+      adminShowToast('Load Failed', 'Could not fetch newsletter subscribers from database.', 'danger');
+      tableBody.innerHTML = `
+        <tr>
+          <td colspan="4" style="text-align:center;color:var(--color-danger);padding:2rem;">
+            <i data-feather="alert-triangle" style="width:20px;height:20px;vertical-align:middle;margin-right:0.35rem;"></i>
+            Failed to load subscribers. Check database connection.
+          </td>
+        </tr>`;
+      if (window.feather) feather.replace();
+      return;
+    }
+  } else {
+    // No Supabase — show empty state
+    tableBody.innerHTML = `
+      <tr>
+        <td colspan="4" style="text-align:center;color:var(--text-secondary);padding:2rem;">
+          Supabase not connected. No subscriber data available.
+        </td>
+      </tr>`;
+    if (countEl) countEl.textContent = '—';
+    return;
+  }
+
+  _newsletterAllRows = subscribers;
+  if (countEl) countEl.textContent = subscribers.length;
+  _adminRenderNewsletterRows(subscribers);
+}
+
+function _adminRenderNewsletterRows(rows) {
+  const tableBody = document.getElementById('admin-newsletter-table-body');
+  if (!tableBody) return;
+
+  if (rows.length === 0) {
+    tableBody.innerHTML = `
+      <tr>
+        <td colspan="4" style="text-align:center;color:var(--text-secondary);padding:2.5rem;">
+          <i data-feather="inbox" style="width:32px;height:32px;display:block;margin:0 auto 0.75rem;opacity:0.4;"></i>
+          No newsletter subscribers yet. Share the sign-up form!
+        </td>
+      </tr>`;
+    if (window.feather) feather.replace();
+    return;
+  }
+
+  tableBody.innerHTML = rows.map((sub, idx) => {
+    const dateStr = new Date(sub.subscribed_at).toLocaleString('en-IN', {
+      day: '2-digit', month: 'short', year: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    });
+    return `
+      <tr id="newsletter-row-${sub.id}">
+        <td style="font-size:0.8rem;color:var(--text-muted);font-family:monospace;">${idx + 1}</td>
+        <td style="font-family:monospace;font-size:0.9rem;font-weight:600;color:var(--text-primary);">
+          <i data-feather="mail" style="width:13px;height:13px;vertical-align:middle;margin-right:0.4rem;color:var(--color-brand);"></i>
+          ${sub.email}
+        </td>
+        <td style="font-size:0.82rem;color:var(--text-secondary);">${dateStr}</td>
+        <td>
+          <div class="crud-btn-wrap">
+            <button class="crud-btn crud-delete"
+              onclick="adminDeleteNewsletterSubscriber('${sub.id}', '${sub.email.replace(/'/g, "\\'")}')"
+              title="Remove subscriber">
+              <i data-feather="trash-2" style="width:14px;height:14px;"></i>
+            </button>
+          </div>
+        </td>
+      </tr>`;
+  }).join('');
+
+  if (window.feather) feather.replace();
+}
+
+function adminFilterNewsletterTable(query) {
+  const q = (query || '').toLowerCase().trim();
+  if (!q) {
+    _adminRenderNewsletterRows(_newsletterAllRows);
+    return;
+  }
+  const filtered = _newsletterAllRows.filter(s => s.email.toLowerCase().includes(q));
+  _adminRenderNewsletterRows(filtered);
+}
+
+async function adminDeleteNewsletterSubscriber(id, email) {
+  if (!confirm(`Remove "${email}" from the newsletter list?\n\nThis cannot be undone.`)) return;
+
+  if (!supabase) {
+    adminShowToast('Not Available', 'Supabase connection required to delete subscribers.', 'warning');
+    return;
+  }
+
+  try {
+    const { error } = await supabase
+      .from('newsletter_subscribers')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
+
+    // Remove from cache and re-render
+    _newsletterAllRows = _newsletterAllRows.filter(s => s.id !== id);
+
+    // Update count badge
+    const countEl = document.getElementById('admin-newsletter-count');
+    if (countEl) countEl.textContent = _newsletterAllRows.length;
+
+    // Re-apply current search filter
+    const searchInput = document.getElementById('admin-newsletter-search');
+    adminFilterNewsletterTable(searchInput ? searchInput.value : '');
+
+    adminShowToast('Subscriber Removed', `"${email}" has been removed from the newsletter list.`, 'success');
+  } catch (err) {
+    console.error('Delete newsletter subscriber error:', err);
+    adminShowToast('Delete Failed', err.message || 'Could not remove subscriber.', 'danger');
+  }
+}
+
+function adminExportNewsletterCSV() {
+  if (_newsletterAllRows.length === 0) {
+    adminShowToast('No Data', 'No subscribers to export.', 'warning');
+    return;
+  }
+  const header = 'Email,Subscribed At';
+  const rows = _newsletterAllRows.map(s => `"${s.email}","${new Date(s.subscribed_at).toISOString()}"`);
+  const csvContent = [header, ...rows].join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `toyzguru_newsletter_${new Date().toISOString().slice(0,10)}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+  adminShowToast('CSV Exported', `Exported ${_newsletterAllRows.length} subscriber emails.`, 'success');
+}
+
+// Window bindings for newsletter functions
+window.adminRenderNewsletterPanel = adminRenderNewsletterPanel;
+window.adminDeleteNewsletterSubscriber = adminDeleteNewsletterSubscriber;
+window.adminFilterNewsletterTable = adminFilterNewsletterTable;
+window.adminExportNewsletterCSV = adminExportNewsletterCSV;
+

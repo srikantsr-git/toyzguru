@@ -304,3 +304,26 @@ create policy "Allow public read access to store_settings" on public.store_setti
 
 create policy "Allow full store_settings access (Admin Control)" on public.store_settings
   for all using (true) with check (true);
+
+
+-- ================= NEWSLETTER SUBSCRIBERS =================
+
+-- 9. Newsletter Subscribers Table
+create table if not exists public.newsletter_subscribers (
+  id uuid default gen_random_uuid() primary key,
+  email text not null unique,
+  subscribed_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- Enable RLS
+alter table public.newsletter_subscribers enable row level security;
+
+-- Anyone can subscribe (insert)
+drop policy if exists "Allow anyone to subscribe to newsletter" on public.newsletter_subscribers;
+create policy "Allow anyone to subscribe to newsletter" on public.newsletter_subscribers
+  for insert with check (true);
+
+-- Admin can read all subscribers
+drop policy if exists "Allow full newsletter access (Admin Control)" on public.newsletter_subscribers;
+create policy "Allow full newsletter access (Admin Control)" on public.newsletter_subscribers
+  for all using (true) with check (true);
