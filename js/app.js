@@ -2832,3 +2832,99 @@ window.toyzToast = showToast;
 window.openProductModal = openProductModal;
 window.quickAddToCart = quickAddToCart;
 window.initDatabase = initDatabase;
+
+// ================= LANDSCAPE ORIENTATION HINT =================
+// Shows a popup suggesting landscape mode when user opens the Member (profile)
+// or Admin dashboard on a mobile portrait screen.
+
+(function setupLandscapeHint() {
+  // Views that benefit from landscape because they have wide data tables
+  const LANDSCAPE_VIEWS = ['profile', 'admin'];
+
+  const overlay = document.getElementById('landscape-hint-overlay');
+  const dismissBtn = document.getElementById('landscape-hint-dismiss-btn');
+
+  if (!overlay || !dismissBtn) return;
+
+  // Per-session flag: user already clicked "Got it" in this session
+  let sessionDismissed = false;
+
+  /** Returns true if we're on a narrow portrait mobile screen */
+  function isPortraitMobile() {
+    const w = window.innerWidth || document.documentElement.clientWidth;
+    const h = window.innerHeight || document.documentElement.clientHeight;
+    return w < 600 && h > w; // portrait = taller than wide, narrow viewport
+  }
+
+  /** Get current view name from hash */
+  function getCurrentView() {
+    const hash = window.location.hash || '#home';
+    return hash.split('?')[0].substring(1) || 'home';
+  }
+
+  /** Show the hint popup with animated entry */
+  function showHint() {
+    overlay.classList.remove('lh-hiding');
+    overlay.style.display = 'flex';
+    // Re-init feather icons inside the popup (rotate-cw, check, info)
+    if (window.feather) window.feather.replace();
+  }
+
+  /** Hide the hint popup with animated exit */
+  function hideHint(permanent) {
+    if (permanent) sessionDismissed = true;
+    overlay.classList.add('lh-hiding');
+    // Wait for the fade-out animation to complete before hiding
+    setTimeout(() => {
+      overlay.style.display = 'none';
+      overlay.classList.remove('lh-hiding');
+    }, 320);
+  }
+
+  /** Evaluate whether to show or hide based on current state */
+  function evaluate() {
+    if (sessionDismissed) return; // User already said "Got it" this session
+    const view = getCurrentView();
+    if (LANDSCAPE_VIEWS.includes(view) && isPortraitMobile()) {
+      showHint();
+    } else {
+      // If already visible but user rotated to landscape — auto-dismiss softly
+      if (overlay.style.display !== 'none') {
+        hideHint(false); // don't mark as permanent — allow showing again if re-enters portrait
+      }
+    }
+  }
+
+  // Dismiss button: "Got it, Continue"
+  dismissBtn.addEventListener('click', () => hideHint(true));
+
+  // Re-evaluate on orientation / resize change
+  window.addEventListener('resize', evaluate);
+  if (window.screen && window.screen.orientation) {
+    window.screen.orientation.addEventListener('change', evaluate);
+  } else {
+    window.addEventListener('orientationchange', evaluate);
+  }
+
+  // Re-evaluate on route change (hashchange)
+  window.addEventListener('hashchange', () => {
+    // Small delay to let the routing/view switch complete
+    setTimeout(evaluate, 150);
+  });
+
+  // Also hook into initial load
+  window.addEventListener('load', () => setTimeout(evaluate, 500));
+
+  // Reset session dismiss flag when user leaves the landscape-required views
+  // so the hint may show again next visit to that view within the same session
+  window.addEventListener('hashchange', () => {
+    const view = getCurrentView();
+    if (!LANDSCAPE_VIEWS.includes(view)) {
+      sessionDismissed = false;
+    }
+  });
+
+  // Expose for debugging
+  window._landscapeHint = { show: showHint, hide: () => hideHint(false), evaluate };
+})();
+

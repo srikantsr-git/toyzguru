@@ -3236,3 +3236,162 @@ img {
     min-width: 600px;
   }
 }
+
+/* ===============================================================
+   LANDSCAPE ORIENTATION HINT POPUP
+   Shown on mobile portrait when user visits Member / Admin views
+   =============================================================== */
+
+.landscape-hint-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(8, 11, 17, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  /* display is controlled by JS (flex / none) */
+  align-items: flex-end;
+  justify-content: center;
+  padding: 1.25rem;
+  animation: lhFadeIn 0.35s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.landscape-hint-overlay.lh-hiding {
+  animation: lhFadeOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes lhFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes lhFadeOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+.landscape-hint-card {
+  width: 100%;
+  max-width: 420px;
+  padding: 1.75rem 1.5rem 1.5rem;
+  border-radius: var(--border-radius-md);
+  display: flex;
+  align-items: flex-start;
+  gap: 1.25rem;
+  animation: lhSlideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  border-color: rgba(139, 92, 246, 0.25);
+  box-shadow: 0 0 40px rgba(139, 92, 246, 0.18), 0 20px 60px rgba(0, 0, 0, 0.6);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Glow accent top border */
+.landscape-hint-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #8b5cf6, #d946ef, #8b5cf6);
+  background-size: 200% 100%;
+  animation: lhGlow 2.5s linear infinite;
+}
+
+@keyframes lhGlow {
+  0%   { background-position: 0% 0%; }
+  100% { background-position: 200% 0%; }
+}
+
+@keyframes lhSlideUp {
+  from { opacity: 0; transform: translateY(40px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Phone SVG animation */
+.landscape-phone-anim {
+  flex-shrink: 0;
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(139, 92, 246, 0.07);
+  border: 1px solid rgba(139, 92, 246, 0.18);
+  border-radius: 50%;
+  padding: 0.75rem;
+}
+
+.landscape-phone-svg {
+  width: 52px;
+  height: 52px;
+  animation: lhPhoneRotate 2.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  transform-origin: center center;
+}
+
+@keyframes lhPhoneRotate {
+  0%   { transform: rotate(0deg);   }
+  30%  { transform: rotate(-82deg); }
+  60%  { transform: rotate(-82deg); }
+  90%  { transform: rotate(0deg);   }
+  100% { transform: rotate(0deg);   }
+}
+
+.rotate-arrow {
+  animation: lhArrowPulse 2.8s ease-in-out infinite;
+}
+
+@keyframes lhArrowPulse {
+  0%, 100% { opacity: 0.35; }
+  35%, 60%  { opacity: 1; }
+}
+
+.landscape-hint-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.landscape-hint-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 0.6rem;
+  font-family: 'Space Grotesk', sans-serif;
+  display: flex;
+  align-items: center;
+}
+
+.landscape-hint-desc {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.55;
+  margin: 0 0 1rem;
+}
+
+.landscape-hint-desc strong {
+  color: var(--color-brand);
+  font-weight: 700;
+}
+
+.landscape-hint-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.landscape-hint-dismiss-btn {
+  display: inline-flex;
+  align-items: center;
+  width: auto;
+  white-space: nowrap;
+}
+
+.landscape-hint-tip {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
+

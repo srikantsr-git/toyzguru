@@ -2242,6 +2242,54 @@
   <!-- Dynamic Global Toast Notifications Container -->
   <div class="toast-container" id="global-toast-container"></div>
 
+  <!-- ===== LANDSCAPE ORIENTATION SUGGESTION POPUP ===== -->
+  <div id="landscape-hint-overlay" class="landscape-hint-overlay" role="dialog" aria-modal="true" aria-labelledby="landscape-hint-title" style="display:none;">
+    <div class="landscape-hint-card glass-panel">
+      <!-- Animated phone icon -->
+      <div class="landscape-phone-anim" aria-hidden="true">
+        <svg class="landscape-phone-svg" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Phone body -->
+          <rect class="phone-body" x="22" y="10" width="36" height="60" rx="6" stroke="url(#lh-grad)" stroke-width="3" fill="rgba(139,92,246,0.08)"/>
+          <!-- Home button -->
+          <circle cx="40" cy="63" r="3" fill="url(#lh-grad)" opacity="0.7"/>
+          <!-- Speaker -->
+          <rect x="34" y="16" width="12" height="2.5" rx="1.25" fill="url(#lh-grad)" opacity="0.5"/>
+          <!-- Rotate arrows -->
+          <path class="rotate-arrow" d="M12 38 Q12 20 30 20" stroke="url(#lh-grad)" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+          <polygon class="rotate-arrow" points="26,15 30,20 24,22" fill="url(#lh-grad)"/>
+          <path class="rotate-arrow" d="M68 42 Q68 60 50 60" stroke="url(#lh-grad)" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+          <polygon class="rotate-arrow" points="54,65 50,60 56,58" fill="url(#lh-grad)"/>
+          <defs>
+            <linearGradient id="lh-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#8b5cf6"/>
+              <stop offset="100%" stop-color="#d946ef"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+
+      <div class="landscape-hint-body">
+        <h3 class="landscape-hint-title" id="landscape-hint-title">
+          <i data-feather="rotate-cw" style="width:18px;height:18px;vertical-align:middle;margin-right:0.4rem;color:var(--color-brand);"></i>
+          Better Viewed in Landscape
+        </h3>
+        <p class="landscape-hint-desc">
+          This dashboard contains wide data tables and detailed panels. Rotate your device <strong>horizontally</strong> for the best experience and full visibility.
+        </p>
+        <div class="landscape-hint-actions">
+          <button class="checkout-btn landscape-hint-dismiss-btn" id="landscape-hint-dismiss-btn" style="padding:0.6rem 1.5rem;font-size:0.875rem;margin-top:0;">
+            <i data-feather="check" style="width:14px;height:14px;vertical-align:middle;margin-right:0.3rem;"></i>
+            Got it, Continue
+          </button>
+          <p class="landscape-hint-tip">
+            <i data-feather="info" style="width:12px;height:12px;vertical-align:middle;margin-right:0.25rem;opacity:0.6;"></i>
+            Tip: Lock rotation off in your phone's quick settings
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Core Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="js/supabase.js"></script>
