@@ -2995,6 +2995,16 @@ img {
     gap: 2rem;
   }
   
+  .footer-bottom {
+    flex-direction: column;
+    gap: 1.25rem;
+    text-align: center;
+  }
+
+  .footer-bottom > div {
+    justify-content: center;
+  }
+  
   .detail-grid {
     grid-template-columns: 1fr;
   }
