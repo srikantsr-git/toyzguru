@@ -158,6 +158,7 @@ img {
   gap: 0.5rem;
   background: var(--color-brand-gradient);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -492,6 +493,7 @@ img {
   color: var(--text-primary);
   display: -webkit-box;
   -webkit-line-clamp: 1;
+  line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -732,6 +734,7 @@ img {
   margin-bottom: 1.5rem;
   background: linear-gradient(180deg, #ffffff 0%, #d1d5db 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -1065,6 +1068,7 @@ img {
   margin-bottom: 0.5rem;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   height: 2.8rem;
@@ -1183,6 +1187,7 @@ img {
   font-family: 'Space Grotesk', sans-serif;
   background: var(--color-brand-gradient);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -1368,6 +1373,7 @@ img {
 
 .price-slider {
   -webkit-appearance: none;
+  appearance: none;
   width: 100%;
   height: 5px;
   border-radius: 3px;
@@ -1434,6 +1440,7 @@ img {
   background-repeat: no-repeat;
   background-position: right 0.75rem center;
   -webkit-appearance: none;
+  appearance: none;
 }
 
 .sort-select:focus {
@@ -1577,6 +1584,7 @@ img {
   font-weight: 700;
   background: var(--color-brand-gradient);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -1840,6 +1848,7 @@ img {
   text-align: right;
   background: var(--color-brand-gradient);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -2632,6 +2641,7 @@ img {
   margin-bottom: 1.5rem;
   background: var(--color-brand-gradient);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
