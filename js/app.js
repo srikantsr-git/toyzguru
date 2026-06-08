@@ -1477,16 +1477,47 @@ function applyCheckoutAddressSelection() {
     }
   }
 
-  // Toggle form visibility
+  // Toggle form field editability and visibility
   const wrapper = document.getElementById("checkout-address-fields-wrapper");
   if (wrapper) {
-    wrapper.style.display = selectedOption === "new" ? "grid" : "none";
+    // Always show the address fields so user can see what address is being used
+    wrapper.style.display = "grid";
+    
+    // Make fields read-only when using saved address, editable for new address
+    const inputs = wrapper.querySelectorAll("input:not([type=hidden])");
+    const selects = wrapper.querySelectorAll("select");
+    const saveBtn = document.getElementById("checkout-save-address-btn");
+    
+    if (selectedOption === "saved") {
+      inputs.forEach(input => {
+        input.readOnly = true;
+        input.style.background = "rgba(255,255,255,0.03)";
+        input.style.color = "var(--text-secondary)";
+        input.style.cursor = "default";
+      });
+      selects.forEach(select => {
+        select.disabled = true;
+        select.style.color = "var(--text-secondary)";
+        select.style.cursor = "default";
+      });
+      if (saveBtn) saveBtn.style.display = "none";
+    } else {
+      inputs.forEach(input => {
+        input.readOnly = false;
+        input.style.background = "";
+        input.style.color = "";
+        input.style.cursor = "";
+      });
+      selects.forEach(select => {
+        select.disabled = false;
+        select.style.color = "";
+        select.style.cursor = "";
+      });
+      if (saveBtn) saveBtn.style.display = "";
+    }
   }
 
   // Ensure shipping cost updates when selection changes
-  renderCheckoutSummary();
-
-  // Trigger UI summary updates
   renderCheckoutSummary();
 }
 
