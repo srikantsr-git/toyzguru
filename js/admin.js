@@ -853,16 +853,7 @@ async function adminRenderMembersRegistry() {
           <td style="font-family: monospace; font-size: 0.8rem; color: var(--color-brand);">${m.id.substring(0, 8)}...</td>
           <td style="font-weight: 600;">${m.name}</td>
           <td style="font-family: monospace; font-size: 0.85rem;">${m.email}</td>
-          <td>${location}</td>
-          <td style="font-weight: 700; color: var(--color-watches);">${m.loyalty_points} pts</td>
-          <td>
-            <div style="display: flex; gap: 0.5rem; align-items: center;">
-              <input type="number" class="form-input" style="padding: 0.25rem; font-size: 0.8rem; width: 80px; margin: 0; background: var(--bg-tertiary);" id="member-points-input-${m.id}" value="${m.loyalty_points}">
-              <button class="product-card-add-btn" style="padding: 0.35rem 0.65rem; font-size: 0.75rem; border-radius: 4px;" onclick="adminUpdateMemberPoints('${m.id}')">Update</button>
-              <button class="crud-btn crud-delete" onclick="adminDeleteMemberTrigger('${m.id}')" title="Delete Member">
-                <i data-feather="trash-2" style="width: 14px; height: 14px;"></i>
-              </button>
-            </div>
+              </div>
           </td>
         </tr>
       `;
