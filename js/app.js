@@ -2457,8 +2457,8 @@ function setupEventListeners() {
       if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Sending...'; }
 
       try {
-        // redirectTo must point back to THIS page so Supabase embeds the token in the hash
-        const redirectTo = window.location.origin + window.location.pathname;
+        // redirectTo points to the production site where the reset password view lives
+        const redirectTo = 'https://toyzguru.in#reset-password';
         const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
         if (error) throw error;
         showToast("Reset Link Sent ✓", `A password reset link has been sent to ${email}. Check your inbox (and spam folder).`, "success");
