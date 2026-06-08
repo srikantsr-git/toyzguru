@@ -306,12 +306,17 @@ async function initDatabase() {
     ordersState = [];
   }
 
-  // Load wishlist from userState or localStorage
-  if (userState && Array.isArray(userState.wishlist)) {
+  // Load wishlist from userState (Supabase profile or localStorage)
+  if (userState && Array.isArray(userState.wishlist) && userState.wishlist.length > 0) {
     wishlistState = userState.wishlist;
   } else {
     wishlistState = JSON.parse(localStorage.getItem("toyzguru_wishlist")) || [];
+    // If user is logged in, sync their localStorage wishlist back to userState
+    if (userState && wishlistState.length > 0) {
+      userState.wishlist = wishlistState;
+    }
   }
+
 
   // Load state delivery charges from Supabase/localStorage
   if (supabase) {
@@ -1271,8 +1276,18 @@ async function saveWishlist() {
       match.wishlist = wishlistState;
       localStorage.setItem("toyzguru_profiles", JSON.stringify(localProfiles));
     }
+
+    // Sync wishlist to Supabase profile (if wishlist column exists)
+    if (supabase) {
+      try {
+        await supabase.from('profiles').update({ wishlist: wishlistState }).eq('id', userState.id);
+      } catch (err) {
+        // Silently fail if wishlist column doesn't exist yet
+      }
+    }
   }
 }
+
 
 function renderCartDrawer() {
   const container = document.getElementById("cart-items-list");
@@ -2824,8 +2839,14 @@ function setupEventListeners() {
         p.classList.remove("active");
         if (p.id === targetPanel) p.classList.add("active");
       });
+
+      // Re-render wishlist when Wishlist Vault tab is opened
+      if (targetPanel === "profile-wishlist") {
+        renderProfileWishlist();
+      }
     });
   });
+
 
   // Homepage Hero Carousel Dot Indicators
   const sliderDots = document.querySelectorAll("#hero-carousel .slider-dot");

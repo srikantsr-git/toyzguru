@@ -327,3 +327,9 @@ create policy "Allow anyone to subscribe to newsletter" on public.newsletter_sub
 drop policy if exists "Allow full newsletter access (Admin Control)" on public.newsletter_subscribers;
 create policy "Allow full newsletter access (Admin Control)" on public.newsletter_subscribers
   for all using (true) with check (true);
+
+
+-- ================= WISHLIST PERSISTENCE MIGRATION =================
+-- Run this to enable cross-device wishlist persistence for logged-in users
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS wishlist jsonb DEFAULT NULL;
+
