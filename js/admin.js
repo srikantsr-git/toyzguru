@@ -854,6 +854,10 @@ async function adminRenderMembersRegistry() {
           <td style="font-weight: 600;">${m.name}</td>
           <td style="font-family: monospace; font-size: 0.85rem;">${m.email}</td>
           <td>${location}</td>
+          <td>
+            <button class="crud-btn crud-edit" onclick="adminEditMemberTrigger('${m.id}')" title="Edit Member"><i data-feather="edit" style="width: 14px; height: 14px;"></i></button>
+            <button class="crud-btn crud-delete" onclick="adminDeleteMemberTrigger('${m.id}')" title="Delete Member"><i data-feather="trash-2" style="width: 14px; height: 14px;"></i></button>
+          </td>
         </tr>
       `;
     }).join("");
@@ -923,6 +927,11 @@ async function adminDeleteMemberTrigger(profileId) {
       if (window.toyzToast) window.toyzToast("Delete Failed", err.message || "Failed to delete member.", "danger");
     }
   }
+}
+
+function adminEditMemberTrigger(profileId) {
+    if (window.toyzToast) window.toyzToast("Edit Member", "Edit functionality not implemented yet.", "info");
+    // TODO: Implement member edit modal/dialog.
 }
 
 // ================= CUSTOMER FEEDBACK INBOX MANAGEMENT =================
