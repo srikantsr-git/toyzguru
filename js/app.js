@@ -396,7 +396,9 @@ async function initDatabase() {
   updateCartBadges();
   updateWishlistBadges();
   renderFeaturedProducts();
+  renderFooterCollections();
   updateProfileAvatar();
+
 
   // Re-run view specific rendering if active
   const hash = window.location.hash || "#home";
@@ -780,6 +782,37 @@ function updateProfileAvatar() {
     avatarEl.src = (userState && userState.avatar) ? userState.avatar : "assets/images/product_anime_figure.png";
   }
 }
+
+// ================= FOOTER COLLECTIONS =================
+function renderFooterCollections() {
+  const list = document.getElementById("footer-browse-store-links");
+  if (!list) return;
+
+  // Same display names as catalog sidebar
+  const categoryDisplayNames = {
+    "anime": "Anime Figures",
+    "toy-cars": "Collectible Cars",
+    "watches": "Imported Watches"
+  };
+
+  const getCategoryDisplayName = (cat) => {
+    if (categoryDisplayNames[cat]) return categoryDisplayNames[cat];
+    return cat.split("-").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
+  };
+
+  // Get unique categories from productsState, sorted alphabetically
+  const uniqueCats = [...new Set(productsState.map(p => p.category))].sort();
+
+  // Build links: "All Collections" first, then each category
+  let html = `<li><a href="#catalog" class="footer-link">All Collections</a></li>`;
+  uniqueCats.forEach(cat => {
+    html += `<li><a href="#catalog?category=${encodeURIComponent(cat)}" class="footer-link">${getCategoryDisplayName(cat)}</a></li>`;
+  });
+
+  list.innerHTML = html;
+}
+
+
 
 function renderProductCardHTML(product) {
   const price = Number(product.price);
