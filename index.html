@@ -45,6 +45,7 @@
         <nav class="nav-links" id="main-nav-menu">
           <a href="#home" class="nav-link active" data-view="home">Home</a>
           <a href="#catalog" class="nav-link" data-view="catalog">Shop</a>
+          <a href="#wishlist" class="nav-link" data-view="wishlist">Wishlist</a>
           <a href="#about" class="nav-link" data-view="about">About Us</a>
           <a href="#faqs" class="nav-link" data-view="faqs">FAQs</a>
           <a href="#contact" class="nav-link" data-view="contact">Contact Us</a>
@@ -61,6 +62,12 @@
           <!-- Account Icon -->
           <button class="icon-btn" id="profile-icon-btn" title="View Profile">
             <i data-feather="user"></i>
+          </button>
+
+          <!-- Wishlist Icon -->
+          <button class="icon-btn" id="wishlist-icon-btn" title="Open Wishlist" style="position: relative;">
+            <i data-feather="heart"></i>
+            <span class="icon-badge" id="wishlist-badge-count" style="display: none;">0</span>
           </button>
 
           <!-- Cart Icon -->
@@ -1306,6 +1313,8 @@
                   style="width: 18px;"></i> Account Settings</button>
               <button class="profile-nav-btn" data-panel="profile-orders"><i data-feather="list"
                   style="width: 18px;"></i> Order History</button>
+              <button class="profile-nav-btn" data-panel="profile-wishlist"><i data-feather="heart"
+                  style="width: 18px;"></i> Wishlist Vault</button>
               <button class="profile-nav-btn" id="profile-signout-btn" style="color: var(--color-danger);"><i
                   data-feather="log-out" style="width: 18px; color: var(--color-danger);"></i> Sign Out</button>
             </nav>
@@ -1313,6 +1322,27 @@
 
           <!-- Profile Info Panels -->
           <div>
+            <!-- Profile Wishlist Panel -->
+            <div class="glass-panel profile-panel" id="profile-wishlist">
+              <h3 class="profile-panel-title">Your Wishlist Vault</h3>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+                <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">
+                  Manage items currently saved in your secure loyalty vault.
+                </p>
+                <div style="display: flex; gap: 0.5rem;" id="profile-wishlist-actions">
+                  <button type="button" class="product-card-add-btn" id="profile-wishlist-add-all-btn" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
+                    Add All to Cart
+                  </button>
+                  <button type="button" class="product-card-add-btn" id="profile-wishlist-clear-btn" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; background: var(--bg-tertiary); color: var(--text-primary); border-color: var(--glass-border);">
+                    Clear All
+                  </button>
+                </div>
+              </div>
+              <div class="products-grid" id="profile-wishlist-items-grid" style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem;">
+                <!-- Dynamically populated via app.js -->
+              </div>
+            </div>
+
             <!-- Order History Panel -->
             <div class="glass-panel profile-panel" id="profile-orders">
               <h3 class="profile-panel-title">Your Order History</h3>
@@ -1399,6 +1429,38 @@
             </div>
           </div>
 
+        </div>
+      </section>
+
+      <!-- ================= WISHLIST VIEW ================= -->
+      <section id="wishlist-view" class="view-panel" style="display: none;">
+        <div class="glass-panel" style="padding: 2.5rem; position: relative;">
+          <!-- Header -->
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--glass-border); padding-bottom: 1.5rem; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <h2 style="font-size: 2rem; font-family: 'Space Grotesk', sans-serif; color: var(--text-primary); display: flex; align-items: center; gap: 0.75rem;">
+                <i data-feather="heart" style="color: var(--color-brand); width: 28px; height: 28px; fill: var(--color-brand);"></i>
+                My Wishlist Vault
+              </h2>
+              <p style="font-size: 0.875rem; color: var(--text-secondary); margin-top: 0.25rem;">
+                Manage your saved limited-edition figures, mechanical watches, and die-cast cars.
+              </p>
+            </div>
+            <!-- Action to clear all or add all to cart -->
+            <div style="display: flex; gap: 0.75rem;" id="wishlist-actions-container">
+              <button class="checkout-btn" id="wishlist-add-all-btn" style="padding: 0.65rem 1.25rem; font-size: 0.85rem; background: var(--color-brand-gradient);">
+                <i data-feather="shopping-cart" style="width: 15px; height: 15px; margin-right: 0.35rem; vertical-align: middle;"></i> Add All to Cart
+              </button>
+              <button class="checkout-btn" id="wishlist-clear-btn" style="padding: 0.65rem 1.25rem; font-size: 0.85rem; background: rgba(255,255,255,0.05); color: var(--text-primary); border: 1px solid var(--glass-border);">
+                <i data-feather="trash-2" style="width: 15px; height: 15px; margin-right: 0.35rem; vertical-align: middle;"></i> Clear Wishlist
+              </button>
+            </div>
+          </div>
+
+          <!-- Grid of items -->
+          <div class="products-grid" id="wishlist-items-grid">
+            <!-- Dynamically populated via app.js -->
+          </div>
         </div>
       </section>
 
@@ -1610,6 +1672,7 @@
                       <th>Name</th>
                       <th>Email</th>
                       <th>Location</th>
+                      <th>Wishlist</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
@@ -2006,6 +2069,10 @@
             <button class="detail-add-btn" id="modal-add-cart-btn">
               Add to Cart <i data-feather="shopping-bag" style="width: 18px;"></i>
             </button>
+
+            <button class="icon-btn" id="modal-wishlist-btn" title="Add to Wishlist" style="width: 48px; height: 48px; border-radius: 8px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.02); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-secondary); transition: all var(--transition-fast);">
+              <i data-feather="heart" style="width: 20px; height: 20px;"></i>
+            </button>
           </div>
 
           <!-- Specifications Section -->
@@ -2328,6 +2395,90 @@
           <button type="submit" class="checkout-btn" style="padding: 0.85rem; font-size: 1rem; margin-top: 1.5rem;"
             id="admin-coupon-save-btn">
             Save Coupon
+          </button>
+        </form>
+      </div>
+  <!-- Admin: Edit Member Modal -->
+  <div class="modal-overlay" id="admin-member-modal-overlay">
+    <div class="product-detail-modal"
+      style="max-width: 550px; padding: 2.5rem; border-radius: 12px; background: var(--bg-secondary); border: 1px solid var(--glass-border); box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
+      <button class="modal-close" id="close-admin-member-modal-btn"
+        style="position: absolute; top: 1.25rem; right: 1.25rem; background: none; border: none; color: var(--text-secondary); cursor: pointer;">
+        <i data-feather="x" style="width: 20px; height: 20px;"></i>
+      </button>
+      <div class="admin-form-container" style="padding: 0;">
+        <h2 style="margin-bottom: 1.5rem; color: var(--color-brand); font-family: 'Space Grotesk', sans-serif;"
+          id="admin-member-modal-title">Edit Member Details</h2>
+        <form id="admin-member-form" class="horizontal-scroll-form">
+          <input type="hidden" id="admin-form-member-id">
+          
+          <div class="checkout-form-grid" style="grid-template-columns: 1fr; gap: 1.25rem;">
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="form-group">
+                <label class="form-label">Full Name *</label>
+                <input type="text" required class="form-input" id="admin-form-member-name" placeholder="John Doe">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Email Address *</label>
+                <input type="email" required class="form-input" id="admin-form-member-email" placeholder="john@example.com">
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="form-group">
+                <label class="form-label">Phone Number</label>
+                <input type="text" class="form-input" id="admin-form-member-phone" placeholder="+91 XXXXX XXXXX">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Loyalty Points *</label>
+                <input type="number" required min="0" class="form-input" id="admin-form-member-points" placeholder="120">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Street Address</label>
+              <input type="text" class="form-input" id="admin-form-member-address" placeholder="123 Street name, Apt / Suite">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="form-group">
+                <label class="form-label">City</label>
+                <input type="text" class="form-input" id="admin-form-member-city" placeholder="Neo-Tokyo">
+              </div>
+              <div class="form-group">
+                <label class="form-label">State</label>
+                <select class="form-select" id="admin-form-member-state">
+                  <!-- Will be populated dynamically -->
+                </select>
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="form-group">
+                <label class="form-label">PinCode</label>
+                <input type="text" class="form-input" id="admin-form-member-zip" placeholder="400001">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Country</label>
+                <input type="text" class="form-input" id="admin-form-member-country" placeholder="India" value="India">
+              </div>
+            </div>
+
+          </div>
+          <!-- Member Wishlist Section inside Edit Modal -->
+          <div style="margin-top: 1.5rem; border-top: 1px solid var(--glass-border); padding-top: 1.5rem;">
+            <h4 style="font-size: 0.95rem; font-family: 'Space Grotesk', sans-serif; color: var(--color-brand); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.35rem;">
+              <i data-feather="heart" style="width: 16px; height: 16px; fill: var(--color-brand);"></i>
+              Member's Wishlist Vault
+            </h4>
+            <div id="admin-member-wishlist-container" style="max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.75rem; background: rgba(255, 255, 255, 0.01); border: 1px solid var(--glass-border); border-radius: 6px; padding: 0.75rem;">
+              <!-- Dynamically populated via admin.js -->
+            </div>
+          </div>
+          <button type="submit" class="checkout-btn" style="padding: 0.85rem; font-size: 1rem; margin-top: 1.5rem;"
+            id="admin-member-save-btn">
+            Save Member Details
           </button>
         </form>
       </div>

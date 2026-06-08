@@ -28,6 +28,7 @@ let adminCurrentPanel = "admin-dashboard-panel";
 let adminInventorySearchQuery = "";
 let adminEditingProductId = null; // null if creating a new product
 let adminAuthenticated = localStorage.getItem("toyzguru_admin_auth") === "true";
+let adminMembersState = [];
 
 // Initialize Admin View
 function adminInit() {
@@ -829,18 +830,65 @@ async function adminRenderMembersRegistry() {
         members = mems || [];
       } catch (err) {
         console.warn("Failed to fetch profiles from Supabase:", err);
-        members = [];
+        members = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
       }
     } else {
-      members = [];
+      members = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
     }
+
+    // Seeding mock profiles in local offline mode
+    if (members.length === 0) {
+      const defaultMembers = [
+        {
+          id: "m-user-101",
+          name: "Srikant Sen",
+          email: "srikantsr@gmail.com",
+          phone: "+91 98765 43210",
+          address: "Flat 402, Neon Heights, Bandra West",
+          city: "Mumbai",
+          state: "Maharashtra",
+          zip: "400050",
+          country: "India",
+          loyalty_points: 850,
+          created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+        },
+        {
+          id: "m-user-102",
+          name: "Aryan Sharma",
+          email: "aryan.sharma@toyzguru.com",
+          phone: "+91 99999 88888",
+          address: "12, Cyber Tower Street",
+          city: "Bengaluru",
+          state: "Karnataka",
+          zip: "560001",
+          country: "India",
+          loyalty_points: 1200,
+          created_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString()
+        },
+        {
+          id: "m-user-103",
+          name: "Neha Patel",
+          email: "neha.patel@gmail.com",
+          phone: "+91 91234 56789",
+          address: "A-504, Greenfield Residency, Gachibowli",
+          city: "Hyderabad",
+          state: "Telangana",
+          zip: "500032",
+          country: "India",
+          loyalty_points: 340,
+          created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString()
+        }
+      ];
+      localStorage.setItem("toyzguru_profiles", JSON.stringify(defaultMembers));
+      members = defaultMembers;
+    }
+
+    adminMembersState = members;
 
     if (!members || members.length === 0) {
       tableBody.innerHTML = `
         <tr>
-                    <td colspan="4" style="text-align: center; color: var(--text-secondary); padding: 2rem;">No registered members found.</td>
-            No registered members found.
-          </td>
+          <td colspan="6" style="text-align: center; color: var(--text-secondary); padding: 2rem;">No registered members found.</td>
         </tr>
       `;
       return;
@@ -848,15 +896,20 @@ async function adminRenderMembersRegistry() {
 
     tableBody.innerHTML = members.map(m => {
       const location = [m.city, m.country].filter(Boolean).join(", ") || "Not Provided";
+      const wishlistCount = Array.isArray(m.wishlist) ? m.wishlist.length : (m.id === (window.userState && window.userState.id) ? (window.wishlistState || []).length : 0);
+      const wishlistText = wishlistCount > 0 ? `<span style="background: rgba(255, 0, 128, 0.1); color: var(--color-brand); padding: 0.25rem 0.55rem; border-radius: 4px; font-weight: 600; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 0.25rem;"><i data-feather="heart" style="width: 12px; height: 12px; fill: var(--color-brand); stroke: var(--color-brand);"></i> ${wishlistCount}</span>` : `<span style="color: var(--text-muted); font-size: 0.8rem;">Empty</span>`;
       return `
         <tr id="admin-member-row-${m.id}">
           <td style="font-family: monospace; font-size: 0.8rem; color: var(--color-brand);">${m.id.substring(0, 8)}...</td>
           <td style="font-weight: 600;">${m.name}</td>
           <td style="font-family: monospace; font-size: 0.85rem;">${m.email}</td>
           <td>${location}</td>
+          <td>${wishlistText}</td>
           <td>
-            <button class="crud-btn crud-edit" onclick="adminEditMemberTrigger('${m.id}')" title="Edit Member"><i data-feather="edit" style="width: 14px; height: 14px;"></i></button>
-            <button class="crud-btn crud-delete" onclick="adminDeleteMemberTrigger('${m.id}')" title="Delete Member"><i data-feather="trash-2" style="width: 14px; height: 14px;"></i></button>
+            <div class="crud-btn-wrap">
+              <button class="crud-btn crud-edit" onclick="adminEditMemberTrigger('${m.id}')" title="Edit Member"><i data-feather="edit" style="width: 14px; height: 14px;"></i></button>
+              <button class="crud-btn crud-delete" onclick="adminDeleteMemberTrigger('${m.id}')" title="Delete Member"><i data-feather="trash-2" style="width: 14px; height: 14px;"></i></button>
+            </div>
           </td>
         </tr>
       `;
@@ -905,7 +958,34 @@ async function adminUpdateMemberPoints(profileId) {
 async function adminDeleteMemberTrigger(profileId) {
   if (confirm("Are you sure you want to delete this member and all their related data? This action cannot be undone.")) {
     if (!supabase) {
-      if (window.toyzToast) window.toyzToast("Action Blocked", "Cannot delete members in local offline demo mode.", "warning");
+      try {
+        let localProfiles = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
+        const member = localProfiles.find(p => p.id === profileId);
+        
+        if (member && member.email) {
+          // Delete orders from local storage matching email
+          let localOrders = JSON.parse(localStorage.getItem("toyzguru_orders")) || [];
+          localOrders = localOrders.filter(o => o.email.toLowerCase() !== member.email.toLowerCase());
+          localStorage.setItem("toyzguru_orders", JSON.stringify(localOrders));
+        }
+
+        localProfiles = localProfiles.filter(p => p.id !== profileId);
+        localStorage.setItem("toyzguru_profiles", JSON.stringify(localProfiles));
+
+        // If deleted user matches active login session
+        if (window.userState && window.userState.id === profileId) {
+          window.userState = null;
+          localStorage.removeItem("toyzguru_user");
+          if (window.location.hash === "#profile") {
+            window.location.hash = "#home";
+          }
+        }
+
+        if (window.toyzToast) window.toyzToast("Member Deleted (Demo)", "Member and their related data have been deleted locally.", "info");
+        adminRenderMembersRegistry();
+      } catch (err) {
+        if (window.toyzToast) window.toyzToast("Delete Failed", err.message || "Failed to delete member.", "danger");
+      }
       return;
     }
 
@@ -930,8 +1010,151 @@ async function adminDeleteMemberTrigger(profileId) {
 }
 
 function adminEditMemberTrigger(profileId) {
-    if (window.toyzToast) window.toyzToast("Edit Member", "Edit functionality not implemented yet.", "info");
-    // TODO: Implement member edit modal/dialog.
+  const member = adminMembersState.find(m => m.id === profileId);
+  if (!member) {
+    if (window.toyzToast) window.toyzToast("Member Not Found", "Failed to retrieve member details.", "warning");
+    return;
+  }
+
+  document.getElementById("admin-form-member-id").value = member.id;
+  document.getElementById("admin-member-modal-title").textContent = `Edit Member: ${member.name}`;
+  document.getElementById("admin-form-member-name").value = member.name || "";
+  document.getElementById("admin-form-member-email").value = member.email || "";
+  document.getElementById("admin-form-member-phone").value = member.phone || "";
+  document.getElementById("admin-form-member-points").value = member.loyalty_points !== undefined ? member.loyalty_points : 120;
+  document.getElementById("admin-form-member-address").value = member.address || "";
+  document.getElementById("admin-form-member-city").value = member.city || "";
+  document.getElementById("admin-form-member-zip").value = member.zip || "";
+  document.getElementById("admin-form-member-country").value = member.country || "India";
+
+  // Populate state dropdown in member edit form
+  const stateSelect = document.getElementById("admin-form-member-state");
+  if (stateSelect) {
+    stateSelect.innerHTML = '<option value="">Select State</option>' +
+      (window.stateChargesState || []).map(s => `<option value="${s.state_name}">${s.state_name}</option>`).join("");
+    stateSelect.value = member.state || "";
+  }
+
+  // Populate member's wishlist
+  const wishlistContainer = document.getElementById("admin-member-wishlist-container");
+  if (wishlistContainer) {
+    const memberWishlistIds = Array.isArray(member.wishlist) ? member.wishlist : (member.id === (window.userState && window.userState.id) ? (window.wishlistState || []) : []);
+    
+    if (memberWishlistIds.length === 0) {
+      wishlistContainer.innerHTML = `<div style="font-size: 0.8rem; color: var(--text-muted); text-align: center; padding: 1rem; width: 100%;">No saved items in this member's wishlist vault.</div>`;
+    } else {
+      const catalogProducts = window.productsState || [];
+      const wishlistedProducts = catalogProducts.filter(p => memberWishlistIds.includes(p.id));
+      
+      if (wishlistedProducts.length === 0) {
+        wishlistContainer.innerHTML = `<div style="font-size: 0.8rem; color: var(--text-muted); text-align: center; padding: 1rem; width: 100%;">Saved product IDs not found in active catalog.</div>`;
+      } else {
+        wishlistContainer.innerHTML = wishlistedProducts.map(product => {
+          return `
+            <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem; background: rgba(255,255,255,0.02); border-radius: 4px; border: 1px solid rgba(255,255,255,0.03); width: 100%;">
+              <img src="${product.image}" alt="${product.title}" style="width: 40px; height: 40px; border-radius: 4px; object-fit: cover;">
+              <div style="flex: 1; min-width: 0;">
+                <div style="font-size: 0.85rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-primary);">${product.title}</div>
+                <div style="font-size: 0.75rem; color: var(--color-brand); font-weight: 500;">₹${Number(product.price).toFixed(2)}</div>
+              </div>
+              <span style="font-size: 0.75rem; padding: 0.15rem 0.4rem; border-radius: 10px; background: ${product.stock > 0 ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)'}; color: ${product.stock > 0 ? '#22c55e' : '#ef4444'}; font-weight: 500;">
+                ${product.stock > 0 ? 'In Stock' : 'Out of Stock'}
+              </span>
+            </div>
+          `;
+        }).join("");
+      }
+    }
+  }
+
+  document.getElementById("admin-member-modal-overlay").classList.add("active");
+  document.body.style.overflow = "hidden";
+  
+  if (window.feather) {
+    window.feather.replace();
+  }
+}
+
+function adminCloseMemberModal() {
+  document.getElementById("admin-member-modal-overlay").classList.remove("active");
+  document.body.style.overflow = "";
+}
+
+async function handleAdminMemberFormSubmit(e) {
+  e.preventDefault();
+
+  const profileId = document.getElementById("admin-form-member-id").value;
+  const name = document.getElementById("admin-form-member-name").value;
+  const email = document.getElementById("admin-form-member-email").value;
+  const phone = document.getElementById("admin-form-member-phone").value.trim();
+  const points = parseInt(document.getElementById("admin-form-member-points").value);
+  const address = document.getElementById("admin-form-member-address").value.trim();
+  const city = document.getElementById("admin-form-member-city").value.trim();
+  const state = document.getElementById("admin-form-member-state").value;
+  const zip = document.getElementById("admin-form-member-zip").value.trim();
+  const country = document.getElementById("admin-form-member-country").value.trim();
+
+  if (isNaN(points)) {
+    if (window.toyzToast) window.toyzToast("Invalid Loyalty Points", "Please enter a valid number of loyalty points.", "warning");
+    return;
+  }
+
+  const dbPayload = {
+    name,
+    email,
+    phone: phone || null,
+    loyalty_points: points,
+    address: address || null,
+    city: city || null,
+    state: state || '',
+    zip: zip || null,
+    country: country || 'India'
+  };
+
+  try {
+    if (supabase) {
+      const { error } = await supabase.from('profiles').update(dbPayload).eq('id', profileId);
+      if (error) throw error;
+      
+      // Update local storage for active customer profile card if matched
+      if (window.userState && window.userState.id === profileId) {
+        window.userState = { ...window.userState, ...dbPayload };
+        localStorage.setItem("toyzguru_user", JSON.stringify(window.userState));
+        
+        // Sync profile view labels
+        const pointsEl = document.getElementById("profile-card-points");
+        if (pointsEl) pointsEl.textContent = points;
+        const nameEl = document.getElementById("profile-card-name");
+        if (nameEl) nameEl.textContent = name;
+      }
+    } else {
+      // Local fallback / offline mode
+      let localProfiles = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
+      const match = localProfiles.find(p => p.id === profileId);
+      if (match) {
+        Object.assign(match, dbPayload);
+        localStorage.setItem("toyzguru_profiles", JSON.stringify(localProfiles));
+      }
+      
+      // Update local storage for active customer profile card if matched
+      if (window.userState && window.userState.id === profileId) {
+        window.userState = { ...window.userState, ...dbPayload };
+        localStorage.setItem("toyzguru_user", JSON.stringify(window.userState));
+      }
+    }
+
+    if (window.toyzToast) {
+      window.toyzToast("Member Updated", `Successfully saved details for: ${name}`, "success");
+    }
+    
+    adminCloseMemberModal();
+    adminRenderMembersRegistry();
+  } catch (err) {
+    if (window.toyzToast) {
+      window.toyzToast("Save Failed", err.message || "Failed to save member details.", "danger");
+    }
+    console.error(err);
+  }
 }
 
 // ================= CUSTOMER FEEDBACK INBOX MANAGEMENT =================
@@ -1029,6 +1252,24 @@ function setupAdminEventListeners() {
   document.getElementById("admin-order-modal-overlay").addEventListener("click", (e) => {
     if (e.target.id === "admin-order-modal-overlay") adminCloseOrderModal();
   });
+
+  // Admin member overlay closure
+  const closeMemberBtn = document.getElementById("close-admin-member-modal-btn");
+  if (closeMemberBtn) {
+    closeMemberBtn.addEventListener("click", adminCloseMemberModal);
+  }
+  const memberOverlay = document.getElementById("admin-member-modal-overlay");
+  if (memberOverlay) {
+    memberOverlay.addEventListener("click", (e) => {
+      if (e.target.id === "admin-member-modal-overlay") adminCloseMemberModal();
+    });
+  }
+
+  // Admin member form submit
+  const memberForm = document.getElementById("admin-member-form");
+  if (memberForm) {
+    memberForm.addEventListener("submit", handleAdminMemberFormSubmit);
+  }
 
   // Admin form submit
   document.getElementById("admin-product-form").addEventListener("submit", handleAdminProductFormSubmit);
@@ -1475,6 +1716,9 @@ window.adminDeleteProductTrigger = adminDeleteProductTrigger;
 window.adminUpdateOrderStatus = adminUpdateOrderStatus;
 window.adminCloseProductModal = adminCloseProductModal;
 window.adminUpdateMemberPoints = adminUpdateMemberPoints;
+window.adminDeleteMemberTrigger = adminDeleteMemberTrigger;
+window.adminEditMemberTrigger = adminEditMemberTrigger;
+window.adminCloseMemberModal = adminCloseMemberModal;
 window.adminDeleteFeedbackTrigger = adminDeleteFeedbackTrigger;
 window.adminCreateProductTrigger = adminCreateProductTrigger;
 window.adminShowOrderDetailsTrigger = adminShowOrderDetailsTrigger;

@@ -26,6 +26,7 @@ let productsState = [];
 let cartState = [];
 let ordersState = [];
 let userState = null;
+let wishlistState = [];
 let stateChargesState = [];
 let couriersState = [];
 let storeSettings = { tax_enabled: false, sgst_pct: 0, cgst_pct: 0, igst_pct: 0 };
@@ -38,6 +39,10 @@ Object.defineProperty(window, 'productsState', {
 Object.defineProperty(window, 'cartState', {
   get: () => cartState,
   set: (val) => { cartState = val; }
+});
+Object.defineProperty(window, 'wishlistState', {
+  get: () => wishlistState,
+  set: (val) => { wishlistState = val; }
 });
 Object.defineProperty(window, 'ordersState', {
   get: () => ordersState,
@@ -301,6 +306,13 @@ async function initDatabase() {
     ordersState = [];
   }
 
+  // Load wishlist from userState or localStorage
+  if (userState && Array.isArray(userState.wishlist)) {
+    wishlistState = userState.wishlist;
+  } else {
+    wishlistState = JSON.parse(localStorage.getItem("toyzguru_wishlist")) || [];
+  }
+
   // Load state delivery charges from Supabase/localStorage
   if (supabase) {
     try {
@@ -377,6 +389,7 @@ async function initDatabase() {
 
   // Update DOM displays
   updateCartBadges();
+  updateWishlistBadges();
   renderFeaturedProducts();
   updateProfileAvatar();
 
@@ -714,6 +727,8 @@ function setupRouting() {
       initCatalogView(params);
     } else if (viewName === "profile") {
       initProfileView();
+    } else if (viewName === "wishlist") {
+      initWishlistView();
     } else if (viewName === "checkout") {
       initCheckoutView();
     } else if (viewName === "contact") {
@@ -793,10 +808,20 @@ function renderProductCardHTML(product) {
     ? `<button class="product-card-add-btn" disabled style="opacity: 0.5; cursor: not-allowed; background: var(--bg-tertiary) !important; color: var(--text-muted) !important; box-shadow: none !important; border-color: var(--glass-border) !important;">Sold Out</button>`
     : `<button class="product-card-add-btn" onclick="quickAddToCart('${product.id}')">Add +</button>`;
 
+  const isWishlisted = wishlistState.includes(product.id);
+  const heartClass = isWishlisted ? "wishlist-toggle-btn active" : "wishlist-toggle-btn";
+  const heartFill = isWishlisted ? 'fill="var(--color-brand)"' : '';
+  const wishlistBtnHTML = `
+    <button class="${heartClass}" onclick="event.stopPropagation(); toggleWishlist('${product.id}')" title="${isWishlisted ? 'Remove from Wishlist' : 'Add to Wishlist'}">
+      <i data-feather="heart" ${heartFill} style="width: 15px; height: 15px; ${isWishlisted ? 'fill: var(--color-brand); stroke: var(--color-brand);' : ''}"></i>
+    </button>
+  `;
+
   return `
     <article class="product-card" id="product-card-${product.id}">
       ${displayBadge}
       <div class="product-card-img-wrap">
+        ${wishlistBtnHTML}
         <img src="${product.image}" alt="${product.title}" class="product-card-img" ${imgStyle} loading="lazy">
         <div class="product-card-overlay">
           <button class="product-action-btn" onclick="openProductModal('${product.id}')" title="Quick View">
@@ -1076,6 +1101,35 @@ function openProductModal(productId) {
     addToCartBtn.disabled = false;
   }
 
+  // Update wishlist button in product detail modal
+  const modalWishlistBtn = document.getElementById("modal-wishlist-btn");
+  if (modalWishlistBtn) {
+    const isWishlisted = wishlistState.includes(productId);
+    if (isWishlisted) {
+      modalWishlistBtn.classList.add("active");
+      modalWishlistBtn.innerHTML = `<i data-feather="heart" style="width: 20px; height: 20px; fill: var(--color-brand); stroke: var(--color-brand);"></i>`;
+      modalWishlistBtn.setAttribute("title", "Remove from Wishlist");
+    } else {
+      modalWishlistBtn.classList.remove("active");
+      modalWishlistBtn.innerHTML = `<i data-feather="heart" style="width: 20px; height: 20px;"></i>`;
+      modalWishlistBtn.setAttribute("title", "Add to Wishlist");
+    }
+    modalWishlistBtn.onclick = () => {
+      toggleWishlist(productId);
+      const updatedWishlist = wishlistState.includes(productId);
+      if (updatedWishlist) {
+        modalWishlistBtn.classList.add("active");
+        modalWishlistBtn.innerHTML = `<i data-feather="heart" style="width: 20px; height: 20px; fill: var(--color-brand); stroke: var(--color-brand);"></i>`;
+        modalWishlistBtn.setAttribute("title", "Remove from Wishlist");
+      } else {
+        modalWishlistBtn.classList.remove("active");
+        modalWishlistBtn.innerHTML = `<i data-feather="heart" style="width: 20px; height: 20px;"></i>`;
+        modalWishlistBtn.setAttribute("title", "Add to Wishlist");
+      }
+      feather.replace();
+    };
+  }
+
   // Display overlay
   document.getElementById("product-detail-modal-overlay").classList.add("active");
   document.body.style.overflow = "hidden"; // Disable background scrolling
@@ -1186,6 +1240,38 @@ function updateCartBadges() {
 
   const drawerBadgeCount = document.getElementById("cart-drawer-badge-count");
   if (drawerBadgeCount) drawerBadgeCount.textContent = totalItems;
+}
+
+function updateWishlistBadges() {
+  const badge = document.getElementById("wishlist-badge-count");
+  if (!badge) return;
+
+  const count = wishlistState.length;
+  badge.textContent = count;
+  if (count > 0) {
+    badge.style.display = "flex";
+  } else {
+    badge.style.display = "none";
+  }
+}
+
+async function saveWishlist() {
+  localStorage.setItem("toyzguru_wishlist", JSON.stringify(wishlistState));
+  updateWishlistBadges();
+
+  // Sync to active member profile in localStorage if user is logged in
+  if (userState && userState.id) {
+    userState.wishlist = wishlistState;
+    localStorage.setItem("toyzguru_user", JSON.stringify(userState));
+
+    // Also update in profiles array
+    let localProfiles = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
+    const match = localProfiles.find(p => p.id === userState.id);
+    if (match) {
+      match.wishlist = wishlistState;
+      localStorage.setItem("toyzguru_profiles", JSON.stringify(localProfiles));
+    }
+  }
 }
 
 function renderCartDrawer() {
@@ -2062,6 +2148,9 @@ function initProfileView() {
       </tr>
     `;
   }).join("");
+
+  // Refresh wishlist inside member profile settings too
+  renderProfileWishlist();
 
   feather.replace();
 }
@@ -2964,6 +3053,76 @@ function setupEventListeners() {
       }
     }
   });
+
+  // ================= WISHLIST ACTION LISTENERS =================
+  // Heart nav icon button click handler
+  const wishlistIconBtn = document.getElementById("wishlist-icon-btn");
+  if (wishlistIconBtn) {
+    wishlistIconBtn.addEventListener("click", () => {
+      window.location.hash = "#wishlist";
+    });
+  }
+
+  // Clear Wishlist listeners
+  const clearWishlist = () => {
+    wishlistState = [];
+    saveWishlist();
+    initWishlistView();
+    renderProfileWishlist();
+    showToast("Wishlist Cleared", "All saved items removed from your wishlist vault.", "info");
+  };
+  const clearBtn = document.getElementById("wishlist-clear-btn");
+  if (clearBtn) clearBtn.addEventListener("click", clearWishlist);
+  const profileClearBtn = document.getElementById("profile-wishlist-clear-btn");
+  if (profileClearBtn) profileClearBtn.addEventListener("click", clearWishlist);
+
+  // Add All to Cart listeners
+  const addAllToCart = () => {
+    if (wishlistState.length === 0) return;
+    let addedCount = 0;
+    wishlistState.forEach(productId => {
+      const product = productsState.find(p => p.id === productId);
+      if (product && product.stock > 0) {
+        const option = (product.options && product.options.length > 0) ? product.options[0] : "Standard";
+        const existing = cartState.find(item => item.productId === productId && item.option === option);
+        if (existing) {
+          if (existing.quantity < product.stock) {
+            existing.quantity++;
+            addedCount++;
+          }
+        } else {
+          cartState.push({
+            productId: product.id,
+            title: product.title,
+            price: product.price,
+            image: product.image,
+            option: option,
+            quantity: 1
+          });
+          addedCount++;
+        }
+      }
+    });
+    if (addedCount > 0) {
+      saveCart();
+      showToast("Vault Stashed", `Successfully stashed ${addedCount} wishlist items to your cart.`, "success");
+      
+      // Move stashed items out of wishlist
+      wishlistState = wishlistState.filter(productId => {
+        const product = productsState.find(p => p.id === productId);
+        return !product || product.stock <= 0;
+      });
+      saveWishlist();
+      initWishlistView();
+      renderProfileWishlist();
+    } else {
+      showToast("Vault Locked", "All saved items are currently out of stock or already at limit.", "warning");
+    }
+  };
+  const addAllBtn = document.getElementById("wishlist-add-all-btn");
+  if (addAllBtn) addAllBtn.addEventListener("click", addAllToCart);
+  const profileAddAllBtn = document.getElementById("profile-wishlist-add-all-btn");
+  if (profileAddAllBtn) profileAddAllBtn.addEventListener("click", addAllToCart);
 }
 
 // ================= CONTACT VIEW LOGIC =================
@@ -3176,3 +3335,120 @@ window.updateResetPasswordStrength = updateResetPasswordStrength;
 window.toggleResetPasswordVisibility = toggleResetPasswordVisibility;
 window.closePwResetSuccessModal = closePwResetSuccessModal;
 window.closePwResetErrorModal = closePwResetErrorModal;
+
+// ================= WISHLIST ENGINE FUNCTIONS =================
+
+function toggleWishlist(productId) {
+  const index = wishlistState.indexOf(productId);
+  const product = productsState.find(p => p.id === productId);
+  const title = product ? product.title : "Product";
+
+  if (index === -1) {
+    wishlistState.push(productId);
+    showToast("Vault Saved", `"${title}" added to your wishlist.`, "success");
+  } else {
+    wishlistState.splice(index, 1);
+    showToast("Vault Removed", `"${title}" removed from your wishlist.`, "info");
+  }
+
+  saveWishlist();
+
+  // Update product card icon states immediately on the screen
+  const cards = document.querySelectorAll(`.product-card#product-card-${productId}`);
+  cards.forEach(card => {
+    const btn = card.querySelector(".wishlist-toggle-btn");
+    if (btn) {
+      const active = wishlistState.includes(productId);
+      if (active) {
+        btn.classList.add("active");
+        btn.innerHTML = `<i data-feather="heart" fill="var(--color-brand)" style="width: 15px; height: 15px; fill: var(--color-brand); stroke: var(--color-brand);"></i>`;
+      } else {
+        btn.classList.remove("active");
+        btn.innerHTML = `<i data-feather="heart" style="width: 15px; height: 15px;"></i>`;
+      }
+    }
+  });
+
+  // If currently viewing wishlist, refresh it
+  const hash = window.location.hash || "#home";
+  if (hash.startsWith("#wishlist")) {
+    initWishlistView();
+  }
+  
+  // Refresh wishlist inside member profile settings too
+  renderProfileWishlist();
+  
+  // Trigger admin panel lists updates if admin view is active
+  if (window.adminRenderMembersRegistry) {
+    window.adminRenderMembersRegistry();
+  }
+
+  feather.replace();
+}
+
+function initWishlistView() {
+  const container = document.getElementById("wishlist-items-grid");
+  if (!container) return;
+
+  if (wishlistState.length === 0) {
+    container.innerHTML = `
+      <div style="grid-column: 1 / -1; text-align: center; padding: 4rem 2rem; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(255, 255, 255, 0.01); border: 1px dashed var(--glass-border); border-radius: var(--border-radius-md);">
+        <div style="width: 80px; height: 80px; border-radius: 50%; background: rgba(255, 0, 128, 0.05); border: 1px solid rgba(255, 0, 128, 0.15); display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem;">
+          <i data-feather="heart" style="width: 36px; height: 36px; color: var(--color-brand);"></i>
+        </div>
+        <h3 style="font-size: 1.5rem; font-family: 'Space Grotesk', sans-serif; margin-bottom: 0.5rem;">Your Wishlist Vault is Empty</h3>
+        <p style="font-size: 0.9rem; color: var(--text-secondary); max-width: 450px; line-height: 1.6; margin-bottom: 2rem;">
+          Secure your dream collectibles before they sell out! Explore our exclusive inventory of anime action figures, detailed toy cars, and premium mechanical watches.
+        </p>
+        <a href="#catalog" class="checkout-btn" style="text-decoration: none; padding: 0.85rem 2rem;">
+          Browse Vault Catalog <i data-feather="arrow-right" style="width: 16px; height: 16px; vertical-align: middle; margin-left: 0.25rem;"></i>
+        </a>
+      </div>
+    `;
+    
+    // Hide actions container if empty
+    const actionsContainer = document.getElementById("wishlist-actions-container");
+    if (actionsContainer) actionsContainer.style.display = "none";
+    
+    feather.replace();
+    return;
+  }
+
+  // Show actions container
+  const actionsContainer = document.getElementById("wishlist-actions-container");
+  if (actionsContainer) actionsContainer.style.display = "flex";
+
+  // Filter products matching user wishlist ids
+  const wishlistedProds = productsState.filter(p => wishlistState.includes(p.id));
+
+  container.innerHTML = wishlistedProds.map(product => {
+    return renderProductCardHTML(product);
+  }).join("");
+
+  feather.replace();
+}
+
+function renderProfileWishlist() {
+  const container = document.getElementById("profile-wishlist-items-grid");
+  if (!container) return;
+
+  if (wishlistState.length === 0) {
+    container.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 2rem; width: 100%;">No saved items in your vault.</div>`;
+    const actions = document.getElementById("profile-wishlist-actions");
+    if (actions) actions.style.display = "none";
+    return;
+  }
+
+  const actions = document.getElementById("profile-wishlist-actions");
+  if (actions) actions.style.display = "flex";
+
+  const wishlistedProds = productsState.filter(p => wishlistState.includes(p.id));
+  container.innerHTML = wishlistedProds.map(product => renderProductCardHTML(product)).join("");
+
+  feather.replace();
+}
+
+// Expose wishlist functions globally
+window.toggleWishlist = toggleWishlist;
+window.initWishlistView = initWishlistView;
+window.renderProfileWishlist = renderProfileWishlist;

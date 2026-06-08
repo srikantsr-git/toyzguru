@@ -3414,3 +3414,57 @@ img {
 .pw-strength-weak   { background: #ef4444; width: 33% !important; }
 .pw-strength-medium { background: #f59e0b; width: 66% !important; }
 .pw-strength-strong { background: #22c55e; width: 100% !important; }
+
+/* ===============================================================
+   WISHLIST INTEGRATION STYLES
+   =============================================================== */
+
+/* Floating heart button on product cards */
+.wishlist-toggle-btn {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 10;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(8, 11, 17, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  backdrop-filter: blur(4px);
+  padding: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.wishlist-toggle-btn:hover {
+  background: rgba(255, 0, 128, 0.15);
+  border-color: rgba(255, 0, 128, 0.3);
+  color: var(--color-brand);
+  transform: scale(1.1);
+  box-shadow: 0 4px 15px rgba(255, 0, 128, 0.25);
+}
+
+.wishlist-toggle-btn.active {
+  color: var(--color-brand);
+  background: rgba(255, 0, 128, 0.25);
+  border-color: rgba(255, 0, 128, 0.5);
+  box-shadow: 0 0 10px rgba(255, 0, 128, 0.2);
+}
+
+/* Modal detail heart button active state */
+#modal-wishlist-btn:hover {
+  background: rgba(255, 0, 128, 0.08) !important;
+  border-color: var(--color-brand) !important;
+  color: var(--color-brand) !important;
+}
+
+#modal-wishlist-btn.active {
+  background: rgba(255, 0, 128, 0.12) !important;
+  border-color: var(--color-brand) !important;
+  color: var(--color-brand) !important;
+}
