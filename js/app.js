@@ -788,16 +788,22 @@ function renderFooterCollections() {
   const list = document.getElementById("footer-browse-store-links");
   if (!list) return;
 
-  // Same display names as catalog sidebar
+  // Display names for known categories — matches catalog sidebar labels
   const categoryDisplayNames = {
     "anime": "Anime Figures",
     "toy-cars": "Collectible Cars",
-    "watches": "Imported Watches"
+    "watches": "Imported Watches",
+    "Katana": "Katana Collection",
+    "soft-toys": "Soft Toys",
+    "girls-toys": "Girls' Toys",
+    "action-figures": "Action Figures",
+    "collectibles": "Collectibles"
   };
 
   const getCategoryDisplayName = (cat) => {
     if (categoryDisplayNames[cat]) return categoryDisplayNames[cat];
-    return cat.split("-").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
+    // Auto-generate readable name from slug for any future categories
+    return cat.split(/[-_]/).map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
   };
 
   // Get unique categories from productsState, sorted alphabetically
@@ -811,6 +817,7 @@ function renderFooterCollections() {
 
   list.innerHTML = html;
 }
+
 
 
 
