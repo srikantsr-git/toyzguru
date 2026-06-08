@@ -409,7 +409,7 @@ img {
   pointer-events: none;
   transition: opacity var(--transition-normal);
 }
-
+#profile-card-points { display: none; }
 .cart-drawer-overlay.active {
   opacity: 1;
   pointer-events: all;

@@ -838,7 +838,7 @@ async function adminRenderMembersRegistry() {
     if (!members || members.length === 0) {
       tableBody.innerHTML = `
         <tr>
-          <td colspan="6" style="text-align: center; color: var(--text-secondary); padding: 2rem;">
+                    <td colspan="4" style="text-align: center; color: var(--text-secondary); padding: 2rem;">No registered members found.</td>
             No registered members found.
           </td>
         </tr>
@@ -853,8 +853,7 @@ async function adminRenderMembersRegistry() {
           <td style="font-family: monospace; font-size: 0.8rem; color: var(--color-brand);">${m.id.substring(0, 8)}...</td>
           <td style="font-weight: 600;">${m.name}</td>
           <td style="font-family: monospace; font-size: 0.85rem;">${m.email}</td>
-              </div>
-          </td>
+          <td>${location}</td>
         </tr>
       `;
     }).join("");
