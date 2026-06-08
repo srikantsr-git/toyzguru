@@ -552,51 +552,53 @@ document.addEventListener("DOMContentLoaded", () => {
   // We must intercept this BEFORE the router parses the hash.
   // -------------------------------------------------------
   (function interceptRecoveryToken() {
-    const rawHash = window.location.hash;
-    if (!rawHash) return;
+    // Check both hash and search query parameters (useful for PKCE/OAuth redirects)
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const searchParams = new URLSearchParams(window.location.search);
 
-    // Supabase v2 PKCE: tokens may be in hash OR search params
-    const hashContent = rawHash.substring(1); // strip leading '#'
-    const params = new URLSearchParams(hashContent);
+    const getParam = (key) => hashParams.get(key) || searchParams.get(key);
 
-    const type        = params.get('type');
-    const accessToken = params.get('access_token');
-    const refreshToken= params.get('refresh_token');
-    const errorDesc   = params.get('error_description');
-    const error       = params.get('error');
+    const type        = getParam('type');
+    const accessToken = getParam('access_token');
+    const refreshToken= getParam('refresh_token');
+    const errorDesc   = getParam('error_description');
+    const error       = getParam('error');
 
-    if (error || errorDesc) {
-      // Supabase returned an error (e.g. link expired)
-      // Clear the hash so routing doesn't get confused
-      history.replaceState(null, '', window.location.pathname + '#reset-password');
-      // Show error modal after DOM is ready
-      setTimeout(() => {
-        const errModal = document.getElementById('pw-reset-error-modal');
-        const errMsg   = document.getElementById('pw-reset-error-msg');
-        if (errModal) {
-          if (errMsg) errMsg.textContent = decodeURIComponent((errorDesc || error || 'Invalid or expired reset link.')).replace(/\+/g, ' ');
-          errModal.style.display = 'flex';
-          if (window.feather) feather.replace();
-        }
-      }, 600);
-      return;
-    }
-
-    if (type === 'recovery' && accessToken) {
-      // Valid recovery token — set Supabase session from the token,
-      // then clean the URL and redirect to the reset-password view.
-      if (supabase) {
-        supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken || ''
-        }).then(({ error: sessErr }) => {
-          if (sessErr) {
-            console.error('Failed to set recovery session:', sessErr);
+    // If any parameters exist, we should intercept and handle them
+    if (type === 'recovery' || accessToken || error || errorDesc) {
+      if (error || errorDesc) {
+        // Supabase returned an error (e.g. link expired)
+        // Clear the URL query/hash parameters
+        history.replaceState(null, '', window.location.pathname + '#reset-password');
+        // Show error modal after DOM is ready
+        setTimeout(() => {
+          const errModal = document.getElementById('pw-reset-error-modal');
+          const errMsg   = document.getElementById('pw-reset-error-msg');
+          if (errModal) {
+            if (errMsg) errMsg.textContent = decodeURIComponent((errorDesc || error || 'Invalid or expired reset link.')).replace(/\+/g, ' ');
+            errModal.style.display = 'flex';
+            if (window.feather) feather.replace();
           }
-        });
+        }, 600);
+        return;
       }
-      // Replace the messy token URL with a clean hash
-      history.replaceState(null, '', window.location.pathname + '#reset-password');
+
+      if (type === 'recovery' && accessToken) {
+        // Valid recovery token — set Supabase session from the token,
+        // then clean the URL and redirect to the reset-password view.
+        if (supabase) {
+          supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken || ''
+          }).then(({ error: sessErr }) => {
+            if (sessErr) {
+              console.error('Failed to set recovery session:', sessErr);
+            }
+          });
+        }
+        // Replace the messy token URL with a clean hash
+        history.replaceState(null, '', window.location.pathname + '#reset-password');
+      }
     }
   })();
 
@@ -725,6 +727,9 @@ function setupRouting() {
 
   window.addEventListener("hashchange", handleRoute);
   window.addEventListener("load", handleRoute);
+
+  // Run immediately on initialization to sync view with the current URL hash state
+  handleRoute();
 }
 
 function getQueryParams(queryString) {
