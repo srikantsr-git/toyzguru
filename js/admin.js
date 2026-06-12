@@ -8,7 +8,7 @@ if (window.supabase && typeof window.supabase.createClient === 'function') {
   window.supabaseLib = window.supabase;
 }
 
-var supabase = (function() {
+var supabase = (function () {
   try {
     const lib = window.supabaseLib || window.supabase;
     if (lib && typeof lib.createClient === 'function') {
@@ -40,7 +40,7 @@ function adminInit() {
 function updateAdminAuthView() {
   const loginWrapper = document.getElementById("admin-login-wrapper");
   const mainLayout = document.getElementById("admin-main-layout");
-  
+
   if (adminAuthenticated) {
     if (loginWrapper) loginWrapper.style.display = "none";
     if (mainLayout) mainLayout.style.display = "grid";
@@ -191,7 +191,7 @@ function adminRenderWeeklyTrendChart(orders) {
   chartContainer.innerHTML = daysOfWeek.map((day, idx) => {
     const val = salesSum[idx];
     const percentageHeight = (val / maxVal) * 80; // Scale to fit wrapper
-    
+
     return `
       <div class="admin-chart-bar-wrap">
         <div style="font-size: 0.75rem; color: var(--color-brand); font-weight: 700; margin-bottom: 0.25rem;">₹${Math.round(val)}</div>
@@ -223,9 +223,9 @@ async function adminRenderInventoryTable() {
 
   // Filter listings by search box
   const filtered = products.filter(p => {
-    return p.title.toLowerCase().includes(adminInventorySearchQuery.toLowerCase()) || 
-           p.id.toLowerCase().includes(adminInventorySearchQuery.toLowerCase()) || 
-           p.category.toLowerCase().includes(adminInventorySearchQuery.toLowerCase());
+    return p.title.toLowerCase().includes(adminInventorySearchQuery.toLowerCase()) ||
+      p.id.toLowerCase().includes(adminInventorySearchQuery.toLowerCase()) ||
+      p.category.toLowerCase().includes(adminInventorySearchQuery.toLowerCase());
   });
 
   if (filtered.length === 0) {
@@ -241,7 +241,7 @@ async function adminRenderInventoryTable() {
 
   tableBody.innerHTML = filtered.map(prod => {
     const priceOriginal = prod.original_price ? `<span style="text-decoration:line-through; font-size:0.75rem; color:var(--text-muted);">₹${Number(prod.original_price).toFixed(2)}</span> ` : "";
-    
+
     return `
       <tr id="admin-inventory-row-${prod.id}">
         <td style="font-family: monospace; font-size:0.8rem; color:var(--color-brand);">${prod.id}</td>
@@ -288,7 +288,7 @@ async function adminDeleteProductTrigger(productId) {
 
         // refresh table
         await adminRenderInventoryTable();
-        
+
         // update global app state products
         if (window.initDatabase) await window.initDatabase();
 
@@ -306,10 +306,10 @@ async function adminDeleteProductTrigger(productId) {
       const filteredProds = products.filter(p => p.id !== productId);
       window.productsState = filteredProds;
       localStorage.setItem("toyzguru_products", JSON.stringify(filteredProds));
-      
+
       // refresh table
       await adminRenderInventoryTable();
-      
+
       // update global app state products
       if (window.initDatabase) await window.initDatabase();
 
@@ -335,7 +335,7 @@ function adminEditProductTrigger(productId) {
   document.getElementById("admin-form-category").value = product.category;
   document.getElementById("admin-form-badge").value = product.badge || "";
   document.getElementById("admin-form-price").value = product.price;
-  
+
   const origPrice = product.original_price !== undefined ? product.original_price : product.originalPrice;
   document.getElementById("admin-form-original-price").value = origPrice || "";
   document.getElementById("admin-form-stock").value = product.stock;
@@ -365,7 +365,7 @@ function adminEditProductTrigger(productId) {
   document.getElementById("admin-form-rating").value = product.rating !== undefined ? product.rating : 5.0;
   const revsCount = product.reviews_count !== undefined ? product.reviews_count : (product.reviewsCount !== undefined ? product.reviewsCount : 1);
   document.getElementById("admin-form-reviews-count").value = revsCount;
-  
+
   const opts = Array.isArray(product.options) ? product.options : [product.options || "Standard Edition"];
   document.getElementById("admin-form-options").value = opts.join(", ");
   document.getElementById("admin-form-specs-json").value = product.specs ? JSON.stringify(product.specs, null, 2) : "{}";
@@ -379,7 +379,7 @@ function adminEditProductTrigger(productId) {
 function adminCreateProductTrigger() {
   adminEditingProductId = null;
   document.getElementById("admin-modal-title").textContent = "Create New Inventory Item";
-  
+
   // Clear forms inputs
   document.getElementById("admin-product-form").reset();
   document.getElementById("admin-form-product-id").value = "";
@@ -613,7 +613,7 @@ async function adminRenderOrdersQueue() {
     const orderDate = new Date(ord.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" });
     const itemsList = Array.isArray(ord.items) ? ord.items : [];
     const itemsSummary = itemsList.map(i => `${i.title} (${i.option}) <strong>x${i.quantity}</strong>`).join("<br>");
-    
+
     // Build select dropdown selector for status
     const statusOptions = ["pending", "processing", "shipped", "delivered", "cancelled"];
     const dropdownOptions = statusOptions.map(opt => {
@@ -682,7 +682,7 @@ async function adminUpdateOrderStatus(orderId, newStatus) {
       match.status = newStatus;
       localStorage.setItem("toyzguru_orders", JSON.stringify(localOrders));
     }
-    
+
     // Sync app.js state
     if (window.ordersState) {
       const matchState = window.ordersState.find(o => o.id === orderId);
@@ -739,7 +739,7 @@ async function adminShowOrderDetailsTrigger(orderId) {
         items = order.items;
       }
     }
-    
+
     let itemsHtml = items.map(item => `
       <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--glass-border); padding: 0.5rem 0;">
         <div>
@@ -989,7 +989,7 @@ async function adminDeleteMemberTrigger(profileId) {
     try {
       let localProfiles = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
       const member = localProfiles.find(p => p.id === profileId);
-      
+
       if (member && member.email) {
         // Delete orders from local storage matching email
         let localOrders = JSON.parse(localStorage.getItem("toyzguru_orders")) || [];
@@ -1023,12 +1023,12 @@ async function adminDeleteMemberTrigger(profileId) {
       // Use maybeSingle() to handle mock profiles gracefully if they are deleted in online mode
       const { data: member, error: fetchError } = await supabase.from('profiles').select('*').eq('id', profileId).maybeSingle();
       if (fetchError) throw fetchError;
-      
+
       if (member && member.email) {
         await supabase.from('orders').delete().eq('email', member.email);
         await supabase.from('contact_messages').delete().eq('email', member.email);
       }
-      
+
       const { error: profileError } = await supabase.from('profiles').delete().eq('id', profileId);
       if (profileError) throw profileError;
 
@@ -1080,13 +1080,13 @@ function adminEditMemberTrigger(profileId) {
   const wishlistContainer = document.getElementById("admin-member-wishlist-container");
   if (wishlistContainer) {
     const memberWishlistIds = Array.isArray(member.wishlist) ? member.wishlist : (member.id === (window.userState && window.userState.id) ? (window.wishlistState || []) : []);
-    
+
     if (memberWishlistIds.length === 0) {
       wishlistContainer.innerHTML = `<div style="font-size: 0.8rem; color: var(--text-muted); text-align: center; padding: 1rem; width: 100%;">No saved items in this member's wishlist vault.</div>`;
     } else {
       const catalogProducts = window.productsState || [];
       const wishlistedProducts = catalogProducts.filter(p => memberWishlistIds.includes(p.id));
-      
+
       if (wishlistedProducts.length === 0) {
         wishlistContainer.innerHTML = `<div style="font-size: 0.8rem; color: var(--text-muted); text-align: center; padding: 1rem; width: 100%;">Saved product IDs not found in active catalog.</div>`;
       } else {
@@ -1110,7 +1110,7 @@ function adminEditMemberTrigger(profileId) {
 
   document.getElementById("admin-member-modal-overlay").classList.add("active");
   document.body.style.overflow = "hidden";
-  
+
   if (window.feather) {
     window.feather.replace();
   }
@@ -1254,7 +1254,7 @@ async function handleAdminMemberFormSubmit(e) {
       if (supabase) {
         const { error } = await supabase.from('profiles').update(profilePayload).eq('id', profileId);
         if (error) throw error;
-        
+
         // Update local storage for active customer profile card if matched
         if (window.userState && window.userState.id === profileId) {
           window.userState = { ...window.userState, ...profilePayload };
@@ -1358,7 +1358,7 @@ async function adminDeleteFeedbackTrigger(messageId) {
 
 // ================= SETUP ADMIN EVENT LISTENERS =================
 function setupAdminEventListeners() {
-  
+
   // Search box inventory input typing
   const searchInput = document.getElementById("admin-inventory-search");
   if (searchInput) {
@@ -1420,15 +1420,15 @@ function setupAdminEventListeners() {
       const file = e.target.files[0];
       if (file && supabase) {
         const reader = new FileReader();
-        reader.onload = function(evt) {
+        reader.onload = function (evt) {
           const img = new Image();
-          img.onload = function() {
+          img.onload = function () {
             // Resize using canvas to optimize transfer speeds
             const canvas = document.createElement("canvas");
             const maxDim = 400;
             let width = img.width;
             let height = img.height;
-            
+
             if (width > height) {
               if (width > maxDim) {
                 height = Math.round((height * maxDim) / width);
@@ -1440,24 +1440,24 @@ function setupAdminEventListeners() {
                 height = maxDim;
               }
             }
-            
+
             canvas.width = width;
             canvas.height = height;
             const ctx = canvas.getContext("2d");
             ctx.drawImage(img, 0, 0, width, height);
-            
+
             canvas.toBlob(async (blob) => {
               if (!blob) return;
-              
+
               try {
                 // Generate a unique filename
                 const fileExt = file.name.split('.').pop() || 'jpg';
                 const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
-                
+
                 if (window.toyzToast) {
                   window.toyzToast("Uploading...", "Saving photo to Supabase storage bucket...", "info");
                 }
-                
+
                 const { data, error } = await supabase.storage
                   .from('product-images')
                   .upload(fileName, blob, {
@@ -1465,30 +1465,30 @@ function setupAdminEventListeners() {
                     cacheControl: '3600',
                     upsert: true
                   });
-                  
+
                 if (error) throw error;
-                
+
                 // Get public URL
                 const { data: urlData } = supabase.storage
                   .from('product-images')
                   .getPublicUrl(fileName);
-                  
+
                 const publicUrl = urlData.publicUrl;
-                
+
                 // Set hidden field value
                 document.getElementById("admin-form-image").value = publicUrl;
-                
+
                 // Show preview
                 const previewContainer = document.getElementById("admin-form-image-preview-container");
                 const previewImg = document.getElementById("admin-form-image-preview");
                 const previewName = document.getElementById("admin-form-image-name");
-                
+
                 if (previewContainer && previewImg && previewName) {
                   previewImg.src = publicUrl;
                   previewName.textContent = fileName;
                   previewContainer.style.display = "flex";
                 }
-                
+
                 if (window.toyzToast) {
                   window.toyzToast("Image Stored", "Successfully uploaded to Supabase cloud storage.", "success");
                 }
@@ -1731,7 +1731,7 @@ async function adminHandleExcelImport(event) {
   }
 
   const reader = new FileReader();
-  reader.onload = async function(e) {
+  reader.onload = async function (e) {
     try {
       const data = new Uint8Array(e.target.result);
       const workbook = XLSX.read(data, { type: 'array' });
@@ -1930,7 +1930,7 @@ function adminRenderCouriersTable() {
     const statusClass = c.is_active ? "status-delivered" : "status-cancelled";
     const statusText = c.is_active ? "ACTIVE" : "INACTIVE";
     const statesCount = Array.isArray(c.assigned_states) ? c.assigned_states.length : 0;
-    
+
     let statesSummary = "None";
     if (statesCount > 0) {
       if (statesCount === (window.stateChargesState ? window.stateChargesState.length : 0)) {
@@ -2080,7 +2080,7 @@ async function handleAdminCourierFormSubmit(e) {
         assigned_states: assigned_states,
         is_active: is_active
       };
-      
+
       if (window.supabase) {
         const { data, error } = await supabase.from('couriers').insert(newCourierObj).select();
         if (error) throw error;
@@ -2147,13 +2147,13 @@ async function adminFetchCoupons() {
     try {
       const { data: remoteCoupons, error } = await supabase.from('coupons').select('*').order('created_at', { ascending: false });
       if (error) throw error;
-      
+
       const localCoupons = JSON.parse(localStorage.getItem("toyzguru_coupons")) || [];
-      
+
       if (remoteCoupons) {
         const remoteCodes = new Set(remoteCoupons.map(c => c.code.toUpperCase()));
         const localOnlyCoupons = localCoupons.filter(c => c && c.code && !remoteCodes.has(c.code.toUpperCase()));
-        
+
         if (localOnlyCoupons.length > 0) {
           console.log("Syncing local coupons to Supabase:", localOnlyCoupons);
           for (const coupon of localOnlyCoupons) {
@@ -2172,7 +2172,7 @@ async function adminFetchCoupons() {
           }
         }
       }
-      
+
       couponsState = remoteCoupons || [];
       localStorage.setItem("toyzguru_coupons", JSON.stringify(couponsState));
     } catch (err) {
@@ -2254,7 +2254,7 @@ async function adminToggleCouponStatus(code) {
       console.warn("Supabase toggle status failed, modifying locally only:", err);
     }
   }
-  
+
   coupon.is_active = newStatus;
   localStorage.setItem("toyzguru_coupons", JSON.stringify(couponsState));
   adminShowToast("Status Updated", `Coupon ${code} is now ${newStatus ? "ACTIVE" : "INACTIVE"}.`, "success");
@@ -2286,7 +2286,7 @@ function adminEditCouponTrigger(code) {
 
   adminEditingCouponCode = code;
   document.getElementById("admin-coupon-modal-title").textContent = `Edit Coupon: ${code}`;
-  
+
   const codeInput = document.getElementById("admin-coupon-code");
   codeInput.value = coupon.code;
   codeInput.disabled = true; // Coupon code is the primary key and cannot be edited
@@ -2300,7 +2300,7 @@ function adminEditCouponTrigger(code) {
   document.getElementById("admin-coupon-min-order").value = coupon.min_order || 0.00;
   document.getElementById("admin-coupon-max-discount").value = coupon.max_discount || "";
   document.getElementById("admin-coupon-usage-limit").value = coupon.usage_limit || "";
-  
+
   if (coupon.expires_at) {
     // Format expires_at for datetime-local (YYYY-MM-DDTHH:MM)
     const expiryDate = new Date(coupon.expires_at);
@@ -2320,7 +2320,7 @@ function adminCreateCouponTrigger() {
   adminEditingCouponCode = null;
   document.getElementById("admin-coupon-modal-title").textContent = "Create New Coupon";
   document.getElementById("admin-coupon-form").reset();
-  
+
   const codeInput = document.getElementById("admin-coupon-code");
   codeInput.disabled = false;
   codeInput.style.background = "";
@@ -2449,7 +2449,7 @@ async function adminRenderTaxPanel() {
   try {
     const { data, error } = await supabase.from('store_settings').select('*').eq('id', 1).single();
     if (error && error.code !== 'PGRST116') throw error;
-    
+
     if (data) {
       document.getElementById('admin-tax-enabled').checked = data.tax_enabled;
       document.getElementById('admin-tax-sgst').value = data.sgst_pct;
@@ -2467,7 +2467,7 @@ async function adminRenderTaxPanel() {
 document.getElementById('admin-tax-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   if (!supabase) return;
-  
+
   const payload = {
     tax_enabled: document.getElementById('admin-tax-enabled').checked,
     sgst_pct: parseFloat(document.getElementById('admin-tax-sgst').value),
@@ -2479,7 +2479,7 @@ document.getElementById('admin-tax-form').addEventListener('submit', async (e) =
   try {
     const { error } = await supabase.from('store_settings').upsert({ id: 1, ...payload });
     if (error) throw error;
-    
+
     window.storeSettings = payload;
     adminShowToast("Settings Saved", "Tax Configuration updated successfully", "success");
   } catch (err) {
@@ -2660,7 +2660,7 @@ function adminExportNewsletterCSV() {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = `toyzguru_newsletter_${new Date().toISOString().slice(0,10)}.csv`;
+  link.download = `toyzguru_newsletter_${new Date().toISOString().slice(0, 10)}.csv`;
   link.click();
   URL.revokeObjectURL(url);
   adminShowToast('CSV Exported', `Exported ${_newsletterAllRows.length} subscriber emails.`, 'success');

@@ -1925,96 +1925,289 @@ async function handleCheckoutSubmit(e) {
         localStorage.setItem("toyzguru_orders", JSON.stringify(localOrders));
       }
 
-      // ----- Generate PDF receipt -----
+      // ----- Generate Professional PDF Receipt (Amazon/Flipkart Style) -----
       try {
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        
-        // Add logo once loaded
-        const logoImg = new Image();
-        logoImg.src = 'assets/images/logo.png';
-        await new Promise((res) => { logoImg.onload = res; logoImg.onerror = res; });
-        doc.addImage(logoImg, 'PNG', 150, 10, 40, 20);
-        
-        // Header
-        doc.setFontSize(18);
-        doc.setFont(undefined, "bold");
-        doc.text("ToyzGuru", 10, 20);
-        doc.setFontSize(10);
-        doc.setFont(undefined, "normal");
-        doc.text("support@toyzguru.in | toyzguru.in", 10, 28);
-        doc.setLineWidth(0.5);
-        doc.line(10, 32, 200, 32);
+        const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+        const pageW = doc.internal.pageSize.getWidth();
+        const pageH = doc.internal.pageSize.getHeight();
 
-        // Order info
-        doc.setFontSize(12);
-        doc.setFont(undefined, "bold");
-        doc.text("PAYMENT RECEIPT", 10, 42);
-        doc.setFont(undefined, "normal");
-        doc.setFontSize(10);
-        doc.text(`Order ID: ${newOrderObj.id}`, 10, 52);
-        doc.text(`Date: ${new Date(newOrderObj.date).toLocaleString()}`, 10, 60);
-        doc.text(`Customer: ${firstName} ${lastName}`, 10, 68);
-        doc.text(`Email: ${newOrderObj.email}`, 10, 76);
-        doc.text(`Delivery Address: ${newOrderObj.address}`, 10, 84);
+        // ── Color Palette ──
+        const blue       = [26, 90, 160];
+        const lightBlue  = [232, 241, 255];
+        const darkText   = [20, 20, 30];
+        const mutedText  = [100, 110, 130];
+        const white      = [255, 255, 255];
+        const green      = [34, 153, 84];
+        const borderGray = [210, 218, 230];
+        const rowAlt     = [247, 250, 255];
 
-        doc.line(10, 90, 200, 90);
+        // ── GST/Invoice Metadata ──
+        const invoiceNum  = `INV-${newOrderObj.id}`;
+        const invoiceDate = new Date(newOrderObj.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+        const dueDate     = 'PAID';
+        const hsnCode     = '9505';   // Toys & collectibles HSN
+        const gstin       = 'N/A';    // Placeholder — update with real GSTIN
+        const sellerName  = 'ToyzGuru India Pvt. Ltd.';
+        const sellerAddr  = '4th Floor, Cyber Towers, HITEC City,\nHyderabad, Telangana - 500081, India';
+        const sellerEmail = 'support@toyzguru.in';
+        const sellerPhone = '+91 92000 XXXXX';
 
-        // Items
-        doc.setFont(undefined, "bold");
-        doc.text("Items Purchased:", 10, 98);
-        doc.setFont(undefined, "normal");
-        let y = 106;
-        newOrderObj.items.forEach((item, idx) => {
-          const itemPrice = typeof item.price === 'number' ? item.price : parseFloat(item.price) || 0;
-          doc.text(`${idx + 1}. ${item.title} (${item.option}) x${item.quantity} - Rs. ${(itemPrice * item.quantity).toFixed(2)}`, 12, y);
-          y += 8;
+        // ── 1. Top Header Banner ──────────────────────────────────────
+        doc.setFillColor(...blue);
+        doc.rect(0, 0, pageW, 28, 'F');
+
+        // Logo / Brand name in white
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(22);
+        doc.setTextColor(...white);
+        doc.text('ToyzGuru', 10, 13);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Premium Collectibles — toyzguru.in', 10, 19);
+        doc.text('support@toyzguru.in  |  +91 92000 XXXXX', 10, 24);
+
+        // TAX INVOICE label right-aligned
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(16);
+        doc.text('TAX INVOICE', pageW - 10, 13, { align: 'right' });
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Invoice No: ${invoiceNum}`, pageW - 10, 19, { align: 'right' });
+        doc.text(`Date: ${invoiceDate}`, pageW - 10, 24, { align: 'right' });
+
+        // ── 2. Payment Status Badge ───────────────────────────────────
+        doc.setFillColor(...green);
+        doc.roundedRect(pageW - 46, 31, 36, 9, 2, 2, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9);
+        doc.setTextColor(...white);
+        doc.text('✔  PAYMENT RECEIVED', pageW - 28, 37, { align: 'center' });
+
+        // ── 3. Seller & Buyer Info Blocks ─────────────────────────────
+        let y = 33;
+        // Seller block
+        doc.setFillColor(...lightBlue);
+        doc.rect(10, y, 88, 36, 'F');
+        doc.setDrawColor(...borderGray);
+        doc.setLineWidth(0.3);
+        doc.rect(10, y, 88, 36);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7.5);
+        doc.setTextColor(...blue);
+        doc.text('SOLD BY', 13, y + 6);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9);
+        doc.setTextColor(...darkText);
+        doc.text(sellerName, 13, y + 13);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7.5);
+        doc.setTextColor(...mutedText);
+        const sellerLines = doc.splitTextToSize(sellerAddr, 82);
+        doc.text(sellerLines, 13, y + 19);
+        doc.text(`GSTIN: ${gstin}`, 13, y + 31);
+
+        // Buyer block
+        doc.setFillColor(250, 250, 252);
+        doc.rect(102, y, 98, 36, 'F');
+        doc.setDrawColor(...borderGray);
+        doc.rect(102, y, 98, 36);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7.5);
+        doc.setTextColor(...blue);
+        doc.text('BILL TO / SHIP TO', 105, y + 6);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9);
+        doc.setTextColor(...darkText);
+        doc.text(`${firstName} ${lastName}`, 105, y + 13);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7.5);
+        doc.setTextColor(...mutedText);
+        const addrLines = doc.splitTextToSize(newOrderObj.address || '', 92);
+        doc.text(addrLines, 105, y + 19);
+        doc.text(`Email: ${newOrderObj.email}`, 105, y + 31);
+
+        // ── 4. Order Meta Strip ───────────────────────────────────────
+        y += 41;
+        doc.setFillColor(...blue);
+        doc.rect(10, y, 190, 8, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7.5);
+        doc.setTextColor(...white);
+        doc.text(`Order ID: ${newOrderObj.id}`, 13, y + 5.5);
+        doc.text(`Order Date: ${invoiceDate}`, 80, y + 5.5);
+        doc.text(`Payment: ${method.toUpperCase()}`, 130, y + 5.5);
+        doc.text(`Status: ${dueDate}`, 175, y + 5.5, { align: 'right' });
+
+        // ── 5. Product Table ──────────────────────────────────────────
+        y += 13;
+
+        // Table Header
+        const colX   = [10, 18, 85, 105, 120, 140, 163, 185];
+        const colW   = [8,  67, 20,  15,  20,  23,  22,  15];
+        doc.setFillColor(...blue);
+        doc.rect(10, y, 190, 9, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7);
+        doc.setTextColor(...white);
+        const headers = ['#', 'PRODUCT DESCRIPTION', 'HSN', 'QTY', 'UNIT PRICE', 'GST %', 'GST AMT', 'TOTAL'];
+        headers.forEach((h, i) => {
+          const align = i >= 3 ? 'right' : 'left';
+          const xPos  = i >= 3 ? colX[i] + colW[i] - 1 : colX[i] + 1.5;
+          doc.text(h, xPos, y + 6, { align });
+        });
+        y += 9;
+
+        // Table Rows
+        const items = newOrderObj.items || [];
+        const taxPct = storeSettings.tax_enabled ? (storeSettings.cgst_pct || 0) : 0;
+        let computedSubtotal = 0;
+        let totalGst = 0;
+
+        items.forEach((item, idx) => {
+          const rowY = y + idx * 12;
+          const unitP = typeof item.price === 'number' ? item.price : parseFloat(item.price) || 0;
+          const qty   = item.quantity || 1;
+          const lineTotal = unitP * qty;
+          const lineGst   = lineTotal * (taxPct / 100);
+          computedSubtotal += lineTotal;
+          totalGst += lineGst;
+
+          // Alternating row bg
+          if (idx % 2 === 0) {
+            doc.setFillColor(...rowAlt);
+          } else {
+            doc.setFillColor(255, 255, 255);
+          }
+          doc.rect(10, rowY, 190, 12, 'F');
+
+          // Row bottom border
+          doc.setDrawColor(...borderGray);
+          doc.setLineWidth(0.2);
+          doc.line(10, rowY + 12, 200, rowY + 12);
+
+          doc.setTextColor(...darkText);
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(7);
+          doc.text(String(idx + 1), colX[0] + 1.5, rowY + 5);
+
+          // Product name + option
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(7.5);
+          const titleLines = doc.splitTextToSize(item.title || '', 64);
+          doc.text(titleLines[0] || '', colX[1] + 1, rowY + 5);
+          if (item.option) {
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(6.5);
+            doc.setTextColor(...mutedText);
+            doc.text(`Variant: ${item.option}`, colX[1] + 1, rowY + 10);
+          }
+
+          doc.setTextColor(...darkText);
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(7);
+          doc.text(hsnCode, colX[2] + colW[2] - 1, rowY + 6, { align: 'right' });
+          doc.text(String(qty), colX[3] + colW[3] - 1, rowY + 6, { align: 'right' });
+          doc.text(`\u20b9${unitP.toFixed(2)}`, colX[4] + colW[4] - 1, rowY + 6, { align: 'right' });
+          doc.text(`${taxPct > 0 ? taxPct : 0}%`, colX[5] + colW[5] - 1, rowY + 6, { align: 'right' });
+          doc.text(`\u20b9${lineGst.toFixed(2)}`, colX[6] + colW[6] - 1, rowY + 6, { align: 'right' });
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(7.5);
+          doc.text(`\u20b9${lineTotal.toFixed(2)}`, colX[7] + colW[7] - 1, rowY + 6, { align: 'right' });
         });
 
-        doc.line(10, y + 2, 200, y + 2);
-        y += 12;
+        y += items.length * 12 + 4;
 
-        // Totals
-        doc.text(`Subtotal:  Rs. ${Number(newOrderObj.subtotal || 0).toFixed(2)}`, 120, y);
-        y += 8;
-        if (newOrderObj.discount) { doc.text(`Discount:  -Rs. ${Number(newOrderObj.discount).toFixed(2)}`, 120, y); y += 8; }
-        if (newOrderObj.shipping) { doc.text(`Shipping:  Rs. ${Number(newOrderObj.shipping).toFixed(2)}`, 120, y); y += 8; }
-        if (newOrderObj.tax) { doc.text(`Tax:  Rs. ${Number(newOrderObj.tax).toFixed(2)}`, 120, y); y += 8; }
-        doc.setFont(undefined, "bold");
-        doc.text(`TOTAL PAID:  Rs. ${Number(newOrderObj.total).toFixed(2)}`, 120, y + 4);
+        // ── 6. Tax Breakdown & Totals ─────────────────────────────────
+        // Separator
+        doc.setDrawColor(...blue);
+        doc.setLineWidth(0.5);
+        doc.line(10, y, 200, y);
+        y += 5;
 
-        // QR Code linking to order details page
+        const sgst = storeSettings.tax_enabled ? (computedSubtotal * ((storeSettings.sgst_pct || 0) / 100)) : 0;
+        const cgst = storeSettings.tax_enabled ? (computedSubtotal * ((storeSettings.cgst_pct || 0) / 100)) : 0;
+        const igst = storeSettings.tax_enabled ? (computedSubtotal * ((storeSettings.igst_pct || 0) / 100)) : 0;
+
+        const totalsData = [
+          ['Subtotal (before tax)', `\u20b9${computedSubtotal.toFixed(2)}`],
+          ...(newOrderObj.discount > 0 ? [[`Coupon Discount`, `-\u20b9${Number(newOrderObj.discount).toFixed(2)}`]] : []),
+          ...(newOrderObj.shipping > 0 ? [['Shipping & Handling', `\u20b9${Number(newOrderObj.shipping).toFixed(2)}`]] : [['Shipping & Handling', 'FREE']]),
+        ];
+        if (storeSettings.tax_enabled) {
+          if (sgst > 0) totalsData.push([`SGST @ ${storeSettings.sgst_pct}%`, `\u20b9${sgst.toFixed(2)}`]);
+          if (cgst > 0) totalsData.push([`CGST @ ${storeSettings.cgst_pct}%`, `\u20b9${cgst.toFixed(2)}`]);
+          if (igst > 0) totalsData.push([`IGST @ ${storeSettings.igst_pct}%`, `\u20b9${igst.toFixed(2)}`]);
+        }
+
+        // Two-column layout: tax breakdown (left) | grand total box (right)
+        const totColLabelX = 110;
+        const totColValX   = 195;
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        totalsData.forEach((row, i) => {
+          doc.setTextColor(row[0].startsWith('Coupon') ? [200, 50, 50] : mutedText);
+          doc.text(row[0], totColLabelX, y + i * 7);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(row[1].startsWith('-') ? [200, 50, 50] : darkText);
+          doc.text(row[1], totColValX, y + i * 7, { align: 'right' });
+          doc.setFont('helvetica', 'normal');
+        });
+
+        const grandTotalY = y + totalsData.length * 7 + 3;
+        // Grand Total Box
+        doc.setFillColor(...blue);
+        doc.roundedRect(110, grandTotalY, 90, 12, 2, 2, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.setTextColor(...white);
+        doc.text('GRAND TOTAL', 113, grandTotalY + 8);
+        doc.text(`\u20b9${Number(newOrderObj.total).toFixed(2)}`, totColValX, grandTotalY + 8, { align: 'right' });
+
+        // ── 7. QR Code Verification ───────────────────────────────────
         const qrDiv = document.createElement('div');
-        const qr = new QRCode(qrDiv, {
-          text: `${window.location.origin}/index.html#tracking?id=${newOrderObj.id}`,
-          width: 100,
-          height: 100,
+        new QRCode(qrDiv, {
+          text: `${window.location.origin}/#tracking?id=${newOrderObj.id}`,
+          width: 96, height: 96,
           correctLevel: QRCode.CorrectLevel.H
         });
-        
-        // Wait for QR code render (canvas / img)
-        await new Promise((res) => setTimeout(res, 300));
-        const canvas = qrDiv.querySelector('canvas');
-        const img = qrDiv.querySelector('img');
-        let qrDataUrl = null;
-        if (canvas) {
-          qrDataUrl = canvas.toDataURL('image/png');
-        } else if (img) {
-          qrDataUrl = img.src;
-        }
+        await new Promise((res) => setTimeout(res, 350));
+        const qrCanvas = qrDiv.querySelector('canvas');
+        const qrImg    = qrDiv.querySelector('img');
+        let qrDataUrl  = qrCanvas ? qrCanvas.toDataURL('image/png') : (qrImg ? qrImg.src : null);
+
+        const qrY = y;
         if (qrDataUrl) {
-          doc.addImage(qrDataUrl, 'PNG', 10, y + 10, 30, 30);
+          doc.addImage(qrDataUrl, 'PNG', 12, qrY, 28, 28);
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(6);
+          doc.setTextColor(...mutedText);
+          doc.text('Scan to verify order', 26, qrY + 31, { align: 'center' });
         }
 
-        const pdfBlob = doc.output('blob');
+        // ── 8. Terms & Footer ─────────────────────────────────────────
+        const footerY = Math.max(grandTotalY + 22, pageH - 28);
+        doc.setFillColor(...blue);
+        doc.rect(0, footerY, pageW, pageH - footerY, 'F');
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7);
+        doc.setTextColor(...white);
+        doc.text('Terms: All sales are final. For returns/exchanges, contact support within 7 days of delivery.', 10, footerY + 7);
+        doc.text(`This is a computer-generated invoice and does not require a physical signature. | ${invoiceDate}`, 10, footerY + 13);
+        doc.text('ToyzGuru India Pvt. Ltd. | HITEC City, Hyderabad | support@toyzguru.in | toyzguru.in', pageW / 2, footerY + 19, { align: 'center' });
+
+        // ── Upload PDF ────────────────────────────────────────────────
+        const pdfBlob  = doc.output('blob');
         const filePath = `receipts/${newOrderObj.id}_${Date.now()}.pdf`;
         let receiptUrl = null;
         if (supabase) {
-          const { data: uploadData, error: uploadError } = await supabase.storage
+          const { error: uploadError } = await supabase.storage
             .from('order-receipts')
             .upload(filePath, pdfBlob, { contentType: 'application/pdf', upsert: true });
           if (!uploadError) {
-            // Support both v1 and v2 getPublicUrl responses
             const res = supabase.storage.from('order-receipts').getPublicUrl(filePath);
             receiptUrl = (res.data && res.data.publicUrl) || res.publicURL || null;
           } else {
@@ -2023,17 +2216,16 @@ async function handleCheckoutSubmit(e) {
         }
         if (receiptUrl) {
           newOrderObj.receipt_url = receiptUrl;
-          // Update order record in Supabase with the permanent URL
           await supabase.from('orders').update({ receipt_url: receiptUrl }).eq('id', newOrderObj.id);
-          // Also update ordersState in memory
           const memIdx = ordersState.findIndex(o => o.id === newOrderObj.id);
           if (memIdx !== -1) ordersState[memIdx].receipt_url = receiptUrl;
         } else {
-          console.warn('Receipt URL not obtained - PDF may not be accessible. Check Supabase storage bucket policy.');
+          console.warn('Receipt URL not obtained — check Supabase storage bucket policy.');
         }
       } catch (e) {
         console.error('Receipt generation error:', e);
       }
+
 
       // 2. Adjust Products Inventory Stock levels
       for (const cartItem of cartState) {
