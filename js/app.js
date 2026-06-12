@@ -740,6 +740,23 @@ function setupRouting() {
       initCheckoutView();
     } else if (viewName === "contact") {
       initContactView();
+    } else if (viewName === "auth") {
+      const signinForm = document.getElementById("auth-signin-form");
+      const signupForm = document.getElementById("auth-signup-form");
+      const forgotForm = document.getElementById("auth-forgot-password-form");
+      if (signinForm) signinForm.reset();
+      if (signupForm) signupForm.reset();
+      if (forgotForm) forgotForm.reset();
+      
+      const elements = [
+        "auth-signin-email", "auth-signin-password",
+        "auth-signup-name", "auth-signup-email", "auth-signup-password",
+        "auth-forgot-email"
+      ];
+      elements.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = "";
+      });
     } else if (viewName === "admin") {
       if (window.adminRenderDashboard) {
         window.adminRenderDashboard();
