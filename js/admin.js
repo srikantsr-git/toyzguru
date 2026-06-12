@@ -589,7 +589,7 @@ async function adminRenderOrdersQueue() {
   if (!orders || orders.length === 0) {
     tableBody.innerHTML = `
       <tr>
-        <td colspan="7" style="text-align: center; color: var(--text-secondary); padding: 2rem;">
+        <td colspan="8" style="text-align: center; color: var(--text-secondary); padding: 2rem;">
           No customer purchase orders found in registry queues.
         </td>
       </tr>
@@ -598,6 +598,8 @@ async function adminRenderOrdersQueue() {
   }
 
   tableBody.innerHTML = orders.map(ord => {
+    console.log('Admin order:', ord);
+
     const orderDate = new Date(ord.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" });
     const itemsList = Array.isArray(ord.items) ? ord.items : [];
     const itemsSummary = itemsList.map(i => `${i.title} (${i.option}) <strong>x${i.quantity}</strong>`).join("<br>");
@@ -619,10 +621,11 @@ async function adminRenderOrdersQueue() {
         <td>
           <span class="order-status-badge status-${ord.status}">${ord.status}</span>
         </td>
-        <td>
+        <td style="display:flex; gap:0.4rem; flex-wrap:wrap; align-items:center;">
           <select class="form-select" style="padding: 0.35rem; font-size: 0.8rem; background: var(--bg-tertiary);" onchange="adminUpdateOrderStatus('${ord.id}', this.value)">
             ${dropdownOptions}
           </select>
+          ${ord.receipt_url ? `<a href="${ord.receipt_url}" target="_blank" class="product-card-add-btn" style="padding:0.3rem 0.6rem;font-size:0.72rem;text-decoration:none;white-space:nowrap;">⬇ Receipt</a>` : ''}
         </td>
       </tr>
     `;
@@ -803,6 +806,16 @@ async function adminShowOrderDetailsTrigger(orderId) {
           </select>
         </div>
       </div>
+      ${order.receipt_url ? `
+      <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--glass-border); display: flex; justify-content: center;">
+        <a href="${order.receipt_url}" target="_blank"
+          style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.6rem 1.5rem;background:var(--color-brand);color:#fff;border-radius:8px;font-size:0.9rem;font-weight:700;text-decoration:none;">
+          <i data-feather="download" style="width:15px;height:15px;"></i> Download Receipt
+        </a>
+      </div>` : `
+      <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--glass-border); text-align: center; font-size: 0.8rem; color: var(--text-muted);">
+        Receipt not yet generated for this order.
+      </div>`}
     `;
   }
 
@@ -2005,10 +2018,35 @@ async function adminRenderCouponsPanel() {
 async function adminFetchCoupons() {
   if (supabase) {
     try {
-      const { data, error } = await supabase.from('coupons').select('*').order('created_at', { ascending: false });
+      const { data: remoteCoupons, error } = await supabase.from('coupons').select('*').order('created_at', { ascending: false });
       if (error) throw error;
-      couponsState = data || [];
-      // Save locally
+      
+      const localCoupons = JSON.parse(localStorage.getItem("toyzguru_coupons")) || [];
+      
+      if (remoteCoupons) {
+        const remoteCodes = new Set(remoteCoupons.map(c => c.code.toUpperCase()));
+        const localOnlyCoupons = localCoupons.filter(c => c && c.code && !remoteCodes.has(c.code.toUpperCase()));
+        
+        if (localOnlyCoupons.length > 0) {
+          console.log("Syncing local coupons to Supabase:", localOnlyCoupons);
+          for (const coupon of localOnlyCoupons) {
+            try {
+              await supabase.from('coupons').insert(coupon);
+            } catch (err) {
+              console.warn("Failed to sync coupon to Supabase:", coupon.code, err);
+            }
+          }
+          // Fetch again to get the updated list from database
+          const { data: updatedRemote } = await supabase.from('coupons').select('*').order('created_at', { ascending: false });
+          if (updatedRemote) {
+            couponsState = updatedRemote;
+            localStorage.setItem("toyzguru_coupons", JSON.stringify(couponsState));
+            return;
+          }
+        }
+      }
+      
+      couponsState = remoteCoupons || [];
       localStorage.setItem("toyzguru_coupons", JSON.stringify(couponsState));
     } catch (err) {
       console.warn("Failed to fetch coupons from Supabase, falling back to local state:", err);

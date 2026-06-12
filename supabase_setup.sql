@@ -75,6 +75,7 @@ create table if not exists public.orders (
   total numeric(12, 2) not null,
   status text default 'pending'::text not null,
   address text not null,
+  receipt_url text,
   date timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
@@ -213,6 +214,28 @@ end;
 $$ language plpgsql;
 
 select public.setup_bucket();
+
+-- ================= RECEIPT STORAGE SETUP =================
+-- Add bucket for order receipts
+INSERT INTO storage.buckets (id, name, public) VALUES ('order-receipts', 'order-receipts', true)
+  ON CONFLICT (id) DO NOTHING;
+
+-- Public read policy for receipts
+drop policy if exists "Public Receipt Access" on storage.objects;
+CREATE POLICY "Public Receipt Access" ON storage.objects
+  FOR SELECT USING (bucket_id = 'order-receipts');
+
+drop policy if exists "Public Receipt Upload" on storage.objects;
+CREATE POLICY "Public Receipt Upload" ON storage.objects
+  FOR INSERT WITH CHECK (bucket_id = 'order-receipts');
+
+drop policy if exists "Public Receipt Update" on storage.objects;
+CREATE POLICY "Public Receipt Update" ON storage.objects
+  FOR UPDATE USING (bucket_id = 'order-receipts');
+
+drop policy if exists "Public Receipt Delete" on storage.objects;
+CREATE POLICY "Public Receipt Delete" ON storage.objects
+  FOR DELETE USING (bucket_id = 'order-receipts');
 
 
 -- ================= DELIVERY CHARGES & COURIERS SETUP =================

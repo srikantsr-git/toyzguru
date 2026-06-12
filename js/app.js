@@ -1452,7 +1452,31 @@ function initCheckoutView() {
       </label>
     `;
 
-    // Removed Alternative 1 and 2 per user request
+    // 2. Alternative Address 1
+    if (userState && userState.address1) {
+      html += `
+        <label style="display: flex; align-items: flex-start; gap: 0.75rem; cursor: pointer; padding: 1rem; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--glass-border); border-radius: 8px;">
+          <input type="radio" name="checkout-address-option" value="alt1" style="accent-color: var(--color-brand); margin-top: 0.25rem;">
+          <div>
+            <h5 style="margin: 0 0 0.25rem; font-size: 0.9rem; color: var(--text-primary); font-family: 'Space Grotesk', sans-serif;">Alternative Address 1</h5>
+            <p style="margin: 0; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4;">${userState.address1}</p>
+          </div>
+        </label>
+      `;
+    }
+
+    // 3. Alternative Address 2
+    if (userState && userState.address2) {
+      html += `
+        <label style="display: flex; align-items: flex-start; gap: 0.75rem; cursor: pointer; padding: 1rem; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--glass-border); border-radius: 8px;">
+          <input type="radio" name="checkout-address-option" value="alt2" style="accent-color: var(--color-brand); margin-top: 0.25rem;">
+          <div>
+            <h5 style="margin: 0 0 0.25rem; font-size: 0.9rem; color: var(--text-primary); font-family: 'Space Grotesk', sans-serif;">Alternative Address 2</h5>
+            <p style="margin: 0; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4;">${userState.address2}</p>
+          </div>
+        </label>
+      `;
+    }
 
     // 4. Enter New
     html += `
@@ -1517,6 +1541,29 @@ function applyCheckoutAddressSelection() {
     if (stateSelect && stateVal) {
       stateSelect.value = stateVal;
     }
+  } else if (selectedOption === "alt1" || selectedOption === "alt2") {
+    // Parse stored alternative address string: Name, Email, Phone, Address, City, Zip, State, Country
+    const rawAddr = selectedOption === "alt1" ? (userState && userState.address1) : (userState && userState.address2);
+    if (rawAddr) {
+      const parts = rawAddr.split(",").map(p => p.trim());
+      // parts[0]=Name, parts[1]=Email, parts[2]=Phone, parts[3]=Address, parts[4]=City, parts[5]=Zip, parts[6]=State
+      const parsedName = parts[0] || "";
+      const parsedEmail = parts[1] || (userState ? userState.email : "");
+      const parsedPhone = parts[2] || (userState ? userState.phone : "");
+      const parsedAddr = parts[3] || "";
+      const parsedCity = parts[4] || "";
+      const parsedZip = parts[5] || "";
+      const parsedState = parts[6] || "";
+      document.getElementById("ship-first-name").value = parsedName.split(" ")[0] || parsedName;
+      document.getElementById("ship-last-name").value = parsedName.split(" ").slice(1).join(" ") || "";
+      document.getElementById("ship-email").value = parsedEmail;
+      document.getElementById("ship-phone").value = parsedPhone;
+      document.getElementById("ship-address").value = parsedAddr;
+      document.getElementById("ship-city").value = parsedCity;
+      document.getElementById("ship-zip").value = parsedZip;
+      const stateSelect = document.getElementById("ship-state");
+      if (stateSelect && parsedState) stateSelect.value = parsedState;
+    }
   } else if (selectedOption === "new") {
     // Give blank fields to enter another address
     document.getElementById("ship-first-name").value = "";
@@ -1543,7 +1590,7 @@ function applyCheckoutAddressSelection() {
     const selects = wrapper.querySelectorAll("select");
     const saveBtn = document.getElementById("checkout-save-address-btn");
     
-    if (selectedOption === "saved") {
+    if (selectedOption === "saved" || selectedOption === "alt1" || selectedOption === "alt2") {
       inputs.forEach(input => {
         input.readOnly = true;
         input.style.background = "rgba(255,255,255,0.03)";
@@ -1861,6 +1908,116 @@ async function handleCheckoutSubmit(e) {
         localStorage.setItem("toyzguru_orders", JSON.stringify(localOrders));
       }
 
+      // ----- Generate PDF receipt -----
+      try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        // Add logo once loaded
+        const logoImg = new Image();
+        logoImg.src = 'assets/images/logo.png';
+        await new Promise((res) => { logoImg.onload = res; logoImg.onerror = res; });
+        doc.addImage(logoImg, 'PNG', 150, 10, 40, 20);
+        
+        // Header
+        doc.setFontSize(18);
+        doc.setFont(undefined, "bold");
+        doc.text("ToyzGuru", 10, 20);
+        doc.setFontSize(10);
+        doc.setFont(undefined, "normal");
+        doc.text("support@toyzguru.in | toyzguru.in", 10, 28);
+        doc.setLineWidth(0.5);
+        doc.line(10, 32, 200, 32);
+
+        // Order info
+        doc.setFontSize(12);
+        doc.setFont(undefined, "bold");
+        doc.text("PAYMENT RECEIPT", 10, 42);
+        doc.setFont(undefined, "normal");
+        doc.setFontSize(10);
+        doc.text(`Order ID: ${newOrderObj.id}`, 10, 52);
+        doc.text(`Date: ${new Date(newOrderObj.date).toLocaleString()}`, 10, 60);
+        doc.text(`Customer: ${firstName} ${lastName}`, 10, 68);
+        doc.text(`Email: ${newOrderObj.email}`, 10, 76);
+        doc.text(`Delivery Address: ${newOrderObj.address}`, 10, 84);
+
+        doc.line(10, 90, 200, 90);
+
+        // Items
+        doc.setFont(undefined, "bold");
+        doc.text("Items Purchased:", 10, 98);
+        doc.setFont(undefined, "normal");
+        let y = 106;
+        newOrderObj.items.forEach((item, idx) => {
+          const itemPrice = typeof item.price === 'number' ? item.price : parseFloat(item.price) || 0;
+          doc.text(`${idx + 1}. ${item.title} (${item.option}) x${item.quantity} - Rs. ${(itemPrice * item.quantity).toFixed(2)}`, 12, y);
+          y += 8;
+        });
+
+        doc.line(10, y + 2, 200, y + 2);
+        y += 12;
+
+        // Totals
+        doc.text(`Subtotal:  Rs. ${Number(newOrderObj.subtotal || 0).toFixed(2)}`, 120, y);
+        y += 8;
+        if (newOrderObj.discount) { doc.text(`Discount:  -Rs. ${Number(newOrderObj.discount).toFixed(2)}`, 120, y); y += 8; }
+        if (newOrderObj.shipping) { doc.text(`Shipping:  Rs. ${Number(newOrderObj.shipping).toFixed(2)}`, 120, y); y += 8; }
+        if (newOrderObj.tax) { doc.text(`Tax:  Rs. ${Number(newOrderObj.tax).toFixed(2)}`, 120, y); y += 8; }
+        doc.setFont(undefined, "bold");
+        doc.text(`TOTAL PAID:  Rs. ${Number(newOrderObj.total).toFixed(2)}`, 120, y + 4);
+
+        // QR Code linking to order details page
+        const qrDiv = document.createElement('div');
+        const qr = new QRCode(qrDiv, {
+          text: `${window.location.origin}/index.html#tracking?id=${newOrderObj.id}`,
+          width: 100,
+          height: 100,
+          correctLevel: QRCode.CorrectLevel.H
+        });
+        
+        // Wait for QR code render (canvas / img)
+        await new Promise((res) => setTimeout(res, 300));
+        const canvas = qrDiv.querySelector('canvas');
+        const img = qrDiv.querySelector('img');
+        let qrDataUrl = null;
+        if (canvas) {
+          qrDataUrl = canvas.toDataURL('image/png');
+        } else if (img) {
+          qrDataUrl = img.src;
+        }
+        if (qrDataUrl) {
+          doc.addImage(qrDataUrl, 'PNG', 10, y + 10, 30, 30);
+        }
+
+        const pdfBlob = doc.output('blob');
+        const filePath = `receipts/${newOrderObj.id}_${Date.now()}.pdf`;
+        let receiptUrl = null;
+        if (supabase) {
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('order-receipts')
+            .upload(filePath, pdfBlob, { contentType: 'application/pdf', upsert: true });
+          if (!uploadError) {
+            // Support both v1 and v2 getPublicUrl responses
+            const res = supabase.storage.from('order-receipts').getPublicUrl(filePath);
+            receiptUrl = (res.data && res.data.publicUrl) || res.publicURL || null;
+          } else {
+            console.error('PDF upload error:', uploadError);
+          }
+        }
+        if (receiptUrl) {
+          newOrderObj.receipt_url = receiptUrl;
+          // Update order record in Supabase with the permanent URL
+          await supabase.from('orders').update({ receipt_url: receiptUrl }).eq('id', newOrderObj.id);
+          // Also update ordersState in memory
+          const memIdx = ordersState.findIndex(o => o.id === newOrderObj.id);
+          if (memIdx !== -1) ordersState[memIdx].receipt_url = receiptUrl;
+        } else {
+          console.warn('Receipt URL not obtained - PDF may not be accessible. Check Supabase storage bucket policy.');
+        }
+      } catch (e) {
+        console.error('Receipt generation error:', e);
+      }
+
       // 2. Adjust Products Inventory Stock levels
       for (const cartItem of cartState) {
         const match = productsState.find(p => p.id === cartItem.productId);
@@ -1953,6 +2110,15 @@ async function handleCheckoutSubmit(e) {
       document.getElementById("success-est-delivery").textContent = new Date(Date.now() + 8 * 24 * 60 * 60 * 1000).toLocaleDateString("en-US", { month: 'long', day: 'numeric', year: 'numeric' });
       document.getElementById("success-shipping-address").textContent = fullAddress;
       document.getElementById("success-total-paid").textContent = `₹${total.toFixed(2)}`;
+
+      // Show receipt download link if generated
+      const receiptWrap = document.getElementById('success-receipt-wrap');
+      const receiptLink = document.getElementById('success-receipt-link');
+      if (receiptWrap && receiptLink && newOrderObj.receipt_url) {
+        receiptLink.href = newOrderObj.receipt_url;
+        receiptWrap.style.display = '';
+        if (typeof feather !== 'undefined') feather.replace();
+      }
 
       // Set success redirection links
       document.getElementById("success-track-link").href = `#tracking?id=${newOrderId}`;
@@ -2225,21 +2391,89 @@ function initProfileView() {
         <td>${orderDate}</td>
         <td style="font-size: 0.8rem; line-height: 1.4;">${itemsSummary}</td>
         <td style="font-weight: 700; color: var(--color-brand);">₹${ord.total.toFixed(2)}</td>
+        <td><span class="order-status-badge status-${ord.status}">${ord.status}</span></td>
         <td>
-          <span class="order-status-badge status-${ord.status}">${ord.status}</span>
-        </td>
-        <td>
+          ${ord.receipt_url ? `<a href="${ord.receipt_url}" target="_blank" class="product-card-add-btn" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; text-decoration: none;">Download Receipt</a>` : ''}
           <a href="#tracking?id=${ord.id}" class="product-card-add-btn" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; text-decoration: none;">Track Status</a>
         </td>
       </tr>
     `;
   }).join("");
 
+  // Render payment history list
+  renderPaymentHistory(userOrders);
+
   // Refresh wishlist inside member profile settings too
   renderProfileWishlist();
 
   feather.replace();
 }
+
+function renderPaymentHistory(userOrders) {
+  const payContainer = document.getElementById("profile-payments-list");
+  if (!payContainer) return;
+
+  if (!userOrders || userOrders.length === 0) {
+    payContainer.innerHTML = `
+      <tr>
+        <td colspan="6" style="text-align:center;color:var(--text-secondary);padding:2rem;">
+          No payment transactions found for your account.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  payContainer.innerHTML = userOrders.map(ord => {
+    const payDate = new Date(ord.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    const itemsList = Array.isArray(ord.items)
+      ? ord.items.map(i => `${i.title} x${i.quantity}`).join("<br>")
+      : "—";
+
+    return `
+      <tr id="pay-row-${ord.id}">
+        <td style="font-family:'Space Grotesk',sans-serif;font-weight:600;color:var(--color-brand);">${ord.id}</td>
+        <td>${payDate}</td>
+        <td style="font-size:0.8rem;line-height:1.5;">${itemsList}</td>
+        <td style="font-weight:700;">₹${Number(ord.total).toFixed(2)}</td>
+        <td>
+          ${ord.receipt_url
+            ? `<a href="${ord.receipt_url}" target="_blank"
+                style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.3rem 0.7rem;background:var(--color-brand);color:#fff;border-radius:5px;font-size:0.75rem;font-weight:700;text-decoration:none;">
+                <i data-feather="download" style="width:12px;height:12px;"></i> Download
+               </a>`
+            : `<span style="font-size:0.75rem;color:var(--text-muted);">Processing...</span>`}
+        </td>
+        <td>
+          <button type="button" onclick="window.deletePaymentRecord('${ord.id}')"
+            style="padding:0.3rem 0.65rem;font-size:0.75rem;background:rgba(255,60,60,0.12);color:#ff6b6b;border:1px solid rgba(255,60,60,0.3);border-radius:5px;cursor:pointer;font-weight:600;">
+            Delete
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join("");
+
+  if (typeof feather !== "undefined") feather.replace();
+}
+
+window.deletePaymentRecord = async function(orderId) {
+  if (!confirm(`Remove order ${orderId} from your payment history? This only removes the local record — the actual order remains in the system.`)) return;
+
+  // Remove from ordersState memory
+  ordersState = ordersState.filter(o => o.id !== orderId);
+
+  // Remove from localStorage
+  const stored = JSON.parse(localStorage.getItem("toyzguru_orders")) || [];
+  const updated = stored.filter(o => o.id !== orderId);
+  localStorage.setItem("toyzguru_orders", JSON.stringify(updated));
+
+  // Remove row from DOM
+  const row = document.getElementById(`pay-row-${orderId}`);
+  if (row) row.remove();
+
+  showToast("Record Removed", `Payment record for ${orderId} removed from your history.`, "info");
+};
 
 async function handleProfileSettingsSubmit(e) {
   e.preventDefault();
@@ -2281,46 +2515,100 @@ async function handleProfileSettingsSubmit(e) {
   }
 }
 
+// ---- Helper: re-render address cards without full profile re-init ----
+function refreshAddressCards() {
+  const addrContainer = document.getElementById('member-addresses-container');
+  if (!addrContainer) return;
+  addrContainer.innerHTML = '';
+  [1, 2].forEach(function(i) {
+    const val = i === 1 ? userState.address1 : userState.address2;
+    if (val) {
+      addrContainer.innerHTML += `
+        <div style="padding: 1rem; background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); border-radius: 8px;">
+          <h5 style="margin: 0 0 0.5rem; color: var(--text-primary); font-family: 'Space Grotesk',sans-serif;">Alternative Address ${i}</h5>
+          <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">${val}</p>
+          <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+            <button type="button" onclick="window.editAlternativeAddress(${i})" style="padding: 0.35rem 0.75rem; font-size: 0.75rem; background: var(--color-brand); color: white; border: none; border-radius: 4px; cursor: pointer;">Edit</button>
+            <button type="button" onclick="window.deleteAlternativeAddress(${i})" style="padding: 0.35rem 0.75rem; font-size: 0.75rem; background: rgba(255,255,255,0.1); color: var(--text-primary); border: 1px solid var(--glass-border); border-radius: 4px; cursor: pointer;">Delete</button>
+          </div>
+        </div>
+      `;
+    }
+  });
+  if (!userState.address1 && !userState.address2) {
+    addrContainer.innerHTML = '<div style="font-size: 0.85rem; color: var(--text-muted);">No alternative addresses saved yet.</div>';
+  }
+}
+
 window.deleteAlternativeAddress = async function(idx) {
+  if (!confirm(`Delete Alternative Address ${idx}? This cannot be undone.`)) return;
   if (idx === 1) userState.address1 = null;
   if (idx === 2) userState.address2 = null;
 
   try {
     if (supabase && userState.id) {
-      const { error } = await supabase.from('profiles').update({
-        [`address${idx}`]: null
-      }).eq('id', userState.id);
+      const payload = {};
+      payload[`address${idx}`] = null;
+      const { error } = await supabase.from('profiles').update(payload).eq('id', userState.id);
       if (error) throw error;
     }
     await saveUser();
-    showToast("Address Deleted", `Alternative Address ${idx} removed.`, "info");
-    updateProfileViews();
+    refreshAddressCards();
+    showToast('Address Deleted', `Alternative Address ${idx} removed.`, 'info');
   } catch (err) {
-    showToast("Delete Failed", err.message, "danger");
+    showToast('Delete Failed', err.message, 'danger');
   }
 };
 
-window.editAlternativeAddress = async function(idx) {
-  const current = idx === 1 ? userState.address1 : userState.address2;
-  const newVal = prompt(`Edit Alternative Address ${idx} (Format: Name, Email, Phone, Address, City, Zip, State, Country)`, current);
-  if (newVal !== null && newVal.trim() !== "") {
-    if (idx === 1) userState.address1 = newVal.trim();
-    if (idx === 2) userState.address2 = newVal.trim();
-    
+window.editAlternativeAddress = function(idx) {
+  const current = (idx === 1 ? userState.address1 : userState.address2) || '';
+
+  // Remove any existing address edit modal
+  const existing = document.getElementById('addr-edit-modal');
+  if (existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'addr-edit-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1rem;';
+  modal.innerHTML = `
+    <div style="background:var(--bg-secondary);border:1px solid var(--glass-border);border-radius:12px;padding:2rem;width:100%;max-width:480px;">
+      <h4 style="margin:0 0 1.25rem;font-family:'Space Grotesk',sans-serif;color:var(--color-brand);">Edit Alternative Address ${idx}</h4>
+      <textarea id="addr-edit-input" rows="4" style="width:100%;padding:0.75rem;background:rgba(255,255,255,0.05);border:1px solid var(--glass-border);border-radius:6px;color:var(--text-primary);font-size:0.9rem;font-family:inherit;resize:vertical;box-sizing:border-box;">${current}</textarea>
+      <p style="font-size:0.78rem;color:var(--text-muted);margin:0.5rem 0 1.25rem;">Enter full address details (e.g. Name, Phone, Street, City, State, Pin)</p>
+      <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
+        <button id="addr-edit-cancel" type="button" style="padding:0.5rem 1.25rem;background:transparent;border:1px solid var(--glass-border);border-radius:6px;color:var(--text-primary);cursor:pointer;font-size:0.9rem;">Cancel</button>
+        <button id="addr-edit-save" type="button" style="padding:0.5rem 1.25rem;background:var(--color-brand);border:none;border-radius:6px;color:white;cursor:pointer;font-size:0.9rem;font-weight:600;">Save Address</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  document.getElementById('addr-edit-cancel').onclick = function() { modal.remove(); };
+  modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
+
+  document.getElementById('addr-edit-save').onclick = async function() {
+    const newVal = document.getElementById('addr-edit-input').value.trim();
+    if (!newVal) {
+      showToast('Validation Error', 'Address cannot be empty.', 'danger');
+      return;
+    }
+    if (idx === 1) userState.address1 = newVal;
+    if (idx === 2) userState.address2 = newVal;
     try {
       if (supabase && userState.id) {
-        const { error } = await supabase.from('profiles').update({
-          [`address${idx}`]: newVal.trim()
-        }).eq('id', userState.id);
+        const payload = {};
+        payload[`address${idx}`] = newVal;
+        const { error } = await supabase.from('profiles').update(payload).eq('id', userState.id);
         if (error) throw error;
       }
       await saveUser();
-      showToast("Address Updated", `Alternative Address ${idx} saved.`, "success");
-      updateProfileViews();
+      modal.remove();
+      refreshAddressCards();
+      showToast('Address Updated', `Alternative Address ${idx} saved successfully.`, 'success');
     } catch (err) {
-      showToast("Update Failed", err.message, "danger");
+      showToast('Update Failed', err.message, 'danger');
     }
-  }
+  };
 };
 
 // ================= EVENT LISTENERS BINDINGS =================

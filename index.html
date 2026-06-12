@@ -22,6 +22,9 @@
   <!-- Feather Icons CDN -->
   <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <!-- PDF and QR Code Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 
 
@@ -1015,6 +1018,13 @@
               <span>Total Paid:</span>
               <strong id="success-total-paid">₹0.00</strong>
             </div>
+            <div class="success-details-row" id="success-receipt-wrap" style="display:none;">
+              <span>Purchase Receipt:</span>
+              <a id="success-receipt-link" href="#" target="_blank"
+                style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.4rem 1rem;background:var(--color-brand);color:#fff;border-radius:6px;font-size:0.85rem;font-weight:700;text-decoration:none;">
+                <i data-feather="download" style="width:14px;height:14px;"></i> Download Receipt
+              </a>
+            </div>
           </div>
 
           <div class="success-actions">
@@ -1323,10 +1333,12 @@
             </div>
 
             <nav class="profile-nav">
-              <button class="profile-nav-btn active" data-panel="profile-settings"><i data-feather="settings"
+              <button class="profile-nav-btn" data-panel="profile-settings"><i data-feather="settings"
                   style="width: 18px;"></i> Account Settings</button>
               <button class="profile-nav-btn" data-panel="profile-orders"><i data-feather="list"
                   style="width: 18px;"></i> Order History</button>
+              <button class="profile-nav-btn" data-panel="profile-payments"><i data-feather="credit-card"
+                  style="width: 18px;"></i> Payment History</button>
               <button class="profile-nav-btn" data-panel="profile-wishlist"><i data-feather="heart"
                   style="width: 18px;"></i> Wishlist Vault</button>
               <button class="profile-nav-btn" id="profile-signout-btn" style="color: var(--color-danger);"><i
@@ -1378,6 +1390,30 @@
                     </tr>
                   </thead>
                   <tbody id="profile-orders-list">
+                    <!-- Dynamically populated via app.js -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Payment History Panel -->
+            <div class="glass-panel profile-panel" id="profile-payments">
+              <h3 class="profile-panel-title">Payment History</h3>
+              <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:1.5rem;">All transactions processed through your account. Download receipts or remove records below.</p>
+
+              <div class="orders-table-wrap">
+                <table class="orders-table">
+                  <thead>
+                    <tr>
+                      <th>Order ID</th>
+                      <th>Date</th>
+                      <th>Items</th>
+                      <th>Amount Paid</th>
+                      <th>Receipt</th>
+                      <th>Remove</th>
+                    </tr>
+                  </thead>
+                  <tbody id="profile-payments-list">
                     <!-- Dynamically populated via app.js -->
                   </tbody>
                 </table>
@@ -1670,6 +1706,7 @@
                   <thead>
                     <tr>
                       <th>Order ID</th>
+                      <th>Receipt</th>
                       <th>Customer Email</th>
                       <th>Purchase Date</th>
                       <th>Items Purchased</th>
