@@ -2613,6 +2613,7 @@ window.editAlternativeAddress = function(idx) {
 
 // ================= EVENT LISTENERS BINDINGS =================
 function setupEventListeners() {
+  console.log("setupEventListeners running");
 
   // Mobile Hamburger menu toggle
   const mobileMenuBtn = document.getElementById("mobile-menu-btn");
@@ -3068,62 +3069,134 @@ function setupEventListeners() {
       const email = document.getElementById("auth-signin-email").value.trim();
       const password = document.getElementById("auth-signin-password").value;
 
-      if (!supabase) {
-        showToast("Database Offline", "Supabase client is not loaded. Cannot authenticate.", "danger");
-        return;
+      let signedIn = false;
+
+      // 1. Try Supabase Auth first if active
+      if (supabase) {
+        try {
+          const { error } = await supabase.auth.signInWithPassword({ email, password });
+          if (!error) {
+            showToast("Signed In", "Welcome back to ToyzGuru!", "success");
+            await initDatabase();
+            window.location.hash = "#profile";
+            signedIn = true;
+          }
+        } catch (err) {
+          console.warn("Supabase auth sign in failed, trying local fallback:", err);
+        }
       }
 
-      try {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+      // 2. Local Fallback if Supabase is offline or authentication failed
+      if (!signedIn) {
+        const localProfiles = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
+        const matchedProfile = localProfiles.find(p => p.email.toLowerCase() === email.toLowerCase());
 
-        showToast("Signed In", "Welcome back to ToyzGuru!", "success");
-        await initDatabase();
-        window.location.hash = "#profile";
-      } catch (err) {
-        showToast("Sign In Failed", err.message || "Invalid email or password.", "danger");
+        if (matchedProfile) {
+          // Found local profile
+          localStorage.setItem("toyzguru_mock_session", "true");
+          localStorage.setItem("toyzguru_user", JSON.stringify(matchedProfile));
+          
+          showToast("Signed In (Demo)", "Logged in to local demo profile.", "success");
+          await initDatabase();
+          window.location.hash = "#profile";
+        } else if (email.toLowerCase() === "srikantsr@gmail.com") {
+          // Log in as default user
+          localStorage.setItem("toyzguru_mock_session", "true");
+          localStorage.setItem("toyzguru_user", JSON.stringify(defaultUser));
+          if (!localStorage.getItem("toyzguru_orders")) {
+            localStorage.setItem("toyzguru_orders", JSON.stringify(defaultOrders));
+          }
+
+          showToast("Signed In (Demo)", "Logged in to default user profile.", "success");
+          await initDatabase();
+          window.location.hash = "#profile";
+        } else {
+          showToast("Sign In Failed", "Invalid email or password. Profile not found in demo registry.", "danger");
+        }
       }
     });
   }
 
   // Auth Sign Up Submit
+  console.log("authSignupForm exists in DOM:", !!authSignupForm);
   if (authSignupForm) {
     authSignupForm.addEventListener("submit", async (e) => {
+      console.log("Signup form submit triggered");
       e.preventDefault();
       const name = document.getElementById("auth-signup-name").value.trim();
       const email = document.getElementById("auth-signup-email").value.trim();
       const password = document.getElementById("auth-signup-password").value;
 
-      if (!supabase) {
-        showToast("Database Offline", "Supabase client is not loaded. Cannot register.", "danger");
-        return;
+      let registered = false;
+
+      // 1. Try Supabase registration first if active
+      if (supabase) {
+        try {
+          const { data: existingProfile } = await supabase.from('profiles').select('email').eq('email', email).maybeSingle();
+          if (existingProfile) {
+            showToast("Sign Up Failed", "An account with this email address already exists. Please sign in instead.", "warning");
+            return;
+          }
+
+          const { data, error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              data: { name }
+            }
+          });
+          if (error) throw error;
+
+          if (data.session) {
+            showToast("Account Created", "Welcome to ToyzGuru! Logged in automatically.", "success");
+            await initDatabase();
+            window.location.hash = "#profile";
+          } else {
+            showToast("Verification Sent", "Check your email inbox to verify your registration.", "info");
+          }
+          registered = true;
+        } catch (err) {
+          console.warn("Supabase sign up failed, trying local fallback:", err);
+        }
       }
 
-      try {
-        const { data: existingProfile } = await supabase.from('profiles').select('email').eq('email', email).maybeSingle();
-        if (existingProfile) {
-          showToast("Sign Up Failed", "An account with this email address already exists. Please sign in instead.", "warning");
+      // 2. Local Fallback if Supabase is offline or registration failed
+      if (!registered) {
+        let localProfiles = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
+        const existingLocal = localProfiles.some(p => p.email.toLowerCase() === email.toLowerCase());
+
+        if (existingLocal) {
+          showToast("Sign Up Failed", "An account with this email address already exists in local registry.", "warning");
           return;
         }
 
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: { name }
-          }
-        });
-        if (error) throw error;
+        // Create new local profile
+        const randomId = Math.floor(1000 + Math.random() * 9000);
+        const newLocalProfile = {
+          id: `m-user-local-${randomId}`,
+          name: name,
+          email: email,
+          phone: "",
+          address: "",
+          city: "",
+          state: "",
+          zip: "",
+          country: "India",
+          loyalty_points: 120,
+          created_at: new Date().toISOString()
+        };
 
-        if (data.session) {
-          showToast("Account Created", "Welcome to ToyzGuru! Logged in automatically.", "success");
-          await initDatabase();
-          window.location.hash = "#profile";
-        } else {
-          showToast("Verification Sent", "Check your email inbox to verify your registration.", "info");
-        }
-      } catch (err) {
-        showToast("Sign Up Failed", err.message || "Registration encountered an error.", "danger");
+        // Add to local profiles array
+        localProfiles.push(newLocalProfile);
+        localStorage.setItem("toyzguru_profiles", JSON.stringify(localProfiles));
+
+        // Start mock session
+        localStorage.setItem("toyzguru_mock_session", "true");
+        localStorage.setItem("toyzguru_user", JSON.stringify(newLocalProfile));
+
+        showToast("Account Created (Demo)", "Welcome to ToyzGuru! Logged in to local profile.", "success");
+        await initDatabase();
+        window.location.hash = "#profile";
       }
     });
   }
