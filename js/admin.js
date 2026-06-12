@@ -836,6 +836,7 @@ async function adminRenderMembersRegistry() {
 
   try {
     let members = [];
+    let isOfflineFallback = false;
     if (supabase) {
       try {
         const { data: mems, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
@@ -844,13 +845,15 @@ async function adminRenderMembersRegistry() {
       } catch (err) {
         console.warn("Failed to fetch profiles from Supabase:", err);
         members = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
+        isOfflineFallback = true;
       }
     } else {
       members = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
+      isOfflineFallback = true;
     }
 
-    // Seeding mock profiles in local offline mode
-    if (members.length === 0) {
+    // Seeding mock profiles only if they have never been initialized in local storage
+    if (localStorage.getItem("toyzguru_profiles") === null) {
       const defaultMembers = [
         {
           id: "m-user-101",
@@ -893,7 +896,9 @@ async function adminRenderMembersRegistry() {
         }
       ];
       localStorage.setItem("toyzguru_profiles", JSON.stringify(defaultMembers));
-      members = defaultMembers;
+      if (isOfflineFallback) {
+        members = defaultMembers;
+      }
     }
 
     adminMembersState = members;
@@ -970,40 +975,43 @@ async function adminUpdateMemberPoints(profileId) {
 
 async function adminDeleteMemberTrigger(profileId) {
   if (confirm("Are you sure you want to delete this member and all their related data? This action cannot be undone.")) {
-    if (!supabase) {
-      try {
-        let localProfiles = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
-        const member = localProfiles.find(p => p.id === profileId);
-        
-        if (member && member.email) {
-          // Delete orders from local storage matching email
-          let localOrders = JSON.parse(localStorage.getItem("toyzguru_orders")) || [];
-          localOrders = localOrders.filter(o => o.email.toLowerCase() !== member.email.toLowerCase());
-          localStorage.setItem("toyzguru_orders", JSON.stringify(localOrders));
-        }
-
-        localProfiles = localProfiles.filter(p => p.id !== profileId);
-        localStorage.setItem("toyzguru_profiles", JSON.stringify(localProfiles));
-
-        // If deleted user matches active login session
-        if (window.userState && window.userState.id === profileId) {
-          window.userState = null;
-          localStorage.removeItem("toyzguru_user");
-          if (window.location.hash === "#profile") {
-            window.location.hash = "#home";
-          }
-        }
-
-        if (window.toyzToast) window.toyzToast("Member Deleted (Demo)", "Member and their related data have been deleted locally.", "info");
-        adminRenderMembersRegistry();
-      } catch (err) {
-        if (window.toyzToast) window.toyzToast("Delete Failed", err.message || "Failed to delete member.", "danger");
+    // 1. Clean up from local storage in both offline and online modes
+    try {
+      let localProfiles = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
+      const member = localProfiles.find(p => p.id === profileId);
+      
+      if (member && member.email) {
+        // Delete orders from local storage matching email
+        let localOrders = JSON.parse(localStorage.getItem("toyzguru_orders")) || [];
+        localOrders = localOrders.filter(o => o.email.toLowerCase() !== member.email.toLowerCase());
+        localStorage.setItem("toyzguru_orders", JSON.stringify(localOrders));
       }
+
+      localProfiles = localProfiles.filter(p => p.id !== profileId);
+      localStorage.setItem("toyzguru_profiles", JSON.stringify(localProfiles));
+
+      // If deleted user matches active login session
+      if (window.userState && window.userState.id === profileId) {
+        window.userState = null;
+        localStorage.removeItem("toyzguru_user");
+        if (window.location.hash === "#profile") {
+          window.location.hash = "#home";
+        }
+      }
+    } catch (err) {
+      console.warn("Failed to clean up member locally:", err);
+    }
+
+    if (!supabase) {
+      if (window.toyzToast) window.toyzToast("Member Deleted (Demo)", "Member and their related data have been deleted locally.", "info");
+      adminRenderMembersRegistry();
       return;
     }
 
+    // 2. Delete from Supabase (online mode)
     try {
-      const { data: member, error: fetchError } = await supabase.from('profiles').select('*').eq('id', profileId).single();
+      // Use maybeSingle() to handle mock profiles gracefully if they are deleted in online mode
+      const { data: member, error: fetchError } = await supabase.from('profiles').select('*').eq('id', profileId).maybeSingle();
       if (fetchError) throw fetchError;
       
       if (member && member.email) {
@@ -1015,10 +1023,11 @@ async function adminDeleteMemberTrigger(profileId) {
       if (profileError) throw profileError;
 
       if (window.toyzToast) window.toyzToast("Member Deleted", "Member and their related data have been successfully deleted.", "info");
-      adminRenderMembersRegistry();
     } catch (err) {
       if (window.toyzToast) window.toyzToast("Delete Failed", err.message || "Failed to delete member.", "danger");
     }
+
+    adminRenderMembersRegistry();
   }
 }
 
