@@ -673,7 +673,296 @@ function showToast(title, description, type = "info") {
   }, 4000);
 }
 
+
+// ================= RECEIPT PDF GENERATOR =================
+// Standalone — works for ANY order object: new checkout orders AND existing orders.
+// Returns: public receipt URL (string) if uploaded to Supabase, or null if offline.
+async function generateOrderReceiptPDF(order) {
+  try {
+    const { jsPDF } = window.jspdf;
+    if (!jsPDF) { console.error('jsPDF not loaded'); return null; }
+
+    const doc    = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+    const pageW  = doc.internal.pageSize.getWidth();
+    const pageH  = doc.internal.pageSize.getHeight();
+
+    // ── Color Palette ──
+    const blue       = [26, 90, 160];
+    const lightBlue  = [232, 241, 255];
+    const darkText   = [20, 20, 30];
+    const mutedText  = [100, 110, 130];
+    const white      = [255, 255, 255];
+    const green      = [34, 153, 84];
+    const borderGray = [210, 218, 230];
+    const rowAlt     = [247, 250, 255];
+
+    // ── Invoice Metadata ──
+    const invoiceNum  = `INV-${order.id}`;
+    const invoiceDate = new Date(order.date || Date.now()).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    const hsnCode     = '9505';
+    const gstin       = 'N/A';
+    const sellerName  = 'ToyzGuru India Pvt. Ltd.';
+    const sellerAddr  = '4th Floor, Cyber Towers, HITEC City,\nHyderabad, Telangana - 500081, India';
+    const custName    = order.customer_name || order.name || order.email || 'Customer';
+    const method      = (order.payment_method || order.method || 'Online').toUpperCase();
+
+    // ── 1. Header Banner ──
+    doc.setFillColor(...blue);
+    doc.rect(0, 0, pageW, 28, 'F');
+    doc.setFont('helvetica', 'bold');   doc.setFontSize(22); doc.setTextColor(...white);
+    doc.text('ToyzGuru', 10, 13);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
+    doc.text('Premium Collectibles — toyzguru.in', 10, 19);
+    doc.text('support@toyzguru.in  |  HITEC City, Hyderabad', 10, 24);
+    doc.setFont('helvetica', 'bold');   doc.setFontSize(16);
+    doc.text('TAX INVOICE', pageW - 10, 13, { align: 'right' });
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
+    doc.text(`Invoice No: ${invoiceNum}`, pageW - 10, 19, { align: 'right' });
+    doc.text(`Date: ${invoiceDate}`, pageW - 10, 24, { align: 'right' });
+
+    // ── 2. Payment Badge ──
+    doc.setFillColor(...green);
+    doc.roundedRect(pageW - 46, 31, 36, 9, 2, 2, 'F');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...white);
+    doc.text('✔  PAYMENT RECEIVED', pageW - 28, 37, { align: 'center' });
+
+    // ── 3. Seller & Buyer Blocks ──
+    let y = 33;
+    // Seller
+    doc.setFillColor(...lightBlue);
+    doc.rect(10, y, 88, 36, 'F');
+    doc.setDrawColor(...borderGray); doc.setLineWidth(0.3); doc.rect(10, y, 88, 36);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(...blue);
+    doc.text('SOLD BY', 13, y + 6);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...darkText);
+    doc.text(sellerName, 13, y + 13);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(...mutedText);
+    doc.text(doc.splitTextToSize(sellerAddr, 82), 13, y + 19);
+    doc.text(`GSTIN: ${gstin}`, 13, y + 31);
+
+    // Buyer
+    doc.setFillColor(250, 250, 252);
+    doc.rect(102, y, 98, 36, 'F');
+    doc.setDrawColor(...borderGray); doc.rect(102, y, 98, 36);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(...blue);
+    doc.text('BILL TO / SHIP TO', 105, y + 6);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...darkText);
+    doc.text(custName, 105, y + 13);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(...mutedText);
+    const addrLines = doc.splitTextToSize(order.address || 'Address not recorded', 92);
+    doc.text(addrLines, 105, y + 19);
+    doc.text(`Email: ${order.email || '—'}`, 105, y + 31);
+
+    // ── 4. Order Meta Strip ──
+    y += 41;
+    doc.setFillColor(...blue); doc.rect(10, y, 190, 8, 'F');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(...white);
+    doc.text(`Order ID: ${order.id}`, 13, y + 5.5);
+    doc.text(`Date: ${invoiceDate}`, 80, y + 5.5);
+    doc.text(`Payment: ${method}`, 130, y + 5.5);
+    doc.text('Status: PAID', 175, y + 5.5, { align: 'right' });
+
+    // ── 5. Product Table ──
+    y += 13;
+    const colX = [10, 18, 85, 105, 120, 140, 163, 185];
+    const colW = [8,  67, 20,  15,  20,  23,  22,  15];
+    doc.setFillColor(...blue); doc.rect(10, y, 190, 9, 'F');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.setTextColor(...white);
+    ['#','PRODUCT DESCRIPTION','HSN','QTY','UNIT PRICE','GST %','GST AMT','TOTAL'].forEach((h, i) => {
+      const align = i >= 3 ? 'right' : 'left';
+      doc.text(h, i >= 3 ? colX[i] + colW[i] - 1 : colX[i] + 1.5, y + 6, { align });
+    });
+    y += 9;
+
+    const taxPct = (window.storeSettings && window.storeSettings.tax_enabled) ? (window.storeSettings.cgst_pct || 0) : 0;
+    const items  = Array.isArray(order.items) ? order.items : [];
+    let computedSubtotal = 0;
+
+    items.forEach((item, idx) => {
+      const rowY    = y + idx * 12;
+      const unitP   = typeof item.price === 'number' ? item.price : parseFloat(item.price) || 0;
+      const qty     = item.quantity || 1;
+      const lineTot = unitP * qty;
+      const lineGst = lineTot * (taxPct / 100);
+      computedSubtotal += lineTot;
+
+      doc.setFillColor(...(idx % 2 === 0 ? rowAlt : white));
+      doc.rect(10, rowY, 190, 12, 'F');
+      doc.setDrawColor(...borderGray); doc.setLineWidth(0.2);
+      doc.line(10, rowY + 12, 200, rowY + 12);
+
+      doc.setTextColor(...darkText);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(7);
+      doc.text(String(idx + 1), colX[0] + 1.5, rowY + 5);
+
+      // Product name
+      const titleLines = doc.splitTextToSize(item.title || '', 64);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5);
+      doc.text(titleLines[0] || '', colX[1] + 1, rowY + 5);
+      if (item.option) {
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(6.5); doc.setTextColor(...mutedText);
+        doc.text(`Variant: ${item.option}`, colX[1] + 1, rowY + 10);
+      }
+
+      doc.setTextColor(...darkText); doc.setFont('helvetica', 'normal'); doc.setFontSize(7);
+      doc.text(hsnCode, colX[2] + colW[2] - 1, rowY + 6, { align: 'right' });
+      doc.text(String(qty), colX[3] + colW[3] - 1, rowY + 6, { align: 'right' });
+      doc.text(`\u20b9${unitP.toFixed(2)}`, colX[4] + colW[4] - 1, rowY + 6, { align: 'right' });
+      doc.text(`${taxPct}%`, colX[5] + colW[5] - 1, rowY + 6, { align: 'right' });
+      doc.text(`\u20b9${lineGst.toFixed(2)}`, colX[6] + colW[6] - 1, rowY + 6, { align: 'right' });
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5);
+      doc.text(`\u20b9${lineTot.toFixed(2)}`, colX[7] + colW[7] - 1, rowY + 6, { align: 'right' });
+    });
+    y += items.length * 12 + 4;
+
+    // ── 6. Tax & Totals ──
+    doc.setDrawColor(...blue); doc.setLineWidth(0.5); doc.line(10, y, 200, y); y += 5;
+
+    const sgst = window.storeSettings && window.storeSettings.tax_enabled ? (computedSubtotal * ((window.storeSettings.sgst_pct || 0) / 100)) : 0;
+    const cgst = window.storeSettings && window.storeSettings.tax_enabled ? (computedSubtotal * ((window.storeSettings.cgst_pct || 0) / 100)) : 0;
+    const igst = window.storeSettings && window.storeSettings.tax_enabled ? (computedSubtotal * ((window.storeSettings.igst_pct || 0) / 100)) : 0;
+    const totalsData = [
+      ['Subtotal (before tax)', `\u20b9${computedSubtotal.toFixed(2)}`],
+      ...((order.discount > 0) ? [['Coupon Discount', `-\u20b9${Number(order.discount).toFixed(2)}`]] : []),
+      ...(Number(order.shipping) > 0 ? [['Shipping & Handling', `\u20b9${Number(order.shipping).toFixed(2)}`]] : [['Shipping & Handling', 'FREE']]),
+    ];
+    if (window.storeSettings && window.storeSettings.tax_enabled) {
+      if (sgst > 0) totalsData.push([`SGST @ ${window.storeSettings.sgst_pct}%`, `\u20b9${sgst.toFixed(2)}`]);
+      if (cgst > 0) totalsData.push([`CGST @ ${window.storeSettings.cgst_pct}%`, `\u20b9${cgst.toFixed(2)}`]);
+      if (igst > 0) totalsData.push([`IGST @ ${window.storeSettings.igst_pct}%`, `\u20b9${igst.toFixed(2)}`]);
+    }
+
+    const totColLabelX = 110, totColValX = 195;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
+    totalsData.forEach((row, i) => {
+      doc.setTextColor(row[0].startsWith('Coupon') ? [200, 50, 50] : mutedText);
+      doc.text(row[0], totColLabelX, y + i * 7);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(row[1].startsWith('-') ? [200, 50, 50] : darkText);
+      doc.text(row[1], totColValX, y + i * 7, { align: 'right' });
+      doc.setFont('helvetica', 'normal');
+    });
+
+    const grandTotalY = y + totalsData.length * 7 + 3;
+    doc.setFillColor(...blue);
+    doc.roundedRect(110, grandTotalY, 90, 12, 2, 2, 'F');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(...white);
+    doc.text('GRAND TOTAL', 113, grandTotalY + 8);
+    doc.text(`\u20b9${Number(order.total).toFixed(2)}`, totColValX, grandTotalY + 8, { align: 'right' });
+
+    // ── 7. QR Code ──
+    const qrDiv = document.createElement('div');
+    new QRCode(qrDiv, { text: `${window.location.origin}/#tracking?id=${order.id}`, width: 96, height: 96, correctLevel: QRCode.CorrectLevel.H });
+    await new Promise(res => setTimeout(res, 350));
+    const qrCanvas = qrDiv.querySelector('canvas');
+    const qrImg    = qrDiv.querySelector('img');
+    const qrDataUrl = qrCanvas ? qrCanvas.toDataURL('image/png') : (qrImg ? qrImg.src : null);
+    if (qrDataUrl) {
+      doc.addImage(qrDataUrl, 'PNG', 12, y, 28, 28);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(6); doc.setTextColor(...mutedText);
+      doc.text('Scan to verify order', 26, y + 31, { align: 'center' });
+    }
+
+    // ── 8. Footer ──
+    const footerY = Math.max(grandTotalY + 22, pageH - 28);
+    doc.setFillColor(...blue); doc.rect(0, footerY, pageW, pageH - footerY, 'F');
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(...white);
+    doc.text('Terms: All sales are final. For returns/exchanges contact support within 7 days of delivery.', 10, footerY + 7);
+    doc.text(`Computer-generated invoice — no physical signature required. | ${invoiceDate}`, 10, footerY + 13);
+    doc.text('ToyzGuru India Pvt. Ltd. | HITEC City, Hyderabad | support@toyzguru.in | toyzguru.in', pageW / 2, footerY + 19, { align: 'center' });
+
+    // ── Save locally + upload to Supabase ──
+    const pdfBlob  = doc.output('blob');
+    const filePath = `receipts/${order.id}_${Date.now()}.pdf`;
+    let receiptUrl = null;
+
+    if (window.supabase || window.supabaseClient) {
+      const sb = window.supabase || window.supabaseClient;
+      try {
+        const { error: uploadError } = await sb.storage
+          .from('order-receipts')
+          .upload(filePath, pdfBlob, { contentType: 'application/pdf', upsert: true });
+        if (!uploadError) {
+          const res = sb.storage.from('order-receipts').getPublicUrl(filePath);
+          receiptUrl = (res.data && res.data.publicUrl) || res.publicURL || null;
+        } else {
+          console.warn('PDF upload error:', uploadError);
+        }
+      } catch (e) {
+        console.warn('Supabase upload failed, saving locally:', e);
+      }
+    }
+
+    // Always trigger browser download as fallback
+    if (!receiptUrl) {
+      const url  = URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href  = url;
+      link.download = `ToyzGuru_Invoice_${order.id}.pdf`;
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    return receiptUrl;
+  } catch (err) {
+    console.error('generateOrderReceiptPDF error:', err);
+    return null;
+  }
+}
+window.generateOrderReceiptPDF = generateOrderReceiptPDF;
+
+// Helper: generate receipt on demand and download immediately
+window.downloadOrderReceipt = async function(orderId) {
+  const btns = document.querySelectorAll(`.receipt-btn-${orderId}`);
+  btns.forEach(btn => {
+    btn.style.pointerEvents = 'none';
+    btn.style.opacity = '0.6';
+    btn.dataset.oldHtml = btn.innerHTML;
+    btn.textContent = 'Generating...';
+  });
+
+  try {
+    // Find order from state or Supabase
+    let order = (window.ordersState || []).find(o => o.id === orderId);
+    if (!order && (window.supabase || window.supabaseClient)) {
+      const sb = window.supabase || window.supabaseClient;
+      const { data } = await sb.from('orders').select('*').eq('id', orderId).single();
+      order = data;
+    }
+    if (!order) { showToast('Order Not Found', 'Could not locate order data.', 'danger'); return; }
+
+    const receiptUrl = await generateOrderReceiptPDF(order);
+    if (receiptUrl) {
+      // Update order in memory + DB
+      const memIdx = (window.ordersState || []).findIndex(o => o.id === orderId);
+      if (memIdx !== -1) window.ordersState[memIdx].receipt_url = receiptUrl;
+      if (window.supabase || window.supabaseClient) {
+        const sb = window.supabase || window.supabaseClient;
+        await sb.from('orders').update({ receipt_url: receiptUrl }).eq('id', orderId);
+      }
+      // Open in new tab
+      window.open(receiptUrl, '_blank');
+      showToast('Receipt Ready', 'Your invoice has been generated and opened.', 'success');
+    } else {
+      showToast('Receipt Downloaded', 'Invoice saved to your downloads folder.', 'success');
+    }
+  } catch (e) {
+    console.error('downloadOrderReceipt error:', e);
+    showToast('Error', 'Failed to generate receipt. Please try again.', 'danger');
+  } finally {
+    btns.forEach(btn => {
+      btn.style.pointerEvents = '';
+      btn.style.opacity = '';
+      btn.innerHTML = btn.dataset.oldHtml || 'Download Receipt';
+    });
+    if (typeof feather !== 'undefined') {
+      feather.replace();
+    }
+  }
+};
+
 // ================= ROUTING SYSTEM =================
+
 function setupRouting() {
   const handleRoute = async () => {
     const hash = window.location.hash || "#home";
@@ -1927,300 +2216,14 @@ async function handleCheckoutSubmit(e) {
 
       // ----- Generate Professional PDF Receipt (Amazon/Flipkart Style) -----
       try {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
-        const pageW = doc.internal.pageSize.getWidth();
-        const pageH = doc.internal.pageSize.getHeight();
-
-        // ── Color Palette ──
-        const blue       = [26, 90, 160];
-        const lightBlue  = [232, 241, 255];
-        const darkText   = [20, 20, 30];
-        const mutedText  = [100, 110, 130];
-        const white      = [255, 255, 255];
-        const green      = [34, 153, 84];
-        const borderGray = [210, 218, 230];
-        const rowAlt     = [247, 250, 255];
-
-        // ── GST/Invoice Metadata ──
-        const invoiceNum  = `INV-${newOrderObj.id}`;
-        const invoiceDate = new Date(newOrderObj.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-        const dueDate     = 'PAID';
-        const hsnCode     = '9505';   // Toys & collectibles HSN
-        const gstin       = 'N/A';    // Placeholder — update with real GSTIN
-        const sellerName  = 'ToyzGuru India Pvt. Ltd.';
-        const sellerAddr  = '4th Floor, Cyber Towers, HITEC City,\nHyderabad, Telangana - 500081, India';
-        const sellerEmail = 'support@toyzguru.in';
-        const sellerPhone = '+91 92000 XXXXX';
-
-        // ── 1. Top Header Banner ──────────────────────────────────────
-        doc.setFillColor(...blue);
-        doc.rect(0, 0, pageW, 28, 'F');
-
-        // Logo / Brand name in white
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(22);
-        doc.setTextColor(...white);
-        doc.text('ToyzGuru', 10, 13);
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'normal');
-        doc.text('Premium Collectibles — toyzguru.in', 10, 19);
-        doc.text('support@toyzguru.in  |  +91 92000 XXXXX', 10, 24);
-
-        // TAX INVOICE label right-aligned
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(16);
-        doc.text('TAX INVOICE', pageW - 10, 13, { align: 'right' });
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'normal');
-        doc.text(`Invoice No: ${invoiceNum}`, pageW - 10, 19, { align: 'right' });
-        doc.text(`Date: ${invoiceDate}`, pageW - 10, 24, { align: 'right' });
-
-        // ── 2. Payment Status Badge ───────────────────────────────────
-        doc.setFillColor(...green);
-        doc.roundedRect(pageW - 46, 31, 36, 9, 2, 2, 'F');
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(9);
-        doc.setTextColor(...white);
-        doc.text('✔  PAYMENT RECEIVED', pageW - 28, 37, { align: 'center' });
-
-        // ── 3. Seller & Buyer Info Blocks ─────────────────────────────
-        let y = 33;
-        // Seller block
-        doc.setFillColor(...lightBlue);
-        doc.rect(10, y, 88, 36, 'F');
-        doc.setDrawColor(...borderGray);
-        doc.setLineWidth(0.3);
-        doc.rect(10, y, 88, 36);
-
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(7.5);
-        doc.setTextColor(...blue);
-        doc.text('SOLD BY', 13, y + 6);
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(9);
-        doc.setTextColor(...darkText);
-        doc.text(sellerName, 13, y + 13);
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(7.5);
-        doc.setTextColor(...mutedText);
-        const sellerLines = doc.splitTextToSize(sellerAddr, 82);
-        doc.text(sellerLines, 13, y + 19);
-        doc.text(`GSTIN: ${gstin}`, 13, y + 31);
-
-        // Buyer block
-        doc.setFillColor(250, 250, 252);
-        doc.rect(102, y, 98, 36, 'F');
-        doc.setDrawColor(...borderGray);
-        doc.rect(102, y, 98, 36);
-
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(7.5);
-        doc.setTextColor(...blue);
-        doc.text('BILL TO / SHIP TO', 105, y + 6);
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(9);
-        doc.setTextColor(...darkText);
-        doc.text(`${firstName} ${lastName}`, 105, y + 13);
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(7.5);
-        doc.setTextColor(...mutedText);
-        const addrLines = doc.splitTextToSize(newOrderObj.address || '', 92);
-        doc.text(addrLines, 105, y + 19);
-        doc.text(`Email: ${newOrderObj.email}`, 105, y + 31);
-
-        // ── 4. Order Meta Strip ───────────────────────────────────────
-        y += 41;
-        doc.setFillColor(...blue);
-        doc.rect(10, y, 190, 8, 'F');
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(7.5);
-        doc.setTextColor(...white);
-        doc.text(`Order ID: ${newOrderObj.id}`, 13, y + 5.5);
-        doc.text(`Order Date: ${invoiceDate}`, 80, y + 5.5);
-        doc.text(`Payment: ${method.toUpperCase()}`, 130, y + 5.5);
-        doc.text(`Status: ${dueDate}`, 175, y + 5.5, { align: 'right' });
-
-        // ── 5. Product Table ──────────────────────────────────────────
-        y += 13;
-
-        // Table Header
-        const colX   = [10, 18, 85, 105, 120, 140, 163, 185];
-        const colW   = [8,  67, 20,  15,  20,  23,  22,  15];
-        doc.setFillColor(...blue);
-        doc.rect(10, y, 190, 9, 'F');
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(7);
-        doc.setTextColor(...white);
-        const headers = ['#', 'PRODUCT DESCRIPTION', 'HSN', 'QTY', 'UNIT PRICE', 'GST %', 'GST AMT', 'TOTAL'];
-        headers.forEach((h, i) => {
-          const align = i >= 3 ? 'right' : 'left';
-          const xPos  = i >= 3 ? colX[i] + colW[i] - 1 : colX[i] + 1.5;
-          doc.text(h, xPos, y + 6, { align });
-        });
-        y += 9;
-
-        // Table Rows
-        const items = newOrderObj.items || [];
-        const taxPct = storeSettings.tax_enabled ? (storeSettings.cgst_pct || 0) : 0;
-        let computedSubtotal = 0;
-        let totalGst = 0;
-
-        items.forEach((item, idx) => {
-          const rowY = y + idx * 12;
-          const unitP = typeof item.price === 'number' ? item.price : parseFloat(item.price) || 0;
-          const qty   = item.quantity || 1;
-          const lineTotal = unitP * qty;
-          const lineGst   = lineTotal * (taxPct / 100);
-          computedSubtotal += lineTotal;
-          totalGst += lineGst;
-
-          // Alternating row bg
-          if (idx % 2 === 0) {
-            doc.setFillColor(...rowAlt);
-          } else {
-            doc.setFillColor(255, 255, 255);
-          }
-          doc.rect(10, rowY, 190, 12, 'F');
-
-          // Row bottom border
-          doc.setDrawColor(...borderGray);
-          doc.setLineWidth(0.2);
-          doc.line(10, rowY + 12, 200, rowY + 12);
-
-          doc.setTextColor(...darkText);
-          doc.setFont('helvetica', 'bold');
-          doc.setFontSize(7);
-          doc.text(String(idx + 1), colX[0] + 1.5, rowY + 5);
-
-          // Product name + option
-          doc.setFont('helvetica', 'bold');
-          doc.setFontSize(7.5);
-          const titleLines = doc.splitTextToSize(item.title || '', 64);
-          doc.text(titleLines[0] || '', colX[1] + 1, rowY + 5);
-          if (item.option) {
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(6.5);
-            doc.setTextColor(...mutedText);
-            doc.text(`Variant: ${item.option}`, colX[1] + 1, rowY + 10);
-          }
-
-          doc.setTextColor(...darkText);
-          doc.setFont('helvetica', 'normal');
-          doc.setFontSize(7);
-          doc.text(hsnCode, colX[2] + colW[2] - 1, rowY + 6, { align: 'right' });
-          doc.text(String(qty), colX[3] + colW[3] - 1, rowY + 6, { align: 'right' });
-          doc.text(`\u20b9${unitP.toFixed(2)}`, colX[4] + colW[4] - 1, rowY + 6, { align: 'right' });
-          doc.text(`${taxPct > 0 ? taxPct : 0}%`, colX[5] + colW[5] - 1, rowY + 6, { align: 'right' });
-          doc.text(`\u20b9${lineGst.toFixed(2)}`, colX[6] + colW[6] - 1, rowY + 6, { align: 'right' });
-          doc.setFont('helvetica', 'bold');
-          doc.setFontSize(7.5);
-          doc.text(`\u20b9${lineTotal.toFixed(2)}`, colX[7] + colW[7] - 1, rowY + 6, { align: 'right' });
-        });
-
-        y += items.length * 12 + 4;
-
-        // ── 6. Tax Breakdown & Totals ─────────────────────────────────
-        // Separator
-        doc.setDrawColor(...blue);
-        doc.setLineWidth(0.5);
-        doc.line(10, y, 200, y);
-        y += 5;
-
-        const sgst = storeSettings.tax_enabled ? (computedSubtotal * ((storeSettings.sgst_pct || 0) / 100)) : 0;
-        const cgst = storeSettings.tax_enabled ? (computedSubtotal * ((storeSettings.cgst_pct || 0) / 100)) : 0;
-        const igst = storeSettings.tax_enabled ? (computedSubtotal * ((storeSettings.igst_pct || 0) / 100)) : 0;
-
-        const totalsData = [
-          ['Subtotal (before tax)', `\u20b9${computedSubtotal.toFixed(2)}`],
-          ...(newOrderObj.discount > 0 ? [[`Coupon Discount`, `-\u20b9${Number(newOrderObj.discount).toFixed(2)}`]] : []),
-          ...(newOrderObj.shipping > 0 ? [['Shipping & Handling', `\u20b9${Number(newOrderObj.shipping).toFixed(2)}`]] : [['Shipping & Handling', 'FREE']]),
-        ];
-        if (storeSettings.tax_enabled) {
-          if (sgst > 0) totalsData.push([`SGST @ ${storeSettings.sgst_pct}%`, `\u20b9${sgst.toFixed(2)}`]);
-          if (cgst > 0) totalsData.push([`CGST @ ${storeSettings.cgst_pct}%`, `\u20b9${cgst.toFixed(2)}`]);
-          if (igst > 0) totalsData.push([`IGST @ ${storeSettings.igst_pct}%`, `\u20b9${igst.toFixed(2)}`]);
-        }
-
-        // Two-column layout: tax breakdown (left) | grand total box (right)
-        const totColLabelX = 110;
-        const totColValX   = 195;
-
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8);
-        totalsData.forEach((row, i) => {
-          doc.setTextColor(row[0].startsWith('Coupon') ? [200, 50, 50] : mutedText);
-          doc.text(row[0], totColLabelX, y + i * 7);
-          doc.setFont('helvetica', 'bold');
-          doc.setTextColor(row[1].startsWith('-') ? [200, 50, 50] : darkText);
-          doc.text(row[1], totColValX, y + i * 7, { align: 'right' });
-          doc.setFont('helvetica', 'normal');
-        });
-
-        const grandTotalY = y + totalsData.length * 7 + 3;
-        // Grand Total Box
-        doc.setFillColor(...blue);
-        doc.roundedRect(110, grandTotalY, 90, 12, 2, 2, 'F');
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(11);
-        doc.setTextColor(...white);
-        doc.text('GRAND TOTAL', 113, grandTotalY + 8);
-        doc.text(`\u20b9${Number(newOrderObj.total).toFixed(2)}`, totColValX, grandTotalY + 8, { align: 'right' });
-
-        // ── 7. QR Code Verification ───────────────────────────────────
-        const qrDiv = document.createElement('div');
-        new QRCode(qrDiv, {
-          text: `${window.location.origin}/#tracking?id=${newOrderObj.id}`,
-          width: 96, height: 96,
-          correctLevel: QRCode.CorrectLevel.H
-        });
-        await new Promise((res) => setTimeout(res, 350));
-        const qrCanvas = qrDiv.querySelector('canvas');
-        const qrImg    = qrDiv.querySelector('img');
-        let qrDataUrl  = qrCanvas ? qrCanvas.toDataURL('image/png') : (qrImg ? qrImg.src : null);
-
-        const qrY = y;
-        if (qrDataUrl) {
-          doc.addImage(qrDataUrl, 'PNG', 12, qrY, 28, 28);
-          doc.setFont('helvetica', 'normal');
-          doc.setFontSize(6);
-          doc.setTextColor(...mutedText);
-          doc.text('Scan to verify order', 26, qrY + 31, { align: 'center' });
-        }
-
-        // ── 8. Terms & Footer ─────────────────────────────────────────
-        const footerY = Math.max(grandTotalY + 22, pageH - 28);
-        doc.setFillColor(...blue);
-        doc.rect(0, footerY, pageW, pageH - footerY, 'F');
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(7);
-        doc.setTextColor(...white);
-        doc.text('Terms: All sales are final. For returns/exchanges, contact support within 7 days of delivery.', 10, footerY + 7);
-        doc.text(`This is a computer-generated invoice and does not require a physical signature. | ${invoiceDate}`, 10, footerY + 13);
-        doc.text('ToyzGuru India Pvt. Ltd. | HITEC City, Hyderabad | support@toyzguru.in | toyzguru.in', pageW / 2, footerY + 19, { align: 'center' });
-
-        // ── Upload PDF ────────────────────────────────────────────────
-        const pdfBlob  = doc.output('blob');
-        const filePath = `receipts/${newOrderObj.id}_${Date.now()}.pdf`;
-        let receiptUrl = null;
-        if (supabase) {
-          const { error: uploadError } = await supabase.storage
-            .from('order-receipts')
-            .upload(filePath, pdfBlob, { contentType: 'application/pdf', upsert: true });
-          if (!uploadError) {
-            const res = supabase.storage.from('order-receipts').getPublicUrl(filePath);
-            receiptUrl = (res.data && res.data.publicUrl) || res.publicURL || null;
-          } else {
-            console.error('PDF upload error:', uploadError);
-          }
-        }
+        const receiptUrl = await generateOrderReceiptPDF(newOrderObj);
         if (receiptUrl) {
           newOrderObj.receipt_url = receiptUrl;
-          await supabase.from('orders').update({ receipt_url: receiptUrl }).eq('id', newOrderObj.id);
-          const memIdx = ordersState.findIndex(o => o.id === newOrderObj.id);
-          if (memIdx !== -1) ordersState[memIdx].receipt_url = receiptUrl;
-        } else {
-          console.warn('Receipt URL not obtained — check Supabase storage bucket policy.');
+          if (supabase) {
+            await supabase.from('orders').update({ receipt_url: receiptUrl }).eq('id', newOrderObj.id);
+            const memIdx = ordersState.findIndex(o => o.id === newOrderObj.id);
+            if (memIdx !== -1) ordersState[memIdx].receipt_url = receiptUrl;
+          }
         }
       } catch (e) {
         console.error('Receipt generation error:', e);
@@ -2602,8 +2605,8 @@ function initProfileView() {
         <td style="font-weight: 700; color: var(--color-brand);">₹${ord.total.toFixed(2)}</td>
         <td><span class="order-status-badge status-${ord.status}">${ord.status}</span></td>
         <td>
-          ${ord.receipt_url ? `<a href="${ord.receipt_url}" target="_blank" class="product-card-add-btn" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; text-decoration: none;">Download Receipt</a>` : ''}
-          <a href="#tracking?id=${ord.id}" class="product-card-add-btn" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; text-decoration: none;">Track Status</a>
+          <a href="javascript:void(0)" class="product-card-add-btn receipt-btn-${ord.id}" onclick="window.downloadOrderReceipt('${ord.id}')" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; text-decoration: none; display: inline-block;">Download Receipt</a>
+          <a href="#tracking?id=${ord.id}" class="product-card-add-btn" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; text-decoration: none; display: inline-block;">Track Status</a>
         </td>
       </tr>
     `;
@@ -2646,12 +2649,10 @@ function renderPaymentHistory(userOrders) {
         <td style="font-size:0.8rem;line-height:1.5;">${itemsList}</td>
         <td style="font-weight:700;">₹${Number(ord.total).toFixed(2)}</td>
         <td>
-          ${ord.receipt_url
-            ? `<a href="${ord.receipt_url}" target="_blank"
-                style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.3rem 0.7rem;background:var(--color-brand);color:#fff;border-radius:5px;font-size:0.75rem;font-weight:700;text-decoration:none;">
-                <i data-feather="download" style="width:12px;height:12px;"></i> Download
-               </a>`
-            : `<span style="font-size:0.75rem;color:var(--text-muted);">Processing...</span>`}
+          <a href="javascript:void(0)" class="receipt-btn-${ord.id}" onclick="window.downloadOrderReceipt('${ord.id}')"
+            style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.3rem 0.7rem;background:var(--color-brand);color:#fff;border-radius:5px;font-size:0.75rem;font-weight:700;text-decoration:none;">
+            <i data-feather="download" style="width:12px;height:12px;"></i> Download
+          </a>
         </td>
         <td>
           <button type="button" onclick="window.deletePaymentRecord('${ord.id}')"

@@ -635,7 +635,7 @@ async function adminRenderOrdersQueue() {
           <select class="form-select" style="padding: 0.35rem; font-size: 0.8rem; background: var(--bg-tertiary);" onchange="adminUpdateOrderStatus('${ord.id}', this.value)">
             ${dropdownOptions}
           </select>
-          ${ord.receipt_url ? `<a href="${ord.receipt_url}" target="_blank" class="product-card-add-btn" style="padding:0.3rem 0.6rem;font-size:0.72rem;text-decoration:none;white-space:nowrap;">⬇ Receipt</a>` : ''}
+          <a href="javascript:void(0)" class="product-card-add-btn receipt-btn-${ord.id}" onclick="window.downloadOrderReceipt('${ord.id}')" style="padding:0.3rem 0.6rem;font-size:0.72rem;text-decoration:none;white-space:nowrap;">⬇ Receipt</a>
         </td>
       </tr>
     `;
@@ -816,16 +816,12 @@ async function adminShowOrderDetailsTrigger(orderId) {
           </select>
         </div>
       </div>
-      ${order.receipt_url ? `
       <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--glass-border); display: flex; justify-content: center;">
-        <a href="${order.receipt_url}" target="_blank"
+        <a href="javascript:void(0)" class="receipt-btn-${order.id}" onclick="window.downloadOrderReceipt('${order.id}')"
           style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.6rem 1.5rem;background:var(--color-brand);color:#fff;border-radius:8px;font-size:0.9rem;font-weight:700;text-decoration:none;">
           <i data-feather="download" style="width:15px;height:15px;"></i> Download Receipt
         </a>
-      </div>` : `
-      <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--glass-border); text-align: center; font-size: 0.8rem; color: var(--text-muted);">
-        Receipt not yet generated for this order.
-      </div>`}
+      </div>
     `;
   }
 
