@@ -46,7 +46,17 @@ function updateAdminAuthView() {
     if (mainLayout) mainLayout.style.display = "grid";
     adminRenderDashboard();
   } else {
-    if (loginWrapper) loginWrapper.style.display = "block";
+    if (loginWrapper) {
+      loginWrapper.style.display = "block";
+      const loginForm = document.getElementById("admin-login-form");
+      if (loginForm) {
+        loginForm.reset();
+      }
+      const emailInput = document.getElementById("admin-login-email");
+      const passwordInput = document.getElementById("admin-login-password");
+      if (emailInput) emailInput.value = "";
+      if (passwordInput) passwordInput.value = "";
+    }
     if (mainLayout) mainLayout.style.display = "none";
   }
 }
