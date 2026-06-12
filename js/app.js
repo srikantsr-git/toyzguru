@@ -677,12 +677,17 @@ function showToast(title, description, type = "info") {
 // ================= RECEIPT PDF GENERATOR =================
 // Standalone — works for ANY order object: new checkout orders AND existing orders.
 // Returns: public receipt URL (string) if uploaded to Supabase, or null if offline.
-async function generateOrderReceiptPDF(order) {
+async function generateOrderReceiptPDF(order, autoDownload = true) {
   try {
-    const { jsPDF } = window.jspdf;
-    if (!jsPDF) { console.error('jsPDF not loaded'); return null; }
-
-    const doc    = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+    let doc;
+    if (window.jspdf && window.jspdf.jsPDF) {
+      doc = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+    } else if (window.jsPDF) {
+      doc = new window.jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+    } else {
+      console.error('jsPDF not loaded');
+      return null;
+    }
     const pageW  = doc.internal.pageSize.getWidth();
     const pageH  = doc.internal.pageSize.getHeight();
 
@@ -697,7 +702,8 @@ async function generateOrderReceiptPDF(order) {
     const rowAlt     = [247, 250, 255];
 
     // ── Invoice Metadata ──
-    const invoiceNum  = `INV-${order.id}`;
+    const orderIdStr  = order.id || 'N/A';
+    const invoiceNum  = `INV-${orderIdStr}`;
     const invoiceDate = new Date(order.date || Date.now()).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
     const hsnCode     = '9505';
     const gstin       = 'N/A';
@@ -757,7 +763,7 @@ async function generateOrderReceiptPDF(order) {
     y += 41;
     doc.setFillColor(...blue); doc.rect(10, y, 190, 8, 'F');
     doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(...white);
-    doc.text(`Order ID: ${order.id}`, 13, y + 5.5);
+    doc.text(`Order ID: ${orderIdStr}`, 13, y + 5.5);
     doc.text(`Date: ${invoiceDate}`, 80, y + 5.5);
     doc.text(`Payment: ${method}`, 130, y + 5.5);
     doc.text('Status: PAID', 175, y + 5.5, { align: 'right' });
@@ -775,10 +781,22 @@ async function generateOrderReceiptPDF(order) {
     y += 9;
 
     const taxPct = (window.storeSettings && window.storeSettings.tax_enabled) ? (window.storeSettings.cgst_pct || 0) : 0;
-    const items  = Array.isArray(order.items) ? order.items : [];
+    
+    let items = [];
+    if (Array.isArray(order.items)) {
+      items = order.items;
+    } else if (typeof order.items === 'string') {
+      try {
+        items = JSON.parse(order.items);
+      } catch (e) {
+        console.error('Failed to parse order items JSON:', e);
+      }
+    }
+    
     let computedSubtotal = 0;
 
     items.forEach((item, idx) => {
+      if (!item) return;
       const rowY    = y + idx * 12;
       const unitP   = typeof item.price === 'number' ? item.price : parseFloat(item.price) || 0;
       const qty     = item.quantity || 1;
@@ -821,10 +839,15 @@ async function generateOrderReceiptPDF(order) {
     const sgst = window.storeSettings && window.storeSettings.tax_enabled ? (computedSubtotal * ((window.storeSettings.sgst_pct || 0) / 100)) : 0;
     const cgst = window.storeSettings && window.storeSettings.tax_enabled ? (computedSubtotal * ((window.storeSettings.cgst_pct || 0) / 100)) : 0;
     const igst = window.storeSettings && window.storeSettings.tax_enabled ? (computedSubtotal * ((window.storeSettings.igst_pct || 0) / 100)) : 0;
+    
+    const discountVal = parseFloat(order.discount) || 0;
+    const shippingVal = parseFloat(order.shipping) || 0;
+    const totalVal    = parseFloat(order.total) || 0;
+
     const totalsData = [
       ['Subtotal (before tax)', `\u20b9${computedSubtotal.toFixed(2)}`],
-      ...((order.discount > 0) ? [['Coupon Discount', `-\u20b9${Number(order.discount).toFixed(2)}`]] : []),
-      ...(Number(order.shipping) > 0 ? [['Shipping & Handling', `\u20b9${Number(order.shipping).toFixed(2)}`]] : [['Shipping & Handling', 'FREE']]),
+      ...((discountVal > 0) ? [['Coupon Discount', `-\u20b9${discountVal.toFixed(2)}`]] : []),
+      ...(shippingVal > 0 ? [['Shipping & Handling', `\u20b9${shippingVal.toFixed(2)}`]] : [['Shipping & Handling', 'FREE']]),
     ];
     if (window.storeSettings && window.storeSettings.tax_enabled) {
       if (sgst > 0) totalsData.push([`SGST @ ${window.storeSettings.sgst_pct}%`, `\u20b9${sgst.toFixed(2)}`]);
@@ -848,19 +871,21 @@ async function generateOrderReceiptPDF(order) {
     doc.roundedRect(110, grandTotalY, 90, 12, 2, 2, 'F');
     doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(...white);
     doc.text('GRAND TOTAL', 113, grandTotalY + 8);
-    doc.text(`\u20b9${Number(order.total).toFixed(2)}`, totColValX, grandTotalY + 8, { align: 'right' });
+    doc.text(`\u20b9${totalVal.toFixed(2)}`, totColValX, grandTotalY + 8, { align: 'right' });
 
     // ── 7. QR Code ──
-    const qrDiv = document.createElement('div');
-    new QRCode(qrDiv, { text: `${window.location.origin}/#tracking?id=${order.id}`, width: 96, height: 96, correctLevel: QRCode.CorrectLevel.H });
-    await new Promise(res => setTimeout(res, 350));
-    const qrCanvas = qrDiv.querySelector('canvas');
-    const qrImg    = qrDiv.querySelector('img');
-    const qrDataUrl = qrCanvas ? qrCanvas.toDataURL('image/png') : (qrImg ? qrImg.src : null);
-    if (qrDataUrl) {
-      doc.addImage(qrDataUrl, 'PNG', 12, y, 28, 28);
-      doc.setFont('helvetica', 'normal'); doc.setFontSize(6); doc.setTextColor(...mutedText);
-      doc.text('Scan to verify order', 26, y + 31, { align: 'center' });
+    if (typeof QRCode !== 'undefined') {
+      const qrDiv = document.createElement('div');
+      new QRCode(qrDiv, { text: `${window.location.origin}/#tracking?id=${orderIdStr}`, width: 96, height: 96, correctLevel: QRCode.CorrectLevel.H });
+      await new Promise(res => setTimeout(res, 350));
+      const qrCanvas = qrDiv.querySelector('canvas');
+      const qrImg    = qrDiv.querySelector('img');
+      const qrDataUrl = qrCanvas ? qrCanvas.toDataURL('image/png') : (qrImg ? qrImg.src : null);
+      if (qrDataUrl) {
+        doc.addImage(qrDataUrl, 'PNG', 12, y, 28, 28);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(6); doc.setTextColor(...mutedText);
+        doc.text('Scan to verify order', 26, y + 31, { align: 'center' });
+      }
     }
 
     // ── 8. Footer ──
@@ -873,7 +898,7 @@ async function generateOrderReceiptPDF(order) {
 
     // ── Save locally + upload to Supabase ──
     const pdfBlob  = doc.output('blob');
-    const filePath = `receipts/${order.id}_${Date.now()}.pdf`;
+    const filePath = `receipts/${orderIdStr}_${Date.now()}.pdf`;
     let receiptUrl = null;
 
     if (window.supabase || window.supabaseClient) {
@@ -893,12 +918,12 @@ async function generateOrderReceiptPDF(order) {
       }
     }
 
-    // Always trigger browser download as fallback
-    if (!receiptUrl) {
+    // Trigger local browser download of the PDF blob to completely bypass popup blocker
+    if (autoDownload) {
       const url  = URL.createObjectURL(pdfBlob);
       const link = document.createElement('a');
       link.href  = url;
-      link.download = `ToyzGuru_Invoice_${order.id}.pdf`;
+      link.download = `ToyzGuru_Invoice_${orderIdStr}.pdf`;
       link.click();
       URL.revokeObjectURL(url);
     }
@@ -931,23 +956,21 @@ window.downloadOrderReceipt = async function(orderId) {
     }
     if (!order) { showToast('Order Not Found', 'Could not locate order data.', 'danger'); return; }
 
-    const receiptUrl = await generateOrderReceiptPDF(order);
+    // Call PDF generation with autoDownload = true to trigger a direct local blob download
+    const receiptUrl = await generateOrderReceiptPDF(order, true);
     if (receiptUrl) {
-      // Update order in memory + DB
+      // Update order in memory + DB in the background
       const memIdx = (window.ordersState || []).findIndex(o => o.id === orderId);
       if (memIdx !== -1) window.ordersState[memIdx].receipt_url = receiptUrl;
       if (window.supabase || window.supabaseClient) {
         const sb = window.supabase || window.supabaseClient;
         await sb.from('orders').update({ receipt_url: receiptUrl }).eq('id', orderId);
       }
-      // Open in new tab
-      window.open(receiptUrl, '_blank');
-      showToast('Receipt Ready', 'Your invoice has been generated and opened.', 'success');
-    } else {
-      showToast('Receipt Downloaded', 'Invoice saved to your downloads folder.', 'success');
     }
+    showToast('Receipt Downloaded', 'Invoice saved to your downloads folder.', 'success');
   } catch (e) {
     console.error('downloadOrderReceipt error:', e);
+    alert('Failed to generate receipt: ' + e.message + '\n' + e.stack);
     showToast('Error', 'Failed to generate receipt. Please try again.', 'danger');
   } finally {
     btns.forEach(btn => {
@@ -2216,7 +2239,7 @@ async function handleCheckoutSubmit(e) {
 
       // ----- Generate Professional PDF Receipt (Amazon/Flipkart Style) -----
       try {
-        const receiptUrl = await generateOrderReceiptPDF(newOrderObj);
+        const receiptUrl = await generateOrderReceiptPDF(newOrderObj, false);
         if (receiptUrl) {
           newOrderObj.receipt_url = receiptUrl;
           if (supabase) {
