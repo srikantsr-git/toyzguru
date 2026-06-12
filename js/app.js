@@ -3162,16 +3162,34 @@ function setupEventListeners() {
               data: { name }
             }
           });
-          if (error) throw error;
-
-          if (data.session) {
-            showToast("Account Created", "Welcome to ToyzGuru! Logged in automatically.", "success");
-            await initDatabase();
-            window.location.hash = "#profile";
+          if (error) {
+            // Surface Supabase-specific errors to the user instead of silently falling back
+            const msg = error.message || "";
+            if (msg.toLowerCase().includes("rate limit") || error.status === 429) {
+              showToast("Too Many Requests", "Signup limit reached. Please wait a few minutes and try again.", "warning");
+              return;
+            } else if (msg.toLowerCase().includes("already registered") || msg.toLowerCase().includes("already exists")) {
+              showToast("Email Already Registered", "An account with this email exists. Please sign in instead.", "warning");
+              return;
+            } else if (msg.toLowerCase().includes("password") || msg.toLowerCase().includes("weak")) {
+              showToast("Weak Password", msg, "warning");
+              return;
+            } else if (msg.toLowerCase().includes("email")) {
+              showToast("Invalid Email", msg, "warning");
+              return;
+            }
+            // Unknown Supabase error — still fall through to local demo
+            console.warn("Supabase sign up error, trying local fallback:", error);
           } else {
-            showToast("Verification Sent", "Check your email inbox to verify your registration.", "info");
+            if (data.session) {
+              showToast("Account Created", "Welcome to ToyzGuru! Logged in automatically.", "success");
+              await initDatabase();
+              window.location.hash = "#profile";
+            } else {
+              showToast("Verification Sent", "Check your email inbox to verify your registration.", "info");
+            }
+            registered = true;
           }
-          registered = true;
         } catch (err) {
           console.warn("Supabase sign up failed, trying local fallback:", err);
         }

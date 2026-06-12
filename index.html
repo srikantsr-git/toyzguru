@@ -1724,7 +1724,12 @@
 
             <!-- Member Registry Panel -->
             <div class="admin-panel" id="admin-members-panel">
-              <h3 style="font-size: 1.5rem; margin-bottom: 1.5rem;">Registered Member Registry</h3>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h3 style="font-size: 1.5rem; margin: 0;">Registered Member Registry</h3>
+                <button id="admin-add-member-btn" class="checkout-btn" style="padding: 0.6rem 1.25rem; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 0.5rem;">
+                  <i data-feather="user-plus" style="width: 16px; height: 16px;"></i> Create New Member
+                </button>
+              </div>
 
               <div class="glass-panel admin-table-wrap">
                 <table class="admin-table">
@@ -1744,6 +1749,7 @@
                 </table>
               </div>
             </div>
+
 
             <!-- Customer Feedback Panel -->
             <div class="admin-panel" id="admin-feedback-panel">
@@ -2477,6 +2483,12 @@
             <form id="admin-member-form" class="horizontal-scroll-form">
               <input type="hidden" id="admin-form-member-id">
 
+              <!-- Password field for new member creation only -->
+              <div class="form-group" id="admin-form-member-password-group" style="display:none; margin-bottom: 1.25rem;">
+                <label class="form-label">Password (for new account) *</label>
+                <input type="password" class="form-input" id="admin-form-member-password" placeholder="Min 6 characters" autocomplete="new-password">
+              </div>
+
               <div class="checkout-form-grid" style="grid-template-columns: 1fr; gap: 1.25rem;">
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
@@ -2536,7 +2548,7 @@
 
               </div>
               <!-- Member Wishlist Section inside Edit Modal -->
-              <div style="margin-top: 1.5rem; border-top: 1px solid var(--glass-border); padding-top: 1.5rem;">
+              <div id="admin-member-wishlist-section" style="margin-top: 1.5rem; border-top: 1px solid var(--glass-border); padding-top: 1.5rem;">
                 <h4
                   style="font-size: 0.95rem; font-family: 'Space Grotesk', sans-serif; color: var(--color-brand); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.35rem;">
                   <i data-feather="heart" style="width: 16px; height: 16px; fill: var(--color-brand);"></i>

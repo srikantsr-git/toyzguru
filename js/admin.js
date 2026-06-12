@@ -1048,8 +1048,17 @@ function adminEditMemberTrigger(profileId) {
     return;
   }
 
+  // Switch to Edit mode UI
   document.getElementById("admin-form-member-id").value = member.id;
   document.getElementById("admin-member-modal-title").textContent = `Edit Member: ${member.name}`;
+  document.getElementById("admin-member-save-btn").textContent = "Save Member Details";
+
+  // Hide password field, show wishlist (edit mode)
+  const pwGroup = document.getElementById("admin-form-member-password-group");
+  if (pwGroup) pwGroup.style.display = "none";
+  const wishlistSection = document.getElementById("admin-member-wishlist-section");
+  if (wishlistSection) wishlistSection.style.display = "";
+
   document.getElementById("admin-form-member-name").value = member.name || "";
   document.getElementById("admin-form-member-email").value = member.email || "";
   document.getElementById("admin-form-member-phone").value = member.phone || "";
@@ -1107,6 +1116,41 @@ function adminEditMemberTrigger(profileId) {
   }
 }
 
+function adminCreateMemberTrigger() {
+  // Switch to Create mode UI
+  document.getElementById("admin-form-member-id").value = ""; // empty = create mode
+  document.getElementById("admin-member-modal-title").textContent = "Create New Member";
+  document.getElementById("admin-member-save-btn").textContent = "Create Member Account";
+
+  // Clear all form fields
+  const form = document.getElementById("admin-member-form");
+  if (form) form.reset();
+  document.getElementById("admin-form-member-country").value = "India";
+  document.getElementById("admin-form-member-points").value = 120;
+
+  // Show password field, hide wishlist (not applicable for new members)
+  const pwGroup = document.getElementById("admin-form-member-password-group");
+  if (pwGroup) pwGroup.style.display = "block";
+  const pwInput = document.getElementById("admin-form-member-password");
+  if (pwInput) { pwInput.value = ""; pwInput.required = true; }
+  const wishlistSection = document.getElementById("admin-member-wishlist-section");
+  if (wishlistSection) wishlistSection.style.display = "none";
+
+  // Populate state dropdown
+  const stateSelect = document.getElementById("admin-form-member-state");
+  if (stateSelect) {
+    stateSelect.innerHTML = '<option value="">Select State</option>' +
+      (window.stateChargesState || []).map(s => `<option value="${s.state_name}">${s.state_name}</option>`).join("");
+  }
+
+  document.getElementById("admin-member-modal-overlay").classList.add("active");
+  document.body.style.overflow = "hidden";
+
+  if (window.feather) {
+    window.feather.replace();
+  }
+}
+
 function adminCloseMemberModal() {
   document.getElementById("admin-member-modal-overlay").classList.remove("active");
   document.body.style.overflow = "";
@@ -1115,23 +1159,34 @@ function adminCloseMemberModal() {
 async function handleAdminMemberFormSubmit(e) {
   e.preventDefault();
 
-  const profileId = document.getElementById("admin-form-member-id").value;
-  const name = document.getElementById("admin-form-member-name").value;
-  const email = document.getElementById("admin-form-member-email").value;
+  const profileId = document.getElementById("admin-form-member-id").value.trim();
+  const isCreateMode = !profileId; // empty profileId = creating a new member
+
+  const name = document.getElementById("admin-form-member-name").value.trim();
+  const email = document.getElementById("admin-form-member-email").value.trim();
   const phone = document.getElementById("admin-form-member-phone").value.trim();
-  const points = parseInt(document.getElementById("admin-form-member-points").value);
+  const points = parseInt(document.getElementById("admin-form-member-points").value) || 120;
   const address = document.getElementById("admin-form-member-address").value.trim();
   const city = document.getElementById("admin-form-member-city").value.trim();
   const state = document.getElementById("admin-form-member-state").value;
   const zip = document.getElementById("admin-form-member-zip").value.trim();
-  const country = document.getElementById("admin-form-member-country").value.trim();
+  const country = document.getElementById("admin-form-member-country").value.trim() || "India";
+  const password = isCreateMode ? (document.getElementById("admin-form-member-password") || {}).value : null;
 
-  if (isNaN(points)) {
-    if (window.toyzToast) window.toyzToast("Invalid Loyalty Points", "Please enter a valid number of loyalty points.", "warning");
+  if (!name || !email) {
+    if (window.toyzToast) window.toyzToast("Missing Fields", "Name and Email are required.", "warning");
     return;
   }
 
-  const dbPayload = {
+  if (isCreateMode && (!password || password.length < 6)) {
+    if (window.toyzToast) window.toyzToast("Weak Password", "Password must be at least 6 characters.", "warning");
+    return;
+  }
+
+  const saveBtn = document.getElementById("admin-member-save-btn");
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = isCreateMode ? "Creating..." : "Saving..."; }
+
+  const profilePayload = {
     name,
     email,
     phone: phone || null,
@@ -1140,52 +1195,98 @@ async function handleAdminMemberFormSubmit(e) {
     city: city || null,
     state: state || '',
     zip: zip || null,
-    country: country || 'India'
+    country
   };
 
   try {
-    if (supabase) {
-      const { error } = await supabase.from('profiles').update(dbPayload).eq('id', profileId);
-      if (error) throw error;
-      
-      // Update local storage for active customer profile card if matched
-      if (window.userState && window.userState.id === profileId) {
-        window.userState = { ...window.userState, ...dbPayload };
-        localStorage.setItem("toyzguru_user", JSON.stringify(window.userState));
-        
-        // Sync profile view labels
-        const pointsEl = document.getElementById("profile-card-points");
-        if (pointsEl) pointsEl.textContent = points;
-        const nameEl = document.getElementById("profile-card-name");
-        if (nameEl) nameEl.textContent = name;
+    if (isCreateMode) {
+      // ---- CREATE NEW MEMBER ----
+      if (!supabase) {
+        if (window.toyzToast) window.toyzToast("Offline Mode", "Cannot create Supabase accounts in offline/demo mode.", "warning");
+        return;
       }
-    } else {
-      // Local fallback / offline mode
-      let localProfiles = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
-      const match = localProfiles.find(p => p.id === profileId);
-      if (match) {
-        Object.assign(match, dbPayload);
-        localStorage.setItem("toyzguru_profiles", JSON.stringify(localProfiles));
-      }
-      
-      // Update local storage for active customer profile card if matched
-      if (window.userState && window.userState.id === profileId) {
-        window.userState = { ...window.userState, ...dbPayload };
-        localStorage.setItem("toyzguru_user", JSON.stringify(window.userState));
-      }
-    }
 
-    if (window.toyzToast) {
-      window.toyzToast("Member Updated", `Successfully saved details for: ${name}`, "success");
+      // Check if email already exists in profiles
+      const { data: existing } = await supabase.from('profiles').select('email').eq('email', email).maybeSingle();
+      if (existing) {
+        if (window.toyzToast) window.toyzToast("Email Exists", "A member with this email already exists.", "warning");
+        return;
+      }
+
+      // Create Supabase auth user
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { name } }
+      });
+
+      if (signUpError) {
+        const msg = signUpError.message || "";
+        if (msg.toLowerCase().includes("rate limit") || signUpError.status === 429) {
+          if (window.toyzToast) window.toyzToast("Rate Limited", "Supabase signup limit reached. Please wait a few minutes.", "warning");
+        } else {
+          if (window.toyzToast) window.toyzToast("Create Failed", msg || "Failed to create user account.", "danger");
+        }
+        return;
+      }
+
+      const newUserId = signUpData.user && signUpData.user.id;
+      if (!newUserId) {
+        // Supabase returned no user — might be duplicate or confirmation required
+        if (window.toyzToast) window.toyzToast("Verification Required", "A confirmation email has been sent to the new member. The profile will appear after they verify.", "info");
+        adminCloseMemberModal();
+        return;
+      }
+
+      // Upsert the profile with the new auth user ID
+      const { error: profileError } = await supabase.from('profiles').upsert({
+        id: newUserId,
+        ...profilePayload
+      });
+      if (profileError) throw profileError;
+
+      if (window.toyzToast) window.toyzToast("Member Created", `Account for ${name} has been created successfully.`, "success");
+      adminCloseMemberModal();
+      adminRenderMembersRegistry();
+
+    } else {
+      // ---- EDIT EXISTING MEMBER ----
+      if (supabase) {
+        const { error } = await supabase.from('profiles').update(profilePayload).eq('id', profileId);
+        if (error) throw error;
+        
+        // Update local storage for active customer profile card if matched
+        if (window.userState && window.userState.id === profileId) {
+          window.userState = { ...window.userState, ...profilePayload };
+          localStorage.setItem("toyzguru_user", JSON.stringify(window.userState));
+          const pointsEl = document.getElementById("profile-card-points");
+          if (pointsEl) pointsEl.textContent = points;
+          const nameEl = document.getElementById("profile-card-name");
+          if (nameEl) nameEl.textContent = name;
+        }
+      } else {
+        // Local fallback
+        let localProfiles = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
+        const match = localProfiles.find(p => p.id === profileId);
+        if (match) {
+          Object.assign(match, profilePayload);
+          localStorage.setItem("toyzguru_profiles", JSON.stringify(localProfiles));
+        }
+        if (window.userState && window.userState.id === profileId) {
+          window.userState = { ...window.userState, ...profilePayload };
+          localStorage.setItem("toyzguru_user", JSON.stringify(window.userState));
+        }
+      }
+
+      if (window.toyzToast) window.toyzToast("Member Updated", `Successfully saved details for: ${name}`, "success");
+      adminCloseMemberModal();
+      adminRenderMembersRegistry();
     }
-    
-    adminCloseMemberModal();
-    adminRenderMembersRegistry();
   } catch (err) {
-    if (window.toyzToast) {
-      window.toyzToast("Save Failed", err.message || "Failed to save member details.", "danger");
-    }
+    if (window.toyzToast) window.toyzToast("Save Failed", err.message || "Failed to save member details.", "danger");
     console.error(err);
+  } finally {
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = isCreateMode ? "Create Member Account" : "Save Member Details"; }
   }
 }
 
@@ -1284,6 +1385,12 @@ function setupAdminEventListeners() {
   document.getElementById("admin-order-modal-overlay").addEventListener("click", (e) => {
     if (e.target.id === "admin-order-modal-overlay") adminCloseOrderModal();
   });
+
+  // Add member button trigger click
+  const addMemberBtn = document.getElementById("admin-add-member-btn");
+  if (addMemberBtn) {
+    addMemberBtn.addEventListener("click", adminCreateMemberTrigger);
+  }
 
   // Admin member overlay closure
   const closeMemberBtn = document.getElementById("close-admin-member-modal-btn");
@@ -1750,6 +1857,7 @@ window.adminCloseProductModal = adminCloseProductModal;
 window.adminUpdateMemberPoints = adminUpdateMemberPoints;
 window.adminDeleteMemberTrigger = adminDeleteMemberTrigger;
 window.adminEditMemberTrigger = adminEditMemberTrigger;
+window.adminCreateMemberTrigger = adminCreateMemberTrigger;
 window.adminCloseMemberModal = adminCloseMemberModal;
 window.adminDeleteFeedbackTrigger = adminDeleteFeedbackTrigger;
 window.adminCreateProductTrigger = adminCreateProductTrigger;
