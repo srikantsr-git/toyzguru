@@ -976,156 +976,74 @@ async function sendOutgoingVerificationEmail(userProfile) {
   const confirmLink = `${window.location.origin}${window.location.pathname}#confirm-email?email=${encodeURIComponent(userProfile.email)}`;
   
   try {
-    const response = await fetch(`https://formsubmit.co/ajax/${userProfile.email}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify({
-        _subject: "Confirm your ToyzGuru Registration",
-        _template: "box",
-        sender: "ToyzGuru Security",
-        welcome_message: `Welcome to ToyzGuru, ${userProfile.name}!`,
-        message: "Thank you for registering an account on ToyzGuru. To complete your registration and secure access to our exclusive member section, loyalty rewards, and order status, please confirm your email address by clicking the link below:",
-        confirmation_link: confirmLink,
-        _honey: ""
-      })
-    });
+    if (typeof Email === "undefined") {
+      throw new Error("SMTP.js library not loaded yet");
+    }
     
-    const result = await response.json();
-    if (result && (result.success === "true" || result.success === true)) {
+    const emailBody = `
+      <div style="font-family: 'Inter', sans-serif; background-color: #080b11; color: #f3f4f6; padding: 2.5rem; border-radius: 16px; max-width: 600px; margin: 0 auto; border: 1px solid rgba(139, 92, 246, 0.2); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);">
+        <div style="text-align: center; margin-bottom: 2rem;">
+          <h2 style="font-family: 'Space Grotesk', sans-serif; color: #ffffff; font-size: 1.8rem; margin: 0; font-weight: 700; letter-spacing: -0.02em;">ToyzGuru</h2>
+          <p style="color: #8b5cf6; font-size: 0.85rem; margin: 0.25rem 0 0 0; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em;">Premium Collector Store</p>
+        </div>
+        
+        <h3 style="font-family: 'Space Grotesk', sans-serif; color: #ffffff; font-size: 1.4rem; margin-top: 0; margin-bottom: 1rem; font-weight: 600; text-align: center;">Confirm your Email Address</h3>
+        
+        <p style="color: #9ca3af; font-size: 0.95rem; line-height: 1.6; margin-bottom: 2rem;">
+          Welcome to ToyzGuru, <strong>${userProfile.name}</strong>!<br><br>
+          Thank you for registering an account with us. To complete your registration and unlock access to your profile dashboard, order history, loyalty points, and exclusive member benefits, please confirm your email address by clicking the button below:
+        </p>
+        
+        <div style="text-align: center; margin-bottom: 2.5rem;">
+          <a href="${confirmLink}" style="display: inline-block; padding: 0.9rem 2.2rem; background: linear-gradient(135deg, #8b5cf6 0%, #d946ef 100%); color: #ffffff !important; text-decoration: none; font-weight: 700; border-radius: 8px; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4); font-size: 0.95rem;">Confirm Registration</a>
+        </div>
+        
+        <hr style="border: 0; border-top: 1px solid rgba(255, 255, 255, 0.08); margin-bottom: 1.5rem;" />
+        
+        <p style="color: #6b7280; font-size: 0.8rem; text-align: center; line-height: 1.5; margin: 0;">
+          If the button above does not work, copy and paste the following link into your browser:<br>
+          <a href="${confirmLink}" style="color: #8b5cf6; text-decoration: underline; word-break: break-all;">${confirmLink}</a>
+        </p>
+      </div>
+    `;
+
+    let result = await Email.send({
+      Host: "smtp.zoho.com",
+      Username: "support@toyzguru.in",
+      Password: "Akash@007",
+      Port: 465,
+      To: userProfile.email,
+      From: "support@toyzguru.in",
+      Subject: "Confirm your ToyzGuru Registration",
+      Body: emailBody
+    });
+
+    if (result !== "OK") {
+      console.warn("SMTP.js failed with smtp.zoho.com, trying smtppro.zoho.com...");
+      result = await Email.send({
+        Host: "smtppro.zoho.com",
+        Username: "support@toyzguru.in",
+        Password: "Akash@007",
+        Port: 465,
+        To: userProfile.email,
+        From: "support@toyzguru.in",
+        Subject: "Confirm your ToyzGuru Registration",
+        Body: emailBody
+      });
+    }
+
+    if (result === "OK") {
       showToast("Verification Sent", `A verification email has been sent to ${userProfile.email}.`, "success");
     } else {
-      console.warn("FormSubmit API responded with non-success:", result);
-      showEmailFallbackModal(userProfile, confirmLink);
+      console.warn("SMTP.js responded with non-success status:", result);
+      showCustomDialog("Verification Failed", "Failed to send verification email to " + userProfile.email + ". Please verify your email ID and network connection.", "error");
     }
   } catch (error) {
-    console.error("Failed to send outgoing verification email via FormSubmit:", error);
-    showEmailFallbackModal(userProfile, confirmLink);
+    console.error("Failed to send verification email via SMTP:", error);
+    showCustomDialog("Verification Failed", "Failed to send verification email to " + userProfile.email + ". Please check your network connection and try again.", "error");
   }
 }
 window.sendOutgoingVerificationEmail = sendOutgoingVerificationEmail;
-
-function showEmailFallbackModal(userProfile, confirmLink) {
-  const existing = document.querySelector(".email-fallback-overlay");
-  if (existing) existing.remove();
-
-  const overlay = document.createElement("div");
-  overlay.className = "email-fallback-overlay";
-  overlay.style.cssText = `
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.85);
-    z-index: 3000;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    backdrop-filter: blur(8px);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  `;
-
-  overlay.innerHTML = `
-    <div class="glass-panel" style="
-      background: #18191c;
-      border: 1px solid rgba(124, 58, 237, 0.3);
-      border-radius: 16px;
-      padding: 2.5rem;
-      max-width: 500px;
-      width: 90%;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-      text-align: center;
-      position: relative;
-      color: #dcddde;
-    ">
-      <button class="email-fallback-close" style="
-        position: absolute;
-        top: 1.25rem;
-        right: 1.25rem;
-        background: transparent;
-        border: none;
-        color: #b9bbbe;
-        cursor: pointer;
-        font-size: 1.5rem;
-        transition: color 0.2s;
-      " onclick="this.closest('.email-fallback-overlay').remove()">&times;</button>
-      
-      <div style="
-        width: 80px;
-        height: 80px;
-        border-radius: 50%;
-        background: rgba(124, 58, 237, 0.1);
-        border: 2px solid rgba(124, 58, 237, 0.3);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto 1.5rem;
-      ">
-        <i data-feather="mail" style="width: 40px; height: 40px; color: #7c3aed;"></i>
-      </div>
-      
-      <h3 style="
-        font-size: 1.4rem;
-        font-family: 'Space Grotesk', sans-serif;
-        margin-bottom: 1rem;
-        color: #fff;
-      ">Email Verification Outbox</h3>
-      
-      <p style="
-        font-size: 0.9rem;
-        color: #b9bbbe;
-        line-height: 1.6;
-        margin-bottom: 1.5rem;
-      ">
-        We attempted to send a verification email to <strong>${userProfile.email}</strong>.
-      </p>
-      
-      <p style="
-        font-size: 0.85rem;
-        color: #8e9297;
-        line-height: 1.5;
-        margin-bottom: 2rem;
-        background: rgba(0, 0, 0, 0.3);
-        padding: 1rem;
-        border-radius: 8px;
-        text-align: left;
-      ">
-        <i data-feather="alert-circle" style="width:14px;height:14px;vertical-align:middle;margin-right:0.35rem;color:#7c3aed;"></i>
-        Note: If you are running locally via the <code>file://</code> protocol, browser CORS policies block automated email delivery. To test real emails, run the application using <code>npm run dev</code>.
-      </p>
-      
-      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-        <a href="${confirmLink}" class="checkout-btn" style="
-          display: block;
-          text-decoration: none;
-          padding: 0.85rem;
-          text-align: center;
-          background: var(--color-brand-gradient);
-          color: #fff;
-          font-weight: 700;
-          border-radius: 6px;
-        " onclick="this.closest('.email-fallback-overlay').remove()">
-          <i data-feather="check-circle" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 0.35rem;"></i>
-          Confirm Registration Manually
-        </a>
-        <button class="checkout-btn" style="
-          padding: 0.85rem;
-          background: rgba(255,255,255,0.05);
-          color: #dcddde;
-          border: 1px solid rgba(255,255,255,0.1);
-        " onclick="this.closest('.email-fallback-overlay').remove()">
-          Dismiss
-        </button>
-      </div>
-    </div>
-  `;
-
-  document.body.appendChild(overlay);
-  if (window.feather) feather.replace();
-}
 
 
 // ================= RECEIPT PDF GENERATOR =================
