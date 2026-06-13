@@ -134,20 +134,18 @@ async function adminRenderDashboard() {
       if (productsError) throw productsError;
       products = prods || [];
 
-      // Fetch all profiles
-      const { data: profs, error: profilesError } = await supabase.from('profiles').select('*');
-      if (profilesError) throw profilesError;
-      profiles = profs || [];
+      // Fetch all profiles from local registry
+      profiles = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
     } catch (err) {
       console.warn("Failed to fetch dashboard data from Supabase, falling back to local storage:", err);
       orders = JSON.parse(localStorage.getItem("toyzguru_orders")) || [];
       products = window.productsState || [];
-      profiles = [];
+      profiles = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
     }
   } else {
     orders = JSON.parse(localStorage.getItem("toyzguru_orders")) || [];
     products = window.productsState || [];
-    profiles = [];
+    profiles = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
   }
 
   // Calculate stats
@@ -1197,49 +1195,44 @@ async function handleAdminMemberFormSubmit(e) {
   try {
     if (isCreateMode) {
       // ---- CREATE NEW MEMBER ----
-      if (!supabase) {
-        if (window.toyzToast) window.toyzToast("Offline Mode", "Cannot create Supabase accounts in offline/demo mode.", "warning");
-        return;
-      }
-
-      // Check if email already exists in profiles
-      const { data: existing } = await supabase.from('profiles').select('email').eq('email', email).maybeSingle();
+      // Check if email already exists in local profiles first
+      let localProfiles = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
+      const existing = localProfiles.some(p => p.email.toLowerCase() === email.toLowerCase());
       if (existing) {
         if (window.toyzToast) window.toyzToast("Email Exists", "A member with this email already exists.", "warning");
         return;
       }
 
-      // Create Supabase auth user
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { data: { name } }
+      // Generate a UUID v4
+      const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
       });
 
-      if (signUpError) {
-        const msg = signUpError.message || "";
-        if (msg.toLowerCase().includes("rate limit") || signUpError.status === 429) {
-          if (window.toyzToast) window.toyzToast("Rate Limited", "Supabase signup limit reached. Please wait a few minutes.", "warning");
-        } else {
-          if (window.toyzToast) window.toyzToast("Create Failed", msg || "Failed to create user account.", "danger");
+      // Create new profile object
+      const newMember = {
+        id: uuid,
+        ...profilePayload,
+        created_at: new Date().toISOString(),
+        password: password
+      };
+
+      // Add to registry
+      localProfiles.push(newMember);
+      localStorage.setItem("toyzguru_profiles", JSON.stringify(localProfiles));
+
+      // Sync to Supabase profiles table if available
+      if (supabase) {
+        try {
+          const { error: profileError } = await supabase.from('profiles').insert({
+            id: uuid,
+            ...profilePayload
+          });
+          if (profileError) console.error("Error saving member profile to Supabase:", profileError);
+        } catch (err) {
+          console.warn("Failed to sync new member to Supabase:", err);
         }
-        return;
       }
-
-      const newUserId = signUpData.user && signUpData.user.id;
-      if (!newUserId) {
-        // Supabase returned no user — might be duplicate or confirmation required
-        if (window.toyzToast) window.toyzToast("Verification Required", "A confirmation email has been sent to the new member. The profile will appear after they verify.", "info");
-        adminCloseMemberModal();
-        return;
-      }
-
-      // Upsert the profile with the new auth user ID
-      const { error: profileError } = await supabase.from('profiles').upsert({
-        id: newUserId,
-        ...profilePayload
-      });
-      if (profileError) throw profileError;
 
       if (window.toyzToast) window.toyzToast("Member Created", `Account for ${name} has been created successfully.`, "success");
       adminCloseMemberModal();
@@ -1247,30 +1240,31 @@ async function handleAdminMemberFormSubmit(e) {
 
     } else {
       // ---- EDIT EXISTING MEMBER ----
-      if (supabase) {
-        const { error } = await supabase.from('profiles').update(profilePayload).eq('id', profileId);
-        if (error) throw error;
+      // 1. Update in local storage registry
+      let localProfiles = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
+      const match = localProfiles.find(p => p.id === profileId);
+      if (match) {
+        Object.assign(match, profilePayload);
+        localStorage.setItem("toyzguru_profiles", JSON.stringify(localProfiles));
+      }
 
-        // Update local storage for active customer profile card if matched
-        if (window.userState && window.userState.id === profileId) {
-          window.userState = { ...window.userState, ...profilePayload };
-          localStorage.setItem("toyzguru_user", JSON.stringify(window.userState));
-          const pointsEl = document.getElementById("profile-card-points");
-          if (pointsEl) pointsEl.textContent = points;
-          const nameEl = document.getElementById("profile-card-name");
-          if (nameEl) nameEl.textContent = name;
-        }
-      } else {
-        // Local fallback
-        let localProfiles = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
-        const match = localProfiles.find(p => p.id === profileId);
-        if (match) {
-          Object.assign(match, profilePayload);
-          localStorage.setItem("toyzguru_profiles", JSON.stringify(localProfiles));
-        }
-        if (window.userState && window.userState.id === profileId) {
-          window.userState = { ...window.userState, ...profilePayload };
-          localStorage.setItem("toyzguru_user", JSON.stringify(window.userState));
+      // 2. Update active session if it matches the current user
+      if (window.userState && window.userState.id === profileId) {
+        window.userState = { ...window.userState, ...profilePayload };
+        localStorage.setItem("toyzguru_user", JSON.stringify(window.userState));
+        const pointsEl = document.getElementById("profile-card-points");
+        if (pointsEl) pointsEl.textContent = points;
+        const nameEl = document.getElementById("profile-card-name");
+        if (nameEl) nameEl.textContent = name;
+      }
+
+      // 3. Update in Supabase profiles table if online
+      if (supabase) {
+        try {
+          const { error } = await supabase.from('profiles').update(profilePayload).eq('id', profileId);
+          if (error) console.error("Error updating profile in Supabase:", error);
+        } catch (err) {
+          console.warn("Failed to sync profile update to Supabase:", err);
         }
       }
 

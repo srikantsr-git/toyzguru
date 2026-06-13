@@ -1,0 +1,72 @@
+[
+  {
+    "id": "ba55f7bc-b383-4581-81b6-fca01ea6dab4",
+    "name": "Srikant Test",
+    "email": "srikanttest@gmail.com",
+    "phone": null,
+    "address": null,
+    "city": null,
+    "state": "",
+    "zip": null,
+    "country": null,
+    "loyalty_points": 120,
+    "created_at": "2026-06-12T07:04:43.933174+00:00",
+    "password": "password123"
+  },
+  {
+    "id": "18977fda-6766-486a-b515-ddb7f0c659db",
+    "name": "Srikant Test",
+    "email": "srikanttest2@gmail.com",
+    "phone": null,
+    "address": null,
+    "city": null,
+    "state": "",
+    "zip": null,
+    "country": null,
+    "loyalty_points": 120,
+    "created_at": "2026-06-12T07:04:57.635697+00:00",
+    "password": "password123"
+  },
+  {
+    "id": "3dec06a2-cf7a-4a78-a402-d3453164fb10",
+    "name": "Srikant Random",
+    "email": "srikant_rand_9988@gmail.com",
+    "phone": null,
+    "address": null,
+    "city": null,
+    "state": "",
+    "zip": null,
+    "country": null,
+    "loyalty_points": 120,
+    "created_at": "2026-06-12T17:24:05.200487+00:00",
+    "password": "password123"
+  },
+  {
+    "id": "31b343de-a693-4951-9991-3a27ccd0251b",
+    "name": "Pavan Negi",
+    "email": "sriutube2017@gmail.com",
+    "phone": "+919923924078",
+    "address": "302, Tanush Pride, Alkapoor Township, Neknampur",
+    "city": "Hyderabad",
+    "state": "Telangana",
+    "zip": "500089",
+    "country": "IN",
+    "loyalty_points": 2369,
+    "created_at": "2026-06-12T16:47:14.197999+00:00",
+    "password": "password123"
+  },
+  {
+    "id": "9d1f9823-bbf1-49ab-8db4-474e3ddeb9e2",
+    "name": "Test User",
+    "email": "test_signup_3455@toyzguru.in",
+    "phone": null,
+    "address": null,
+    "city": null,
+    "state": "",
+    "zip": null,
+    "country": null,
+    "loyalty_points": 120,
+    "created_at": "2026-06-13T08:26:23.799419+00:00",
+    "password": "password123"
+  }
+]

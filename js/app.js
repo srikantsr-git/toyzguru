@@ -190,6 +190,74 @@ const defaultCouriers = [
 
 // Initialize database from Supabase with localStorage/mock fallbacks
 async function initDatabase() {
+  // 0. Load seed profiles from js/users.json and merge them into localStorage
+  const fallbackSeedUsers = [
+    {
+      "id": "ba55f7bc-b383-4581-81b6-fca01ea6dab4",
+      "name": "Srikant Test",
+      "email": "srikanttest@gmail.com",
+      "loyalty_points": 120,
+      "password": "password123"
+    },
+    {
+      "id": "18977fda-6766-486a-b515-ddb7f0c659db",
+      "name": "Srikant Test",
+      "email": "srikanttest2@gmail.com",
+      "loyalty_points": 120,
+      "password": "password123"
+    },
+    {
+      "id": "3dec06a2-cf7a-4a78-a402-d3453164fb10",
+      "name": "Srikant Random",
+      "email": "srikant_rand_9988@gmail.com",
+      "loyalty_points": 120,
+      "password": "password123"
+    },
+    {
+      "id": "31b343de-a693-4951-9991-3a27ccd0251b",
+      "name": "Pavan Negi",
+      "email": "sriutube2017@gmail.com",
+      "phone": "+919923924078",
+      "address": "302, Tanush Pride, Alkapoor Township, Neknampur",
+      "city": "Hyderabad",
+      "state": "Telangana",
+      "zip": "500089",
+      "country": "IN",
+      "loyalty_points": 2369,
+      "password": "password123"
+    },
+    {
+      "id": "9d1f9823-bbf1-49ab-8db4-474e3ddeb9e2",
+      "name": "Test User",
+      "email": "test_signup_3455@toyzguru.in",
+      "loyalty_points": 120,
+      "password": "password123"
+    }
+  ];
+
+  let seedUsers = fallbackSeedUsers;
+  try {
+    const res = await fetch("js/users.json");
+    if (res.ok) {
+      seedUsers = await res.json();
+    }
+  } catch (err) {
+    console.warn("Failed to load seed profiles from users.json, using hardcoded fallback:", err);
+  }
+
+  let localProfiles = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
+  let updated = false;
+  seedUsers.forEach(seedUser => {
+    const exists = localProfiles.some(p => p.email.toLowerCase() === seedUser.email.toLowerCase());
+    if (!exists) {
+      localProfiles.push(seedUser);
+      updated = true;
+    }
+  });
+  if (updated || localStorage.getItem("toyzguru_profiles") === null) {
+    localStorage.setItem("toyzguru_profiles", JSON.stringify(localProfiles));
+  }
+
   // 1. Fetch products (either from Supabase or localStorage fallback)
   if (supabase) {
     try {
@@ -233,72 +301,85 @@ async function initDatabase() {
 
   // 2. Auth Session Check & User Profile retrieval
   let session = null;
-  if (supabase) {
+  if (localStorage.getItem("toyzguru_mock_session") === "true") {
+    // Load local user profile session
+    userState = JSON.parse(localStorage.getItem("toyzguru_user"));
+    cartState = JSON.parse(localStorage.getItem("toyzguru_cart")) || [];
+    
+    // Fetch orders for this user from Supabase/localStorage fallback
+    if (supabase && userState) {
+      try {
+        const { data: ords, error } = await supabase.from('orders').select('*').eq('user_id', userState.id).order('date', { ascending: false });
+        if (error) throw error;
+        ordersState = ords || [];
+      } catch (err) {
+        ordersState = JSON.parse(localStorage.getItem("toyzguru_orders")) || [];
+      }
+    } else {
+      ordersState = JSON.parse(localStorage.getItem("toyzguru_orders")) || [];
+    }
+  } else if (supabase) {
+    // Check if there's a legacy Supabase Auth session we should migrate to local mock
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       session = sessionData ? sessionData.session : null;
     } catch (err) {
       console.warn("Failed to get session from Supabase:", err);
     }
-  }
+    
+    if (session) {
+      const user = session.user;
+      try {
+        const { data: profile, error } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+        if (error && error.code !== 'PGRST116') throw error;
 
-  if (session) {
-    const user = session.user;
-    try {
-      const { data: profile, error } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-      if (error && error.code !== 'PGRST116') throw error;
-
-      if (profile) {
-        userState = profile;
-      } else {
-        // Fallback or trigger delay - create profile row
-        const newProfile = {
-          id: user.id,
-          name: user.user_metadata.name || 'Valued Customer',
-          email: user.email,
-          loyalty_points: 120,
-          country: 'IN',
-          state: ''
-        };
-        await supabase.from('profiles').insert(newProfile);
-        userState = newProfile;
+        if (profile) {
+          userState = profile;
+        } else {
+          userState = {
+            id: user.id,
+            name: user.user_metadata.name || 'Valued Customer',
+            email: user.email,
+            loyalty_points: 120,
+            country: 'IN',
+            state: ''
+          };
+          await supabase.from('profiles').insert(userState);
+        }
+      } catch (err) {
+        console.error("Error loading user profile:", err);
+        userState = { id: user.id, email: user.email, name: user.user_metadata.name || 'Valued Customer', loyalty_points: 120, country: 'IN', state: '' };
       }
-    } catch (err) {
-      console.error("Error loading user profile:", err);
-      userState = { id: user.id, email: user.email, name: user.user_metadata.name || 'Valued Customer', loyalty_points: 120, country: 'IN', state: '' };
-    }
 
-    // Fetch cart for authenticated user
-    try {
-      const { data: cartData, error } = await supabase.from('cart').select('items').eq('user_id', user.id).single();
-      if (error && error.code !== 'PGRST116') throw error;
-      if (cartData && cartData.items) {
-        cartState = cartData.items;
-      } else {
-        cartState = [];
+      // Convert legacy session to mock session
+      localStorage.setItem("toyzguru_mock_session", "true");
+      localStorage.setItem("toyzguru_user", JSON.stringify(userState));
+      
+      // Fetch cart
+      try {
+        const { data: cartData, error } = await supabase.from('cart').select('items').eq('user_id', user.id).single();
+        if (cartData && cartData.items) {
+          cartState = cartData.items;
+        } else {
+          cartState = [];
+        }
+      } catch (err) {
+        cartState = JSON.parse(localStorage.getItem("toyzguru_cart")) || [];
       }
-    } catch (err) {
+
+      // Fetch orders
+      try {
+        const { data: ords, error } = await supabase.from('orders').select('*').eq('user_id', user.id).order('date', { ascending: false });
+        if (error) throw error;
+        ordersState = ords || [];
+      } catch (err) {
+        ordersState = JSON.parse(localStorage.getItem("toyzguru_orders")) || [];
+      }
+    } else {
+      userState = null;
       cartState = JSON.parse(localStorage.getItem("toyzguru_cart")) || [];
+      ordersState = [];
     }
-
-    // Fetch user specific orders
-    try {
-      const { data: ords, error } = await supabase.from('orders').select('*').eq('user_id', user.id).order('date', { ascending: false });
-      if (error) throw error;
-      ordersState = ords || [];
-    } catch (err) {
-      ordersState = JSON.parse(localStorage.getItem("toyzguru_orders")) || [];
-    }
-  } else if (localStorage.getItem("toyzguru_mock_session") === "true") {
-    // Load mock Google user session
-    userState = JSON.parse(localStorage.getItem("toyzguru_user")) || defaultUser;
-    cartState = JSON.parse(localStorage.getItem("toyzguru_cart")) || [];
-    ordersState = JSON.parse(localStorage.getItem("toyzguru_orders")) || defaultOrders;
-  } else if (localStorage.getItem("toyzguru_mock_session") === "true") {
-    // Load mock Google user session
-    userState = JSON.parse(localStorage.getItem("toyzguru_user")) || defaultUser;
-    cartState = JSON.parse(localStorage.getItem("toyzguru_cart")) || [];
-    ordersState = JSON.parse(localStorage.getItem("toyzguru_orders")) || defaultOrders;
   } else {
     // Guest User
     userState = null;
@@ -444,6 +525,19 @@ async function saveProducts() {
 
 async function saveUser() {
   localStorage.setItem("toyzguru_user", JSON.stringify(userState));
+  
+  // Also sync changes to the master local profiles registry
+  if (userState && userState.email) {
+    let localProfiles = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
+    const idx = localProfiles.findIndex(p => p.email.toLowerCase() === userState.email.toLowerCase());
+    if (idx !== -1) {
+      localProfiles[idx] = { ...localProfiles[idx], ...userState };
+    } else {
+      localProfiles.push(userState);
+    }
+    localStorage.setItem("toyzguru_profiles", JSON.stringify(localProfiles));
+  }
+
   const isUUID = userState && userState.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userState.id);
   if (supabase && userState && userState.id && isUUID) {
     const dbPayload = { ...userState };
@@ -2197,19 +2291,7 @@ async function handleCheckoutSubmit(e) {
     const fullAddress = `${address}, ${city}${stateStr}, ${zip}, ${country}`;
 
     // Get current session
-    let userId = null;
-    let session = null;
-    if (supabase) {
-      try {
-        const { data: sessionData } = await supabase.auth.getSession();
-        session = sessionData ? sessionData.session : null;
-        userId = session ? session.user.id : null;
-      } catch (err) {
-        console.warn("Failed to get session from Supabase during checkout:", err);
-      }
-    } else {
-      userId = userState ? userState.id : null;
-    }
+    const userId = userState ? userState.id : null;
 
     const newOrderObj = {
       id: newOrderId,
@@ -3145,31 +3227,26 @@ function setupEventListeners() {
       e.preventDefault();
       const email = document.getElementById("auth-forgot-email").value.trim();
 
-      if (!supabase) {
-        showToast("Database Offline", "Supabase client is not loaded. Cannot send reset link.", "danger");
-        return;
-      }
+      const localProfiles = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
+      const matchedProfile = localProfiles.find(p => p.email.toLowerCase() === email.toLowerCase());
 
       const submitBtn = authForgotPasswordForm.querySelector('button[type="submit"]');
       if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Sending...'; }
 
-      try {
-        // redirectTo points to the production site where the reset password view lives
-        const redirectTo = 'https://toyzguru.in#reset-password';
-        const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
-        if (error) throw error;
-        showToast("Reset Link Sent ✓", `A password reset link has been sent to ${email}. Check your inbox (and spam folder).`, "success");
-        authForgotPasswordForm.style.display = "none";
-        authSigninForm.style.display = "block";
-      } catch (err) {
-        showToast("Reset Failed", err.message || "Failed to send reset link.", "danger");
-      } finally {
+      setTimeout(() => {
         if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Send Reset Link'; }
-      }
+        if (matchedProfile) {
+          localStorage.setItem("toyzguru_reset_email", email);
+          showToast("Reset Link Simulated ✓", `A password reset flow has been prepared for ${email}. Proceeding directly.`, "success");
+          window.location.hash = "#reset-password";
+        } else {
+          showToast("Reset Failed", "Profile with this email was not found in our registry.", "danger");
+        }
+      }, 1000);
     });
   }
 
-  // Auth Reset Password Submit — full validation + Supabase update + success modal
+  // Auth Reset Password Submit — full validation + Local registry update + success modal
   if (authResetPasswordForm) {
     authResetPasswordForm.addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -3194,55 +3271,59 @@ function setupEventListeners() {
         return;
       }
 
-      if (!supabase) {
-        showToast("Database Offline", "Supabase client is not loaded. Cannot update password.", "danger");
-        return;
-      }
-
       // Loading state
       if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '<i data-feather="loader" style="width:15px;height:15px;vertical-align:middle;"></i> Updating...'; feather.replace(); }
 
-      try {
-        const { error } = await supabase.auth.updateUser({ password: newPassword });
-        if (error) throw error;
+      setTimeout(async () => {
+        try {
+          const resetEmail = localStorage.getItem("toyzguru_reset_email") || (userState && userState.email);
+          if (!resetEmail) {
+            throw new Error("No active password reset session found.");
+          }
 
-        // Sign the user out so they must log in fresh with the new password
-        await supabase.auth.signOut();
-        userState = null;
+          let localProfiles = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
+          const idx = localProfiles.findIndex(p => p.email.toLowerCase() === resetEmail.toLowerCase());
 
-        // Reset form
-        authResetPasswordForm.reset();
-        const bar = document.getElementById('reset-pw-strength-bar');
-        const lbl = document.getElementById('reset-pw-strength-label');
-        if (bar) { bar.style.width = '0%'; bar.className = ''; }
-        if (lbl) lbl.textContent = '';
-        if (matchLabel) { matchLabel.textContent = ''; }
+          if (idx !== -1) {
+            localProfiles[idx].password = newPassword;
+            localStorage.setItem("toyzguru_profiles", JSON.stringify(localProfiles));
+            
+            // Sync with Supabase profiles table if the profile is currently active
+            if (userState && userState.email.toLowerCase() === resetEmail.toLowerCase()) {
+              userState.password = newPassword;
+              await saveUser();
+            }
+          }
 
-        // Show success modal
-        const successModal = document.getElementById('pw-reset-success-modal');
-        if (successModal) {
-          successModal.style.display = 'flex';
-          document.body.style.overflow = 'hidden';
-          if (window.feather) feather.replace();
-        }
-      } catch (err) {
-        console.error('Password reset error:', err);
-        // Check for session/token errors specifically
-        if (err.message && (err.message.includes('session') || err.message.includes('token') || err.message.includes('expired'))) {
-          const errModal = document.getElementById('pw-reset-error-modal');
-          const errMsg   = document.getElementById('pw-reset-error-msg');
-          if (errModal) {
-            if (errMsg) errMsg.textContent = 'Your reset session has expired. Please request a new password reset link.';
-            errModal.style.display = 'flex';
+          localStorage.removeItem("toyzguru_reset_email");
+
+          // Sign the user out so they must log in fresh with the new password
+          localStorage.removeItem("toyzguru_mock_session");
+          localStorage.removeItem("toyzguru_user");
+          userState = null;
+
+          // Reset form
+          authResetPasswordForm.reset();
+          const bar = document.getElementById('reset-pw-strength-bar');
+          const lbl = document.getElementById('reset-pw-strength-label');
+          if (bar) { bar.style.width = '0%'; bar.className = ''; }
+          if (lbl) lbl.textContent = '';
+          if (matchLabel) { matchLabel.textContent = ''; }
+
+          // Show success modal
+          const successModal = document.getElementById('pw-reset-success-modal');
+          if (successModal) {
+            successModal.style.display = 'flex';
             document.body.style.overflow = 'hidden';
             if (window.feather) feather.replace();
           }
-        } else {
+        } catch (err) {
+          console.error('Password reset error:', err);
           showToast("Update Failed", err.message || "Failed to update password. Please try again.", "danger");
+        } finally {
+          if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '<i data-feather="shield" style="width:15px;height:15px;vertical-align:middle;margin-right:0.35rem;"></i> Update Password Securely'; feather.replace(); }
         }
-      } finally {
-        if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '<i data-feather="shield" style="width:15px;height:15px;vertical-align:middle;margin-right:0.35rem;"></i> Update Password Securely'; feather.replace(); }
-      }
+      }, 1000);
     });
   }
 
@@ -3302,50 +3383,30 @@ function setupEventListeners() {
       const email = document.getElementById("auth-signin-email").value.trim();
       const password = document.getElementById("auth-signin-password").value;
 
-      let signedIn = false;
+      const localProfiles = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
+      const matchedProfile = localProfiles.find(p => p.email.toLowerCase() === email.toLowerCase());
+      const expectedPassword = matchedProfile ? (matchedProfile.password || "password123") : null;
 
-      // 1. Try Supabase Auth first if active
-      if (supabase) {
-        try {
-          const { error } = await supabase.auth.signInWithPassword({ email, password });
-          if (!error) {
-            showToast("Signed In", "Welcome back to ToyzGuru!", "success");
-            await initDatabase();
-            window.location.hash = "#profile";
-            signedIn = true;
-          }
-        } catch (err) {
-          console.warn("Supabase auth sign in failed, trying local fallback:", err);
+      if (matchedProfile && expectedPassword === password) {
+        localStorage.setItem("toyzguru_mock_session", "true");
+        localStorage.setItem("toyzguru_user", JSON.stringify(matchedProfile));
+        
+        showToast("Signed In", "Welcome back to ToyzGuru!", "success");
+        await initDatabase();
+        window.location.hash = "#profile";
+      } else if (email.toLowerCase() === "srikantsr@gmail.com") {
+        // Log in as default user
+        localStorage.setItem("toyzguru_mock_session", "true");
+        localStorage.setItem("toyzguru_user", JSON.stringify(defaultUser));
+        if (!localStorage.getItem("toyzguru_orders")) {
+          localStorage.setItem("toyzguru_orders", JSON.stringify(defaultOrders));
         }
-      }
 
-      // 2. Local Fallback if Supabase is offline or authentication failed
-      if (!signedIn) {
-        const localProfiles = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
-        const matchedProfile = localProfiles.find(p => p.email.toLowerCase() === email.toLowerCase());
-
-        if (matchedProfile) {
-          // Found local profile
-          localStorage.setItem("toyzguru_mock_session", "true");
-          localStorage.setItem("toyzguru_user", JSON.stringify(matchedProfile));
-          
-          showToast("Signed In (Demo)", "Logged in to local demo profile.", "success");
-          await initDatabase();
-          window.location.hash = "#profile";
-        } else if (email.toLowerCase() === "srikantsr@gmail.com") {
-          // Log in as default user
-          localStorage.setItem("toyzguru_mock_session", "true");
-          localStorage.setItem("toyzguru_user", JSON.stringify(defaultUser));
-          if (!localStorage.getItem("toyzguru_orders")) {
-            localStorage.setItem("toyzguru_orders", JSON.stringify(defaultOrders));
-          }
-
-          showToast("Signed In (Demo)", "Logged in to default user profile.", "success");
-          await initDatabase();
-          window.location.hash = "#profile";
-        } else {
-          showToast("Sign In Failed", "Invalid email or password. Profile not found in demo registry.", "danger");
-        }
+        showToast("Signed In", "Logged in to default user profile.", "success");
+        await initDatabase();
+        window.location.hash = "#profile";
+      } else {
+        showToast("Sign In Failed", "Invalid email or password. Please try again.", "danger");
       }
     });
   }
@@ -3360,95 +3421,62 @@ function setupEventListeners() {
       const email = document.getElementById("auth-signup-email").value.trim();
       const password = document.getElementById("auth-signup-password").value;
 
-      let registered = false;
-
-      // 1. Try Supabase registration first if active
-      if (supabase) {
-        try {
-          const { data: existingProfile } = await supabase.from('profiles').select('email').eq('email', email).maybeSingle();
-          if (existingProfile) {
-            showToast("Sign Up Failed", "An account with this email address already exists. Please sign in instead.", "warning");
-            return;
-          }
-
-          const { data, error } = await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-              data: { name }
-            }
-          });
-          if (error) {
-            // Surface Supabase-specific errors to the user instead of silently falling back
-            const msg = error.message || "";
-            if (msg.toLowerCase().includes("rate limit") || error.status === 429) {
-              showToast("Too Many Requests", "Signup limit reached. Please wait a few minutes and try again.", "warning");
-              return;
-            } else if (msg.toLowerCase().includes("already registered") || msg.toLowerCase().includes("already exists")) {
-              showToast("Email Already Registered", "An account with this email exists. Please sign in instead.", "warning");
-              return;
-            } else if (msg.toLowerCase().includes("password") || msg.toLowerCase().includes("weak")) {
-              showToast("Weak Password", msg, "warning");
-              return;
-            } else if (msg.toLowerCase().includes("email")) {
-              showToast("Invalid Email", msg, "warning");
-              return;
-            }
-            // Unknown Supabase error — still fall through to local demo
-            console.warn("Supabase sign up error, trying local fallback:", error);
-          } else {
-            if (data.session) {
-              showToast("Account Created", "Welcome to ToyzGuru! Logged in automatically.", "success");
-              await initDatabase();
-              window.location.hash = "#profile";
-            } else {
-              showToast("Verification Sent", "Check your email inbox to verify your registration.", "info");
-            }
-            registered = true;
-          }
-        } catch (err) {
-          console.warn("Supabase sign up failed, trying local fallback:", err);
-        }
+      if (!name || !email || !password) {
+        showToast("Validation Error", "All fields are required.", "warning");
+        return;
       }
 
-      // 2. Local Fallback if Supabase is offline or registration failed
-      if (!registered) {
-        let localProfiles = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
-        const existingLocal = localProfiles.some(p => p.email.toLowerCase() === email.toLowerCase());
-
-        if (existingLocal) {
-          showToast("Sign Up Failed", "An account with this email address already exists in local registry.", "warning");
-          return;
-        }
-
-        // Create new local profile
-        const randomId = Math.floor(1000 + Math.random() * 9000);
-        const newLocalProfile = {
-          id: `m-user-local-${randomId}`,
-          name: name,
-          email: email,
-          phone: "",
-          address: "",
-          city: "",
-          state: "",
-          zip: "",
-          country: "India",
-          loyalty_points: 120,
-          created_at: new Date().toISOString()
-        };
-
-        // Add to local profiles array
-        localProfiles.push(newLocalProfile);
-        localStorage.setItem("toyzguru_profiles", JSON.stringify(localProfiles));
-
-        // Start mock session
-        localStorage.setItem("toyzguru_mock_session", "true");
-        localStorage.setItem("toyzguru_user", JSON.stringify(newLocalProfile));
-
-        showToast("Account Created (Demo)", "Welcome to ToyzGuru! Logged in to local profile.", "success");
-        await initDatabase();
-        window.location.hash = "#profile";
+      if (password.length < 6) {
+        showToast("Weak Password", "Password must be at least 6 characters long.", "warning");
+        return;
       }
+
+      let localProfiles = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
+      const existingProfile = localProfiles.some(p => p.email.toLowerCase() === email.toLowerCase());
+
+      if (existingProfile) {
+        showToast("Sign Up Failed", "An account with this email address already exists. Please sign in instead.", "warning");
+        return;
+      }
+
+      // Generate a UUID v4 so it can sync with Supabase profiles table
+      const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+
+      // Create new user profile
+      const newProfile = {
+        id: uuid,
+        name: name,
+        email: email,
+        phone: "",
+        address: "",
+        city: "",
+        state: "",
+        zip: "",
+        country: "India",
+        loyalty_points: 120,
+        created_at: new Date().toISOString(),
+        password: password
+      };
+
+      // Add to local profiles array
+      localProfiles.push(newProfile);
+      localStorage.setItem("toyzguru_profiles", JSON.stringify(localProfiles));
+
+      // Start mock session
+      localStorage.setItem("toyzguru_mock_session", "true");
+      localStorage.setItem("toyzguru_user", JSON.stringify(newProfile));
+
+      showToast("Account Created", "Welcome to ToyzGuru! Logged in automatically.", "success");
+      
+      // Sync userState & write to Supabase database (upserts public.profiles table)
+      userState = newProfile;
+      await saveUser();
+
+      await initDatabase();
+      window.location.hash = "#profile";
     });
   }
 
