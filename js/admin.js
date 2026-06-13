@@ -1204,22 +1204,22 @@ async function handleAdminMemberFormSubmit(e) {
     if (isCreateMode) {
       // Check if email already exists in local profiles first
       let localProfiles = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
-      const existing = localProfiles.some(p => p.email.toLowerCase() === email.toLowerCase());
+      const existing = localProfiles.some(p => p.email && p.email.toLowerCase() === email.toLowerCase());
       if (existing) {
         adminShowToast("Email Exists", "A member with this email already exists.", "warning");
         return;
       }
 
-      // Check if email already exists in Supabase database first
+      // Check if email already exists in Supabase database first (case-insensitive)
       if (supabase) {
         try {
           const { data: dbMems, error: checkError } = await supabase
             .from('profiles')
             .select('id')
-            .eq('email', email.toLowerCase());
+            .ilike('email', email);
           
           if (!checkError && dbMems && dbMems.length > 0) {
-            adminShowToast("Email Exists", "A member with this email already exists in the cloud database.", "warning");
+            adminShowToast("Email Exists", "A member with this email already exists in the system database.", "warning");
             return;
           }
         } catch (err) {

@@ -3618,20 +3618,20 @@ function setupEventListeners() {
       }
 
       let localProfiles = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
-      const existingProfile = localProfiles.some(p => p.email.toLowerCase() === email.toLowerCase());
+      const existingProfile = localProfiles.some(p => p.email && p.email.toLowerCase() === email.toLowerCase());
 
       if (existingProfile) {
         showToast("Sign Up Failed", "An account with this email address already exists. Please sign in instead.", "warning");
         return;
       }
 
-      // Check if email already exists in Supabase profiles database first
+      // Check if email already exists in Supabase profiles database first (case-insensitive)
       if (supabase) {
         try {
           const { data: dbMems, error: checkError } = await supabase
             .from('profiles')
             .select('id')
-            .eq('email', email.toLowerCase());
+            .ilike('email', email);
           
           if (!checkError && dbMems && dbMems.length > 0) {
             showToast("Sign Up Failed", "An account with this email address already exists. Please sign in instead.", "warning");
