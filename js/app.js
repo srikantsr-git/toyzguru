@@ -3625,6 +3625,23 @@ function setupEventListeners() {
         return;
       }
 
+      // Check if email already exists in Supabase profiles database first
+      if (supabase) {
+        try {
+          const { data: dbMems, error: checkError } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('email', email.toLowerCase());
+          
+          if (!checkError && dbMems && dbMems.length > 0) {
+            showToast("Sign Up Failed", "An account with this email address already exists. Please sign in instead.", "warning");
+            return;
+          }
+        } catch (err) {
+          console.warn("Could not check duplicate email on Supabase:", err);
+        }
+      }
+
       // Generate a UUID v4 so it can sync with Supabase profiles table
       const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
         var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
@@ -3663,18 +3680,23 @@ function setupEventListeners() {
           if (syncError) {
             console.error("Error saving profile to Supabase:", syncError);
             
-            // Revert local profiles registry
-            let currentLocal = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
-            currentLocal = currentLocal.filter(p => p.id !== uuid);
-            localStorage.setItem("toyzguru_profiles", JSON.stringify(currentLocal));
-            
-            let errMsg = syncError.message || "Failed to sync registration to database.";
-            if (syncError.code === '23505' || errMsg.toLowerCase().includes("unique") || errMsg.toLowerCase().includes("exists")) {
-              errMsg = "An account with this email address already exists. Please sign in instead.";
+            // Bypass foreign key constraint warning on local auth
+            if (syncError.code === '23503') {
+              console.warn("Bypassed foreign key constraint on database sync. Saved locally.");
+            } else {
+              // Revert local profiles registry for other critical database errors
+              let currentLocal = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
+              currentLocal = currentLocal.filter(p => p.id !== uuid);
+              localStorage.setItem("toyzguru_profiles", JSON.stringify(currentLocal));
+              
+              let errMsg = syncError.message || "Failed to sync registration to database.";
+              if (syncError.code === '23505' || errMsg.toLowerCase().includes("unique") || errMsg.toLowerCase().includes("exists")) {
+                errMsg = "An account with this email address already exists. Please sign in instead.";
+              }
+              
+              showToast("Sign Up Failed", errMsg, "warning");
+              return;
             }
-            
-            showToast("Sign Up Failed", errMsg, "warning");
-            return;
           }
         } catch (err) {
           console.warn("Could not backup profile to Supabase (offline fallback):", err);

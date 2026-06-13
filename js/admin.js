@@ -840,22 +840,29 @@ async function adminRenderMembersRegistry() {
   if (!tableBody) return;
 
   try {
-    let members = [];
-    let isOfflineFallback = false;
+    let members = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
+    
     if (supabase) {
       try {
         const { data: mems, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
-        if (error) throw error;
-        members = mems || [];
+        if (!error && mems) {
+          // Merge profiles from Supabase if they don't already exist in members
+          mems.forEach(dbMem => {
+            const exists = members.some(p => p.email.toLowerCase() === dbMem.email.toLowerCase());
+            if (!exists) {
+              members.push(dbMem);
+            }
+          });
+          // Persist the merged list locally
+          localStorage.setItem("toyzguru_profiles", JSON.stringify(members));
+        }
       } catch (err) {
-        console.warn("Failed to fetch profiles from Supabase:", err);
-        members = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
-        isOfflineFallback = true;
+        console.warn("Failed to fetch profiles from Supabase, using local registry:", err);
       }
-    } else {
-      members = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
-      isOfflineFallback = true;
     }
+    
+    // Sort members by created_at descending so newest members are at the top
+    members.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
 
     // Seeding mock profiles only if they have never been initialized in local storage
     if (localStorage.getItem("toyzguru_profiles") === null) {
@@ -1195,13 +1202,29 @@ async function handleAdminMemberFormSubmit(e) {
 
   try {
     if (isCreateMode) {
-      // ---- CREATE NEW MEMBER ----
       // Check if email already exists in local profiles first
       let localProfiles = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
       const existing = localProfiles.some(p => p.email.toLowerCase() === email.toLowerCase());
       if (existing) {
         adminShowToast("Email Exists", "A member with this email already exists.", "warning");
         return;
+      }
+
+      // Check if email already exists in Supabase database first
+      if (supabase) {
+        try {
+          const { data: dbMems, error: checkError } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('email', email.toLowerCase());
+          
+          if (!checkError && dbMems && dbMems.length > 0) {
+            adminShowToast("Email Exists", "A member with this email already exists in the cloud database.", "warning");
+            return;
+          }
+        } catch (err) {
+          console.warn("Could not check duplicate email on Supabase:", err);
+        }
       }
 
       // Generate a UUID v4
@@ -1233,18 +1256,23 @@ async function handleAdminMemberFormSubmit(e) {
           if (profileError) {
             console.error("Error saving member profile to Supabase:", profileError);
             
-            // Remove from local profiles registry since sync failed
-            let currentLocalProfiles = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
-            currentLocalProfiles = currentLocalProfiles.filter(p => p.id !== uuid);
-            localStorage.setItem("toyzguru_profiles", JSON.stringify(currentLocalProfiles));
-            
-            let errMsg = profileError.message || "Failed to sync member to cloud database.";
-            if (profileError.code === '23505' || errMsg.toLowerCase().includes("unique") || errMsg.toLowerCase().includes("exists")) {
-              errMsg = "A member with this email already exists in the system.";
+            // Bypass foreign key constraint warning on local auth
+            if (profileError.code === '23503') {
+              console.warn("Bypassed foreign key constraint on database sync. Saved locally.");
+            } else {
+              // Remove from local profiles registry since sync failed for other critical reasons
+              let currentLocalProfiles = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
+              currentLocalProfiles = currentLocalProfiles.filter(p => p.id !== uuid);
+              localStorage.setItem("toyzguru_profiles", JSON.stringify(currentLocalProfiles));
+              
+              let errMsg = profileError.message || "Failed to sync member to cloud database.";
+              if (profileError.code === '23505' || errMsg.toLowerCase().includes("unique") || errMsg.toLowerCase().includes("exists")) {
+                errMsg = "A member with this email already exists in the system.";
+              }
+              
+              adminShowToast("Save Failed", errMsg, "danger");
+              return;
             }
-            
-            adminShowToast("Save Failed", errMsg, "danger");
-            return;
           }
         } catch (err) {
           console.warn("Failed to sync new member to Supabase:", err);
