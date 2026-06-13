@@ -768,6 +768,298 @@ function showToast(title, description, type = "info") {
 }
 
 
+// ================= SIMULATED EMAIL VERIFICATION SYSTEM =================
+// Dynamic Injection of CSS Styles for Mock Mail Client UI
+(function injectMockEmailStyles() {
+  const css = `
+    /* Mock Mail Notification Alert */
+    .mock-mail-alert {
+      position: fixed;
+      bottom: 2rem;
+      left: 2rem;
+      background: rgba(17, 17, 17, 0.95);
+      color: #fff;
+      border: 1px solid var(--color-brand, #7c3aed);
+      border-left: 5px solid var(--color-brand, #7c3aed);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+      z-index: 2500;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      min-width: 320px;
+      max-width: 380px;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      animation: mockMailSlideIn 0.5s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+      transition: all 0.3s ease;
+    }
+    .mock-mail-alert:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 40px rgba(124, 58, 237, 0.2);
+    }
+    @keyframes mockMailSlideIn {
+      from { transform: translateX(-100px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    .mock-mail-alert-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--color-brand, #7c3aed);
+    }
+    .mock-mail-alert-close {
+      background: transparent;
+      border: none;
+      color: #aaa;
+      cursor: pointer;
+      font-size: 1rem;
+      padding: 0;
+      line-height: 1;
+    }
+    .mock-mail-alert-close:hover { color: #fff; }
+    .mock-mail-alert-body {
+      font-size: 0.85rem;
+      font-weight: 600;
+      line-height: 1.4;
+    }
+    .mock-mail-alert-footer {
+      font-size: 0.75rem;
+      color: #aaa;
+    }
+
+    /* Mock Mail Client Modal Overlay */
+    .mock-mail-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.75);
+      z-index: 3000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      backdrop-filter: blur(8px);
+      opacity: 0;
+      animation: fadeInOverlay 0.3s forwards ease-in-out;
+    }
+    @keyframes fadeInOverlay {
+      to { opacity: 1; }
+    }
+    .mock-mail-window {
+      background: #18191c;
+      border: 1px solid #2f3136;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 600px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      color: #dcddde;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .mock-mail-window-header {
+      background: #202225;
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid #2f3136;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .mock-mail-window-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .mock-mail-close-btn {
+      background: transparent;
+      border: none;
+      color: #b9bbbe;
+      cursor: pointer;
+      font-size: 1.25rem;
+    }
+    .mock-mail-close-btn:hover { color: #fff; }
+    .mock-mail-window-body {
+      padding: 1.5rem;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    
+    /* Email Standard Message Format styling */
+    .mail-message-card {
+      background: #ffffff;
+      color: #2c3e50;
+      border-radius: 8px;
+      padding: 2rem;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      margin-top: 1rem;
+    }
+    .mail-message-logo {
+      text-align: center;
+      margin-bottom: 1.5rem;
+      font-weight: 800;
+      font-size: 1.4rem;
+      color: #7c3aed;
+      letter-spacing: 0.05em;
+    }
+    .mail-message-divider {
+      border: none;
+      border-top: 1px solid #e1e8ed;
+      margin: 1.5rem 0;
+    }
+    .mail-message-btn {
+      display: inline-block;
+      background: #7c3aed;
+      color: #ffffff !important;
+      padding: 0.8rem 2rem;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 0.95rem;
+      margin: 1.5rem 0;
+      box-shadow: 0 4px 10px rgba(124, 58, 237, 0.3);
+      transition: all 0.2s ease;
+    }
+    .mail-message-btn:hover {
+      background: #6d28d9;
+      transform: translateY(-1px);
+    }
+    .mail-message-footer {
+      font-size: 0.8rem;
+      color: #7f8c8d;
+      text-align: center;
+      margin-top: 2rem;
+      line-height: 1.5;
+    }
+  `;
+  const styleEl = document.createElement("style");
+  styleEl.textContent = css;
+  document.head.appendChild(styleEl);
+})();
+
+// Active notification reference to prevent duplicate alerts
+let activeMailAlert = null;
+
+function triggerMockEmail(userProfile) {
+  // Clear any existing alert
+  if (activeMailAlert) {
+    activeMailAlert.remove();
+  }
+
+  const alertDiv = document.createElement("div");
+  alertDiv.className = "mock-mail-alert";
+  alertDiv.innerHTML = `
+    <div class="mock-mail-alert-header">
+      <span>✉ Sandbox Mail Delivery</span>
+      <button class="mock-mail-alert-close" onclick="event.stopPropagation(); this.closest('.mock-mail-alert').remove();">&times;</button>
+    </div>
+    <div class="mock-mail-alert-body">
+      Confirm your ToyzGuru Registration for <strong>${userProfile.email}</strong>
+    </div>
+    <div class="mock-mail-alert-footer">
+      Click to open standard verification email & confirm
+    </div>
+  `;
+
+  alertDiv.addEventListener("click", () => {
+    alertDiv.remove();
+    openMockMailClient(userProfile);
+  });
+
+  document.body.appendChild(alertDiv);
+  activeMailAlert = alertDiv;
+
+  // Sound notification effect
+  try {
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(880, audioContext.currentTime); // A5 note
+    osc.frequency.exponentialRampToValueAtTime(1200, audioContext.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.1, audioContext.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+    osc.connect(gain);
+    gain.connect(audioContext.destination);
+    osc.start();
+    osc.stop(audioContext.currentTime + 0.3);
+  } catch (e) {
+    // Audio context failed to load (blocked by browser autoplay rules)
+  }
+}
+window.triggerMockEmail = triggerMockEmail;
+
+function openMockMailClient(userProfile) {
+  const overlay = document.createElement("div");
+  overlay.className = "mock-mail-overlay";
+
+  // Build standard format confirmation email body
+  const confirmLink = `${window.location.origin}${window.location.pathname}#confirm-email?email=${encodeURIComponent(userProfile.email)}`;
+
+  overlay.innerHTML = `
+    <div class="mock-mail-window">
+      <div class="mock-mail-window-header">
+        <div class="mock-mail-window-title">
+          <i data-feather="mail" style="width:16px;height:16px;color:var(--color-brand);"></i>
+          Simulated Mail Client - Inbox
+        </div>
+        <button class="mock-mail-close-btn">&times;</button>
+      </div>
+      <div class="mock-mail-window-body">
+        <div style="font-size: 0.8rem; color: #8e9297; margin-bottom: 0.25rem;">
+          <strong>From:</strong> ToyzGuru Security &lt;noreply@toyzguru.in&gt;
+        </div>
+        <div style="font-size: 0.8rem; color: #8e9297; margin-bottom: 0.25rem;">
+          <strong>To:</strong> ${userProfile.name} &lt;${userProfile.email}&gt;
+        </div>
+        <div style="font-size: 0.8rem; color: #8e9297; margin-bottom: 1rem;">
+          <strong>Subject:</strong> Confirm your ToyzGuru Registration
+        </div>
+        
+        <div class="mail-message-card">
+          <div class="mail-message-logo">TOYZGURU</div>
+          <p style="font-size: 1.05rem; font-weight: 700; margin-bottom: 1rem;">Welcome to ToyzGuru, ${userProfile.name}!</p>
+          <p style="font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.5rem;">
+            Thank you for registering an account on ToyzGuru. To complete your registration and secure access to our exclusive member section, loyalty rewards, and order status, please confirm your email address by clicking the link button below:
+          </p>
+          <div style="text-align: center;">
+            <a href="${confirmLink}" class="mail-message-btn" onclick="document.querySelector('.mock-mail-overlay').remove();">Confirm Email Address</a>
+          </div>
+          <p style="font-size: 0.85rem; color: #5c6a79; line-height: 1.6; margin-top: 1.5rem;">
+            If you did not request this account setup, please ignore this message. This link will expire in 24 hours.
+          </p>
+          <hr class="mail-message-divider">
+          <div class="mail-message-footer">
+            ToyzGuru Collectors Shop, Hyderabad, India<br>
+            © 2026 ToyzGuru. All rights reserved.
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Handle close
+  const closeBtn = overlay.querySelector(".mock-mail-close-btn");
+  closeBtn.addEventListener("click", () => overlay.remove());
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) overlay.remove();
+  });
+
+  document.body.appendChild(overlay);
+  if (window.feather) feather.replace();
+}
+
+
 // ================= RECEIPT PDF GENERATOR =================
 // Standalone — works for ANY order object: new checkout orders AND existing orders.
 // Returns: public receipt URL (string) if uploaded to Supabase, or null if offline.
@@ -1084,8 +1376,33 @@ function setupRouting() {
   const handleRoute = async () => {
     const hash = window.location.hash || "#home";
     const parts = hash.split("?");
-    const viewName = parts[0].substring(1); // Remove '#'
+    const viewName = parts[0].substring(1);
     const params = getQueryParams(parts[1] || "");
+
+    // 0. Email Confirmation Interception
+    if (viewName === "confirm-email") {
+      const email = params.email;
+      if (email) {
+        let localProfiles = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
+        const idx = localProfiles.findIndex(p => p.email.toLowerCase() === email.toLowerCase());
+        if (idx !== -1) {
+          localProfiles[idx].email_confirmed = true;
+          localStorage.setItem("toyzguru_profiles", JSON.stringify(localProfiles));
+
+          // Set active logged in session
+          localStorage.setItem("toyzguru_mock_session", "true");
+          localStorage.setItem("toyzguru_user", JSON.stringify(localProfiles[idx]));
+
+          showToast("Email Confirmed ✓", "Registration verified! Welcome to ToyzGuru.", "success");
+          await initDatabase();
+          window.location.hash = "#profile";
+          return;
+        }
+      }
+      showToast("Verification Failed", "Invalid confirmation link.", "danger");
+      window.location.hash = "#auth";
+      return;
+    }
 
     // Auth redirection rules for protected routes
     if (viewName === "profile" || viewName === "checkout") {
@@ -3388,6 +3705,10 @@ function setupEventListeners() {
       const expectedPassword = matchedProfile ? (matchedProfile.password || "password123") : null;
 
       if (matchedProfile && expectedPassword === password) {
+        if (matchedProfile.email_confirmed === false) {
+          showToast("Email Unverified", "Please check your inbox and confirm your registration first.", "warning");
+          return;
+        }
         localStorage.setItem("toyzguru_mock_session", "true");
         localStorage.setItem("toyzguru_user", JSON.stringify(matchedProfile));
         
@@ -3445,7 +3766,7 @@ function setupEventListeners() {
         return v.toString(16);
       });
 
-      // Create new user profile
+      // Create new user profile with verification set to false
       const newProfile = {
         id: uuid,
         name: name,
@@ -3458,25 +3779,38 @@ function setupEventListeners() {
         country: "India",
         loyalty_points: 120,
         created_at: new Date().toISOString(),
-        password: password
+        password: password,
+        email_confirmed: false
       };
 
       // Add to local profiles array
       localProfiles.push(newProfile);
       localStorage.setItem("toyzguru_profiles", JSON.stringify(localProfiles));
 
-      // Start mock session
-      localStorage.setItem("toyzguru_mock_session", "true");
-      localStorage.setItem("toyzguru_user", JSON.stringify(newProfile));
+      // Sync user profile to Supabase database directly if online
+      if (supabase) {
+        try {
+          const dbPayload = { ...newProfile };
+          delete dbPayload.password;
+          delete dbPayload.email_confirmed;
+          await supabase.from('profiles').insert(dbPayload);
+        } catch (err) {
+          console.warn("Could not backup profile to Supabase:", err);
+        }
+      }
 
-      showToast("Account Created", "Welcome to ToyzGuru! Logged in automatically.", "success");
+      showToast("Verification Sent", "A confirmation email has been sent. Please confirm before logging in.", "info");
       
-      // Sync userState & write to Supabase database (upserts public.profiles table)
-      userState = newProfile;
-      await saveUser();
+      // Trigger the mock email client notification
+      if (window.triggerMockEmail) {
+        window.triggerMockEmail(newProfile);
+      }
 
-      await initDatabase();
-      window.location.hash = "#profile";
+      // Switch view tab back to Sign In
+      const authTabSignin = document.getElementById("auth-tab-signin");
+      if (authTabSignin) {
+        authTabSignin.click();
+      }
     });
   }
 

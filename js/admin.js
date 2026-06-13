@@ -1214,7 +1214,8 @@ async function handleAdminMemberFormSubmit(e) {
         id: uuid,
         ...profilePayload,
         created_at: new Date().toISOString(),
-        password: password
+        password: password,
+        email_confirmed: false
       };
 
       // Add to registry
