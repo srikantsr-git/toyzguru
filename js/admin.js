@@ -1236,6 +1236,12 @@ async function handleAdminMemberFormSubmit(e) {
       }
 
       if (window.toyzToast) window.toyzToast("Member Created", `Account for ${name} has been created successfully.`, "success");
+      
+      // Trigger outgoing verification email
+      if (window.sendOutgoingVerificationEmail) {
+        window.sendOutgoingVerificationEmail(newMember);
+      }
+
       adminCloseMemberModal();
       adminRenderMembersRegistry();
 
