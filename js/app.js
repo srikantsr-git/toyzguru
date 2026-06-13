@@ -240,6 +240,19 @@ async function initDatabase() {
       "password": "aakash00"
     },
     {
+      "id": "b743de27-1b3a-4951-9991-3a27ccd0251b",
+      "name": "Sri Utube 17",
+      "email": "sriutube17@gmail.com",
+      "phone": "+919923924017",
+      "address": "302, Tanush Pride, Neknampur",
+      "city": "Hyderabad",
+      "state": "Telangana",
+      "zip": "500089",
+      "country": "IN",
+      "loyalty_points": 120,
+      "password": "aakash00"
+    },
+    {
       "id": "9d1f9823-bbf1-49ab-8db4-474e3ddeb9e2",
       "name": "Test User",
       "email": "test_signup_3455@toyzguru.in",
