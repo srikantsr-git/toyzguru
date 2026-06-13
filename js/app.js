@@ -224,7 +224,20 @@ async function initDatabase() {
       "zip": "500089",
       "country": "IN",
       "loyalty_points": 2369,
-      "password": "password123"
+      "password": "aakash00"
+    },
+    {
+      "id": "a6934951-31b3-43de-9991-3a27ccd0251b",
+      "name": "Sri Utube 21",
+      "email": "sriutube21@gmail.com",
+      "phone": "+919923924021",
+      "address": "302, Alkapoor Township, Neknampur",
+      "city": "Hyderabad",
+      "state": "Telangana",
+      "zip": "500089",
+      "country": "IN",
+      "loyalty_points": 120,
+      "password": "aakash00"
     },
     {
       "id": "9d1f9823-bbf1-49ab-8db4-474e3ddeb9e2",
@@ -248,10 +261,17 @@ async function initDatabase() {
   let localProfiles = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
   let updated = false;
   seedUsers.forEach(seedUser => {
-    const exists = localProfiles.some(p => p.email.toLowerCase() === seedUser.email.toLowerCase());
-    if (!exists) {
+    const existingIndex = localProfiles.findIndex(p => p.email.toLowerCase() === seedUser.email.toLowerCase());
+    if (existingIndex === -1) {
       localProfiles.push(seedUser);
       updated = true;
+    } else {
+      const existing = localProfiles[existingIndex];
+      // Keep password, loyalty points, and essential fields synchronized from the seed database
+      if (existing.password !== seedUser.password || existing.loyalty_points !== seedUser.loyalty_points) {
+        localProfiles[existingIndex] = { ...existing, ...seedUser };
+        updated = true;
+      }
     }
   });
   if (updated || localStorage.getItem("toyzguru_profiles") === null) {
