@@ -2332,7 +2332,14 @@ async function adminToggleCouponStatus(code) {
       const { error } = await supabase.from('coupons').update({ is_active: newStatus }).eq('code', code);
       if (error) throw error;
     } catch (err) {
-      console.warn("Supabase toggle status failed, modifying locally only:", err);
+      console.error("Supabase toggle status failed:", err);
+      const errMsg = err.message || "Failed to update coupon status in database.";
+      if (window.showCustomDialog) {
+        await window.showCustomDialog("Status Update Failed", errMsg, "danger");
+      } else {
+        adminShowToast("Status Update Failed", errMsg, "danger");
+      }
+      return;
     }
   }
 
@@ -2353,7 +2360,14 @@ async function adminDeleteCouponTrigger(code) {
         const { error } = await supabase.from('coupons').delete().eq('code', code);
         if (error) throw error;
       } catch (err) {
-        console.warn("Supabase coupon delete failed, deleting locally only:", err);
+        console.error("Supabase coupon delete failed:", err);
+        const errMsg = err.message || "Failed to delete coupon from database.";
+        if (window.showCustomDialog) {
+          await window.showCustomDialog("Delete Failed", errMsg, "danger");
+        } else {
+          adminShowToast("Delete Failed", errMsg, "danger");
+        }
+        return;
       }
     }
     couponsState = couponsState.filter(c => c.code !== code);
@@ -2465,12 +2479,8 @@ async function handleAdminCouponFormSubmit(e) {
     if (adminEditingCouponCode) {
       // Edit mode
       if (supabase) {
-        try {
-          const { error } = await supabase.from('coupons').update(newCouponObj).eq('code', adminEditingCouponCode);
-          if (error) throw error;
-        } catch (dbErr) {
-          console.warn("Supabase edit failed, updating locally only:", dbErr);
-        }
+        const { error } = await supabase.from('coupons').update(newCouponObj).eq('code', adminEditingCouponCode);
+        if (error) throw error;
       }
       const matchIndex = couponsState.findIndex(c => c.code === adminEditingCouponCode);
       if (matchIndex >= 0) {
@@ -2487,12 +2497,8 @@ async function handleAdminCouponFormSubmit(e) {
       }
 
       if (supabase) {
-        try {
-          const { error } = await supabase.from('coupons').insert(newCouponObj);
-          if (error) throw error;
-        } catch (dbErr) {
-          console.warn("Supabase create failed, saving locally only:", dbErr);
-        }
+        const { error } = await supabase.from('coupons').insert(newCouponObj);
+        if (error) throw error;
       }
       couponsState.push(newCouponObj);
       adminShowToast("Coupon Created", `Added coupon "${code}" to store databases.`, "success");
@@ -2502,7 +2508,13 @@ async function handleAdminCouponFormSubmit(e) {
     adminCloseCouponModal();
     adminRenderCouponsTable();
   } catch (err) {
-    adminShowToast("Save Failed", err.message || "Failed to save coupon details.", "danger");
+    console.error("Coupon save failed:", err);
+    const errMsg = err.message || "Failed to save coupon details.";
+    if (window.showCustomDialog) {
+      await window.showCustomDialog("Save Failed", errMsg, "danger");
+    } else {
+      adminShowToast("Save Failed", errMsg, "danger");
+    }
   }
 }
 
