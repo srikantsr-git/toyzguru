@@ -971,82 +971,393 @@ function showCustomDialog(title, message, type = "warning", confirmCallbackOrIsC
 window.showCustomDialog = showCustomDialog;
 
 
-/// ================= REAL OUTGOING EMAIL VERIFICATION SYSTEM =================
+
+// ================= EMAIL UTILITY =================
+// Sends email via local Python Flask email proxy server (email-server/server.py)
+// running at http://localhost:3001
+const EMAIL_SERVER_URL = "http://localhost:3001/send-email";
+
+async function sendEmailViaServer({ to, subject, html, text = "" }) {
+  try {
+    const res = await fetch(EMAIL_SERVER_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ to, subject, html, text }),
+    });
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      throw new Error(json.error || "Email server returned an error.");
+    }
+    return { success: true };
+  } catch (err) {
+    throw new Error(err.message || "Failed to reach the email server. Is email-server/server.py running?");
+  }
+}
+window.sendEmailViaServer = sendEmailViaServer;
+
+// ─── Build registration confirmation HTML email ────────────────────────────
+function buildVerificationEmailHTML(userProfile, confirmLink) {
+  return `
+    <div style="font-family: 'Inter', Arial, sans-serif; background-color: #080b11; color: #f3f4f6; padding: 2.5rem; border-radius: 16px; max-width: 600px; margin: 0 auto; border: 1px solid rgba(139, 92, 246, 0.2); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+      <div style="text-align: center; margin-bottom: 2rem;">
+        <h2 style="font-family: 'Space Grotesk', Arial, sans-serif; color: #ffffff; font-size: 1.8rem; margin: 0; font-weight: 700; letter-spacing: -0.02em;">ToyzGuru</h2>
+        <p style="color: #8b5cf6; font-size: 0.85rem; margin: 0.25rem 0 0 0; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em;">Premium Collector Store</p>
+      </div>
+
+      <h3 style="font-family: 'Space Grotesk', Arial, sans-serif; color: #ffffff; font-size: 1.4rem; margin-top: 0; margin-bottom: 1rem; font-weight: 600; text-align: center;">Confirm your Email Address</h3>
+
+      <p style="color: #9ca3af; font-size: 0.95rem; line-height: 1.6; margin-bottom: 2rem;">
+        Welcome to ToyzGuru, <strong style="color: #ffffff;">${userProfile.name}</strong>!<br><br>
+        Thank you for registering an account with us. To complete your registration and unlock access to your profile dashboard, order history, loyalty points, and exclusive member benefits, please confirm your email address by clicking the button below:
+      </p>
+
+      <div style="text-align: center; margin-bottom: 2.5rem;">
+        <a href="${confirmLink}" style="display: inline-block; padding: 0.9rem 2.2rem; background: linear-gradient(135deg, #8b5cf6 0%, #d946ef 100%); color: #ffffff !important; text-decoration: none; font-weight: 700; border-radius: 8px; box-shadow: 0 4px 15px rgba(139,92,246,0.4); font-size: 0.95rem;">Confirm Registration</a>
+      </div>
+
+      <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.08); margin-bottom: 1.5rem;" />
+
+      <p style="color: #6b7280; font-size: 0.8rem; text-align: center; line-height: 1.5; margin: 0;">
+        If the button above does not work, copy and paste the following link into your browser:<br>
+        <a href="${confirmLink}" style="color: #8b5cf6; text-decoration: underline; word-break: break-all;">${confirmLink}</a>
+      </p>
+    </div>
+  `;
+}
+
+// ─── Registration verification email ──────────────────────────────────────
 async function sendOutgoingVerificationEmail(userProfile) {
   const confirmLink = `${window.location.origin}${window.location.pathname}#confirm-email?email=${encodeURIComponent(userProfile.email)}`;
-  
+
   try {
-    if (typeof Email === "undefined") {
-      throw new Error("SMTP.js library not loaded yet");
-    }
-    
-    const emailBody = `
-      <div style="font-family: 'Inter', sans-serif; background-color: #080b11; color: #f3f4f6; padding: 2.5rem; border-radius: 16px; max-width: 600px; margin: 0 auto; border: 1px solid rgba(139, 92, 246, 0.2); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);">
-        <div style="text-align: center; margin-bottom: 2rem;">
-          <h2 style="font-family: 'Space Grotesk', sans-serif; color: #ffffff; font-size: 1.8rem; margin: 0; font-weight: 700; letter-spacing: -0.02em;">ToyzGuru</h2>
-          <p style="color: #8b5cf6; font-size: 0.85rem; margin: 0.25rem 0 0 0; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em;">Premium Collector Store</p>
-        </div>
-        
-        <h3 style="font-family: 'Space Grotesk', sans-serif; color: #ffffff; font-size: 1.4rem; margin-top: 0; margin-bottom: 1rem; font-weight: 600; text-align: center;">Confirm your Email Address</h3>
-        
-        <p style="color: #9ca3af; font-size: 0.95rem; line-height: 1.6; margin-bottom: 2rem;">
-          Welcome to ToyzGuru, <strong>${userProfile.name}</strong>!<br><br>
-          Thank you for registering an account with us. To complete your registration and unlock access to your profile dashboard, order history, loyalty points, and exclusive member benefits, please confirm your email address by clicking the button below:
-        </p>
-        
-        <div style="text-align: center; margin-bottom: 2.5rem;">
-          <a href="${confirmLink}" style="display: inline-block; padding: 0.9rem 2.2rem; background: linear-gradient(135deg, #8b5cf6 0%, #d946ef 100%); color: #ffffff !important; text-decoration: none; font-weight: 700; border-radius: 8px; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4); font-size: 0.95rem;">Confirm Registration</a>
-        </div>
-        
-        <hr style="border: 0; border-top: 1px solid rgba(255, 255, 255, 0.08); margin-bottom: 1.5rem;" />
-        
-        <p style="color: #6b7280; font-size: 0.8rem; text-align: center; line-height: 1.5; margin: 0;">
-          If the button above does not work, copy and paste the following link into your browser:<br>
-          <a href="${confirmLink}" style="color: #8b5cf6; text-decoration: underline; word-break: break-all;">${confirmLink}</a>
-        </p>
-      </div>
-    `;
-
-    let result = await Email.send({
-      Host: "smtp.zoho.com",
-      Username: "support@toyzguru.in",
-      Password: "Akash@007",
-      Port: 465,
-      To: userProfile.email,
-      From: "support@toyzguru.in",
-      Subject: "Confirm your ToyzGuru Registration",
-      Body: emailBody
+    await sendEmailViaServer({
+      to: userProfile.email,
+      subject: "Confirm your ToyzGuru Registration",
+      html: buildVerificationEmailHTML(userProfile, confirmLink),
+      text: `Welcome to ToyzGuru, ${userProfile.name}!\n\nPlease confirm your registration by visiting:\n${confirmLink}`,
     });
-
-    if (result !== "OK") {
-      console.warn("SMTP.js failed with smtp.zoho.com, trying smtppro.zoho.com...");
-      result = await Email.send({
-        Host: "smtppro.zoho.com",
-        Username: "support@toyzguru.in",
-        Password: "Akash@007",
-        Port: 465,
-        To: userProfile.email,
-        From: "support@toyzguru.in",
-        Subject: "Confirm your ToyzGuru Registration",
-        Body: emailBody
-      });
-    }
-
-    if (result === "OK") {
-      showToast("Verification Sent", `A verification email has been sent to ${userProfile.email}.`, "success");
-    } else {
-      console.warn("SMTP.js responded with non-success status:", result);
-      showCustomDialog("Verification Failed", "Failed to send verification email to " + userProfile.email + ". Please verify your email ID and network connection.", "error");
-    }
+    showToast("Verification Sent", `A verification email has been sent to ${userProfile.email}.`, "success");
   } catch (error) {
-    console.error("Failed to send verification email via SMTP:", error);
-    showCustomDialog("Verification Failed", "Failed to send verification email to " + userProfile.email + ". Please check your network connection and try again.", "error");
+    console.error("Failed to send verification email:", error);
+    showCustomDialog("Verification Failed", `Failed to send verification email to ${userProfile.email}.\n\nDetails: ${error.message}\n\nPlease make sure the email server is running (email-server/server.py).`, "error");
   }
 }
 window.sendOutgoingVerificationEmail = sendOutgoingVerificationEmail;
 
+// ─── Order confirmation email ──────────────────────────────────────────────
+async function sendOrderConfirmationEmail(order) {
+  if (!order || !order.email) return;
 
-// ================= RECEIPT PDF GENERATOR =================
+  const itemsHTML = (order.items || []).map(item =>
+    `<tr>
+      <td style="padding: 0.6rem 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.06); color: #e5e7eb; font-size: 0.9rem;">${item.name || item.productName || "Product"}</td>
+      <td style="padding: 0.6rem 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.06); color: #9ca3af; font-size: 0.9rem; text-align: center;">×${item.quantity || 1}</td>
+      <td style="padding: 0.6rem 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.06); color: #a78bfa; font-size: 0.9rem; text-align: right;">₹${Number(item.price * (item.quantity || 1)).toFixed(2)}</td>
+    </tr>`
+  ).join("");
+
+  const estimatedDelivery = new Date(Date.now() + 8 * 24 * 60 * 60 * 1000).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
+
+  const html = `
+    <div style="font-family: 'Inter', Arial, sans-serif; background-color: #080b11; color: #f3f4f6; padding: 2.5rem; border-radius: 16px; max-width: 620px; margin: 0 auto; border: 1px solid rgba(139,92,246,0.2); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+      <div style="text-align: center; margin-bottom: 2rem;">
+        <h2 style="font-family: 'Space Grotesk', Arial, sans-serif; color: #ffffff; font-size: 1.8rem; margin: 0; font-weight: 700; letter-spacing: -0.02em;">ToyzGuru</h2>
+        <p style="color: #8b5cf6; font-size: 0.85rem; margin: 0.25rem 0 0 0; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em;">Premium Collector Store</p>
+      </div>
+
+      <div style="background: rgba(139,92,246,0.08); border: 1px solid rgba(139,92,246,0.25); border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 1.75rem; text-align: center;">
+        <p style="margin: 0 0 0.35rem 0; color: #a78bfa; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em;">Order Confirmed ✓</p>
+        <p style="margin: 0; color: #ffffff; font-size: 1.15rem; font-weight: 700; font-family: monospace;">#${order.id || order.order_id}</p>
+      </div>
+
+      <p style="color: #9ca3af; font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.5rem;">
+        Hi <strong style="color: #ffffff;">${order.name || order.customer_name || "Valued Customer"}</strong>,<br><br>
+        Thank you for your order! We've received your payment and will begin processing your items shortly.
+      </p>
+
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 1.5rem;">
+        <thead>
+          <tr>
+            <th style="padding: 0.6rem 0.75rem; background: rgba(255,255,255,0.04); color: #6b7280; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; text-align: left; border-radius: 6px 0 0 6px;">Item</th>
+            <th style="padding: 0.6rem 0.75rem; background: rgba(255,255,255,0.04); color: #6b7280; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; text-align: center;">Qty</th>
+            <th style="padding: 0.6rem 0.75rem; background: rgba(255,255,255,0.04); color: #6b7280; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; text-align: right; border-radius: 0 6px 6px 0;">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${itemsHTML}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="2" style="padding: 0.75rem; color: #6b7280; font-size: 0.85rem; text-align: right; font-weight: 600;">Total Paid:</td>
+            <td style="padding: 0.75rem; color: #a78bfa; font-size: 1rem; text-align: right; font-weight: 700;">₹${Number(order.total || 0).toFixed(2)}</td>
+          </tr>
+        </tfoot>
+      </table>
+
+      <div style="display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 180px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; padding: 1rem;">
+          <p style="margin: 0 0 0.3rem 0; color: #6b7280; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.07em; font-weight: 600;">Shipping To</p>
+          <p style="margin: 0; color: #e5e7eb; font-size: 0.88rem; line-height: 1.5;">${order.address || order.shipping_address || "—"}</p>
+        </div>
+        <div style="flex: 1; min-width: 180px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; padding: 1rem;">
+          <p style="margin: 0 0 0.3rem 0; color: #6b7280; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.07em; font-weight: 600;">Est. Delivery</p>
+          <p style="margin: 0; color: #e5e7eb; font-size: 0.88rem;">${estimatedDelivery}</p>
+        </div>
+      </div>
+
+      <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.07); margin-bottom: 1.5rem;" />
+
+      <p style="color: #6b7280; font-size: 0.8rem; text-align: center; margin: 0; line-height: 1.6;">
+        Questions? Reply to this email or contact us at <a href="mailto:support@toyzguru.in" style="color: #8b5cf6;">support@toyzguru.in</a><br>
+        &copy; 2025 ToyzGuru Premium Store
+      </p>
+    </div>
+  `;
+
+  try {
+    await sendEmailViaServer({
+      to: order.email,
+      subject: `Order Confirmed #${order.id || order.order_id} – ToyzGuru`,
+      html,
+      text: `Order Confirmed!\n\nHi ${order.name || "Customer"},\n\nYour order #${order.id || order.order_id} has been confirmed.\nTotal: ₹${Number(order.total || 0).toFixed(2)}\nEst. Delivery: ${estimatedDelivery}\n\nThank you for shopping at ToyzGuru!\nsupport@toyzguru.in`,
+    });
+    console.log("Order confirmation email sent to", order.email);
+  } catch (err) {
+    console.warn("Order confirmation email failed (non-blocking):", err.message);
+  }
+}
+window.sendOrderConfirmationEmail = sendOrderConfirmationEmail;
+window.sendOrderConfirmationEmail = sendOrderConfirmationEmail;
+
+
+// ================= OTP EMAIL VERIFICATION SYSTEM =================
+// Generates a 6-digit OTP, emails it via the proxy server, then
+// shows an in-page modal for the user to enter the code.
+// Returns a Promise<boolean> — true = verified, false = cancelled/failed.
+
+const OTP_VALIDITY_MINUTES = 10;
+let _otpStore = {}; // { email: { code, expiresAt } }
+
+function generateOtp() {
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
+
+async function sendOtpEmail(email, name) {
+  const otp = generateOtp();
+  const expiresAt = Date.now() + OTP_VALIDITY_MINUTES * 60 * 1000;
+  _otpStore[email.toLowerCase()] = { code: otp, expiresAt };
+
+  const html = `
+    <div style="font-family:'Inter',Arial,sans-serif;background:#080b11;color:#f3f4f6;padding:2.5rem;border-radius:16px;max-width:560px;margin:0 auto;border:1px solid rgba(139,92,246,0.2);box-shadow:0 10px 30px rgba(0,0,0,0.5);">
+      <div style="text-align:center;margin-bottom:1.75rem;">
+        <h2 style="font-family:'Space Grotesk',Arial,sans-serif;color:#fff;font-size:1.7rem;margin:0;font-weight:700;letter-spacing:-0.02em;">ToyzGuru</h2>
+        <p style="color:#8b5cf6;font-size:0.8rem;margin:0.2rem 0 0;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;">Premium Collector Store</p>
+      </div>
+
+      <h3 style="font-family:'Space Grotesk',Arial,sans-serif;color:#fff;font-size:1.25rem;margin:0 0 0.75rem;font-weight:600;text-align:center;">Registration Verification</h3>
+
+      <p style="color:#9ca3af;font-size:0.9rem;line-height:1.65;margin-bottom:1.5rem;">
+        Dear <strong style="color:#fff;">${name || "Member"}</strong>,<br><br>
+        Thank you for registering with us.<br>
+        To complete your registration and verify your account, please use the One-Time Password (OTP) below:
+      </p>
+
+      <div style="background:rgba(139,92,246,0.1);border:1.5px solid rgba(139,92,246,0.35);border-radius:12px;padding:1.5rem;text-align:center;margin-bottom:1.75rem;">
+        <p style="margin:0 0 0.4rem;color:#a78bfa;font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;">Your OTP</p>
+        <p style="margin:0;font-family:monospace;font-size:2.75rem;font-weight:800;color:#ffffff;letter-spacing:0.35em;text-shadow:0 0 20px rgba(139,92,246,0.6);">${otp}</p>
+        <p style="margin:0.6rem 0 0;color:#6b7280;font-size:0.78rem;">Valid for <strong style="color:#a78bfa;">${OTP_VALIDITY_MINUTES} minutes</strong></p>
+      </div>
+
+      <p style="color:#9ca3af;font-size:0.85rem;line-height:1.6;margin-bottom:1.5rem;">
+        For your security, please do not share this code with anyone.<br>
+        If you did not initiate this registration request, please ignore this message or contact our support team immediately.
+      </p>
+
+      <hr style="border:0;border-top:1px solid rgba(255,255,255,0.07);margin-bottom:1.25rem;" />
+
+      <p style="color:#6b7280;font-size:0.78rem;text-align:center;margin:0;line-height:1.6;">
+        Thank you,<br>
+        <strong style="color:#a78bfa;">ToyzGuru</strong> &mdash; Premium Collector Store<br>
+        <a href="mailto:support@toyzguru.in" style="color:#8b5cf6;">support@toyzguru.in</a>
+      </p>
+    </div>
+  `;
+
+  await sendEmailViaServer({
+    to: email,
+    subject: "Your ToyzGuru Registration OTP",
+    html,
+    text: `Registration Verification\n\nDear ${name || "Member"},\n\nThank you for registering with us.\n\nYour OTP: ${otp}\n\nThis OTP is valid for ${OTP_VALIDITY_MINUTES} minutes. Do not share it with anyone.\n\nThank you,\nToyzGuru`,
+  });
+
+  return otp; // returned for logging only — do NOT expose in UI
+}
+
+function verifyOtpCode(email, enteredCode) {
+  const record = _otpStore[email.toLowerCase()];
+  if (!record) return { valid: false, reason: "No OTP sent to this email." };
+  if (Date.now() > record.expiresAt) {
+    delete _otpStore[email.toLowerCase()];
+    return { valid: false, reason: "OTP has expired. Please try again." };
+  }
+  if (enteredCode.trim() !== record.code) {
+    return { valid: false, reason: "Incorrect OTP. Please check your email and try again." };
+  }
+  delete _otpStore[email.toLowerCase()];
+  return { valid: true };
+}
+
+// Shows the OTP entry modal. Returns Promise<boolean> true = verified.
+function showOtpModal(email) {
+  return new Promise((resolve) => {
+    // Inject keyframe CSS once
+    if (!document.getElementById("otp-dialog-style")) {
+      const style = document.createElement("style");
+      style.id = "otp-dialog-style";
+      style.textContent = `
+        @keyframes otpFadeIn { from { opacity:0; transform:scale(0.94) translateY(12px); } to { opacity:1; transform:scale(1) translateY(0); } }
+        .otp-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);z-index:99999;display:flex;align-items:center;justify-content:center;padding:1rem; }
+        .otp-box { background:var(--bg-secondary,#0d1117);border:1px solid rgba(139,92,246,0.3);border-radius:20px;padding:2.25rem 2rem;max-width:420px;width:100%;box-shadow:0 0 0 1px rgba(139,92,246,0.12),0 20px 60px rgba(0,0,0,0.6);animation:otpFadeIn 0.28s cubic-bezier(0.34,1.56,0.64,1) both;position:relative; }
+        .otp-input { width:100%;padding:1.1rem 1rem;font-family:monospace;font-size:2rem;font-weight:800;text-align:center;letter-spacing:0.4em;background:rgba(139,92,246,0.07);border:1.5px solid rgba(139,92,246,0.3);border-radius:12px;color:#fff;outline:none;transition:border-color 0.2s,box-shadow 0.2s; }
+        .otp-input:focus { border-color:#8b5cf6;box-shadow:0 0 0 3px rgba(139,92,246,0.18); }
+        .otp-input.shake { animation:shake 0.4s ease; }
+        @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
+        .otp-verify-btn { width:100%;padding:0.9rem;background:linear-gradient(135deg,#8b5cf6 0%,#d946ef 100%);color:#fff;border:none;border-radius:10px;font-weight:700;font-size:1rem;cursor:pointer;margin-top:1rem;transition:transform 0.2s,box-shadow 0.2s; }
+        .otp-verify-btn:hover { transform:translateY(-2px);box-shadow:0 6px 20px rgba(139,92,246,0.45); }
+        .otp-verify-btn:disabled { opacity:0.55;cursor:not-allowed;transform:none; }
+        .otp-cancel-btn { width:100%;padding:0.75rem;background:transparent;color:var(--text-secondary,#9ca3af);border:1px solid rgba(255,255,255,0.08);border-radius:10px;font-size:0.9rem;cursor:pointer;margin-top:0.5rem;transition:background 0.2s,border-color 0.2s; }
+        .otp-cancel-btn:hover { background:rgba(255,255,255,0.05);border-color:rgba(255,255,255,0.15); }
+        .otp-resend-link { background:none;border:none;color:#8b5cf6;font-size:0.82rem;cursor:pointer;text-decoration:underline;padding:0; }
+        .otp-resend-link:disabled { color:#6b7280;cursor:not-allowed;text-decoration:none; }
+        .otp-error-msg { color:#f87171;font-size:0.82rem;text-align:center;margin-top:0.6rem;min-height:1.2em; }
+      `;
+      document.head.appendChild(style);
+    }
+
+    const overlay = document.createElement("div");
+    overlay.className = "otp-overlay";
+    overlay.innerHTML = `
+      <div class="otp-box">
+        <button id="otp-close-btn" style="position:absolute;top:1rem;right:1rem;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:var(--text-secondary,#9ca3af);width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;">&times;</button>
+
+        <div style="text-align:center;margin-bottom:1.5rem;">
+          <div style="width:52px;height:52px;background:rgba(139,92,246,0.12);border:1px solid rgba(139,92,246,0.3);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">
+            <i data-feather="mail" style="width:24px;height:24px;color:#8b5cf6;"></i>
+          </div>
+          <h3 style="font-family:'Space Grotesk',sans-serif;color:#fff;font-size:1.3rem;font-weight:700;margin:0 0 0.4rem;">Verify Your Email</h3>
+          <p style="color:#9ca3af;font-size:0.88rem;margin:0;line-height:1.5;">
+            We've sent a <strong style="color:#a78bfa;">6-digit OTP</strong> to<br>
+            <strong style="color:#e5e7eb;">${email}</strong>
+          </p>
+        </div>
+
+        <input id="otp-code-input" class="otp-input" type="text" inputmode="numeric" maxlength="6" placeholder="— — — — — —" autocomplete="one-time-code" />
+        <p id="otp-error-msg" class="otp-error-msg"></p>
+
+        <p style="color:#6b7280;font-size:0.8rem;text-align:center;margin:0.25rem 0 0;">
+          Valid for <strong style="color:#a78bfa;">${OTP_VALIDITY_MINUTES} min</strong> &nbsp;·&nbsp;
+          <button id="otp-resend-btn" class="otp-resend-link">Resend OTP</button>
+        </p>
+
+        <button id="otp-verify-btn" class="otp-verify-btn">Verify &amp; Continue</button>
+        <button id="otp-cancel-btn-action" class="otp-cancel-btn">Cancel Registration</button>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+    if (window.feather) feather.replace();
+
+    const input = overlay.querySelector("#otp-code-input");
+    const verifyBtn = overlay.querySelector("#otp-verify-btn");
+    const cancelBtn = overlay.querySelector("#otp-cancel-btn-action");
+    const closeBtn = overlay.querySelector("#otp-close-btn");
+    const errorMsg = overlay.querySelector("#otp-error-msg");
+    const resendBtn = overlay.querySelector("#otp-resend-btn");
+
+    // Auto-format input to digits only
+    input.addEventListener("input", () => {
+      input.value = input.value.replace(/\D/g, "").slice(0, 6);
+      errorMsg.textContent = "";
+    });
+
+    input.focus();
+
+    const doVerify = () => {
+      const entered = input.value.trim();
+      if (entered.length !== 6) {
+        errorMsg.textContent = "Please enter the 6-digit OTP.";
+        input.classList.add("shake");
+        setTimeout(() => input.classList.remove("shake"), 400);
+        return;
+      }
+      const result = verifyOtpCode(email, entered);
+      if (result.valid) {
+        overlay.remove();
+        resolve(true);
+      } else {
+        errorMsg.textContent = result.reason;
+        input.classList.add("shake");
+        setTimeout(() => input.classList.remove("shake"), 400);
+        input.value = "";
+        input.focus();
+      }
+    };
+
+    const doClose = () => { overlay.remove(); resolve(false); };
+
+    verifyBtn.addEventListener("click", doVerify);
+    cancelBtn.addEventListener("click", doClose);
+    closeBtn.addEventListener("click", doClose);
+
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") doVerify();
+      if (e.key === "Escape") doClose();
+    });
+
+    // Resend OTP — re-sends and restarts expiry timer
+    resendBtn.addEventListener("click", async () => {
+      resendBtn.disabled = true;
+      resendBtn.textContent = "Sending…";
+      errorMsg.textContent = "";
+      try {
+        const storedName = resendBtn.dataset.name || "";
+        await sendOtpEmail(email, storedName);
+        errorMsg.style.color = "#34d399";
+        errorMsg.textContent = "New OTP sent! Check your inbox.";
+        setTimeout(() => { errorMsg.style.color = "#f87171"; errorMsg.textContent = ""; }, 3500);
+      } catch (err) {
+        errorMsg.textContent = "Failed to resend OTP: " + err.message;
+      }
+      setTimeout(() => { resendBtn.disabled = false; resendBtn.textContent = "Resend OTP"; }, 30000);
+    });
+  });
+}
+
+// Main entry point — call this before creating the account.
+// Returns Promise<boolean>: true = OTP verified, false = cancelled.
+async function requestEmailOtpVerification(email, name) {
+  try {
+    showToast("OTP Sent", `A verification OTP has been sent to ${email}. Please check your inbox.`, "info");
+    await sendOtpEmail(email, name);
+  } catch (err) {
+    console.error("Failed to send OTP email:", err);
+    await showCustomDialog(
+      "OTP Delivery Failed",
+      `Could not send OTP to ${email}.\n\nDetails: ${err.message}\n\nPlease ensure the email server is running (email-server/server.py on port 3001).`,
+      "danger"
+    );
+    return false;
+  }
+
+  // Show the OTP entry modal and wait for user action
+  const resendBtn_ref = document.querySelector("#otp-resend-btn");
+  if (resendBtn_ref) resendBtn_ref.dataset.name = name || "";
+  return await showOtpModal(email);
+}
+window.requestEmailOtpVerification = requestEmailOtpVerification;
+
+
+
 // Standalone — works for ANY order object: new checkout orders AND existing orders.
 // Returns: public receipt URL (string) if uploaded to Supabase, or null if offline.
 async function generateOrderReceiptPDF(order, autoDownload = true) {
@@ -2743,6 +3054,12 @@ async function handleCheckoutSubmit(e) {
       // Set success redirection links
       document.getElementById("success-track-link").href = `#tracking?id=${newOrderId}`;
 
+      // Send order confirmation email (non-blocking)
+      if (window.sendOrderConfirmationEmail) {
+        window.sendOrderConfirmationEmail(newOrderObj);
+      }
+
+
       // Delay slightly to simulate secure gateway poll verification
       setTimeout(() => {
         paymentForm.style.display = "block";
@@ -3765,11 +4082,21 @@ function setupEventListeners() {
         }
       }
 
+      // ── OTP Verification before account creation ────────────────────────
+      if (window.requestEmailOtpVerification) {
+        const otpVerified = await window.requestEmailOtpVerification(email, name);
+        if (!otpVerified) {
+          // User cancelled or OTP failed — do not create account
+          return;
+        }
+      }
+
       // Generate a UUID v4 so it can sync with Supabase profiles table
       const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
         var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
         return v.toString(16);
       });
+
 
       // Create new user profile with verification set to false
       const newProfile = {
@@ -3785,7 +4112,7 @@ function setupEventListeners() {
         loyalty_points: 120,
         created_at: new Date().toISOString(),
         password: password,
-        email_confirmed: false
+        email_confirmed: true
       };
 
       // Add to local profiles array
@@ -3827,12 +4154,8 @@ function setupEventListeners() {
         }
       }
 
-      showToast("Verification Sent", "A confirmation email has been sent. Please confirm before logging in.", "info");
-      
-      // Send the real outgoing verification email
-      if (window.sendOutgoingVerificationEmail) {
-        window.sendOutgoingVerificationEmail(newProfile);
-      }
+
+      showToast("Registration Complete", "Your account has been created and verified. You can now sign in!", "success");
 
       // Switch view tab back to Sign In
       const authTabSignin = document.getElementById("auth-tab-signin");

@@ -1247,11 +1247,23 @@ async function handleAdminMemberFormSubmit(e) {
         }
       }
 
+      // ── OTP Verification before creating member account ─────────────────
+      if (window.requestEmailOtpVerification) {
+        adminShowToast("OTP Sent", `Sending verification OTP to ${email}…`, "info");
+        const otpVerified = await window.requestEmailOtpVerification(email, name);
+        if (!otpVerified) {
+          // Admin or member cancelled — do not create account
+          if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = "Create Member"; }
+          return;
+        }
+      }
+
       // Generate a UUID v4
       const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
         var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
         return v.toString(16);
       });
+
 
       // Create new profile object
       const newMember = {
@@ -1259,7 +1271,7 @@ async function handleAdminMemberFormSubmit(e) {
         ...profilePayload,
         created_at: new Date().toISOString(),
         password: password,
-        email_confirmed: false
+        email_confirmed: true
       };
 
       // Add to registry
@@ -1306,12 +1318,7 @@ async function handleAdminMemberFormSubmit(e) {
         }
       }
 
-      adminShowToast("Member Created", `Account for ${name} has been created successfully.`, "success");
-      
-      // Trigger outgoing verification email
-      if (window.sendOutgoingVerificationEmail) {
-        window.sendOutgoingVerificationEmail(newMember);
-      }
+      adminShowToast("Member Created", `Account for ${name} has been verified and created successfully.`, "success");
 
       adminCloseMemberModal();
       adminRenderMembersRegistry();
