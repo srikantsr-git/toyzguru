@@ -3054,7 +3054,7 @@ async function handleCheckoutSubmit(e) {
 
       // Refresh memory states
       if (supabase) {
-        if (session) {
+        if (userId) {
           try {
             const { data: ords } = await supabase.from('orders').select('*').eq('user_id', userId).order('date', { ascending: false });
             ordersState = ords || [];
