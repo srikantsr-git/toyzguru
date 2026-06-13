@@ -3621,6 +3621,7 @@ function setupEventListeners() {
       const existingProfile = localProfiles.some(p => p.email && p.email.toLowerCase() === email.toLowerCase());
 
       if (existingProfile) {
+        alert("Email ID already exists!");
         showToast("Sign Up Failed", "Email ID already exists!", "warning");
         return;
       }
@@ -3634,6 +3635,7 @@ function setupEventListeners() {
             .ilike('email', email);
           
           if (!checkError && dbMems && dbMems.length > 0) {
+            alert("Email ID already exists!");
             showToast("Sign Up Failed", "Email ID already exists!", "warning");
             return;
           }
@@ -3694,6 +3696,7 @@ function setupEventListeners() {
                 errMsg = "Email ID already exists!";
               }
               
+              alert(errMsg);
               showToast("Sign Up Failed", errMsg, "warning");
               return;
             }

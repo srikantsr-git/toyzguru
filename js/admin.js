@@ -1206,7 +1206,8 @@ async function handleAdminMemberFormSubmit(e) {
       let localProfiles = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
       const existing = localProfiles.some(p => p.email && p.email.toLowerCase() === email.toLowerCase());
       if (existing) {
-        adminShowToast("Email Exists", "A member with this email already exists.", "warning");
+        alert("Email ID already exists!");
+        adminShowToast("Email Exists", "Email ID already exists!", "warning");
         return;
       }
 
@@ -1219,7 +1220,8 @@ async function handleAdminMemberFormSubmit(e) {
             .ilike('email', email);
           
           if (!checkError && dbMems && dbMems.length > 0) {
-            adminShowToast("Email Exists", "A member with this email already exists in the system database.", "warning");
+            alert("Email ID already exists!");
+            adminShowToast("Email Exists", "Email ID already exists!", "warning");
             return;
           }
         } catch (err) {
@@ -1267,9 +1269,10 @@ async function handleAdminMemberFormSubmit(e) {
               
               let errMsg = profileError.message || "Failed to sync member to cloud database.";
               if (profileError.code === '23505' || errMsg.toLowerCase().includes("unique") || errMsg.toLowerCase().includes("exists")) {
-                errMsg = "A member with this email already exists in the system.";
+                errMsg = "Email ID already exists!";
               }
               
+              alert(errMsg);
               adminShowToast("Save Failed", errMsg, "danger");
               return;
             }
