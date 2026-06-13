@@ -1315,68 +1315,147 @@
       <section id="profile-view" class="view-panel" style="display: none;">
         <div class="profile-grid">
 
-          <!-- Profile sidebar -->
+          <!-- ====== Profile Sidebar ====== -->
           <aside class="glass-panel profile-sidebar">
+
+            <!-- Avatar + Name -->
             <div class="profile-user-card">
               <div class="profile-avatar-wrap" id="avatar-upload-trigger" title="Click to upload profile image">
-                <img src="assets/images/product_anime_figure.png" alt="User Profile Image" class="profile-avatar-img"
-                  id="profile-card-avatar">
+                <img src="assets/images/product_anime_figure.png" alt="User Profile Image" class="profile-avatar-img" id="profile-card-avatar">
                 <div class="profile-avatar-overlay">
                   <i data-feather="camera" style="width: 20px; height: 20px;"></i>
                 </div>
                 <input type="file" id="user-setting-avatar-input" accept="image/*" style="display: none;">
               </div>
               <h3 class="profile-name" id="profile-card-name">User Name</h3>
-              <span class="profile-points-badge"><i data-feather="award"
-                  style="width: 12px; height: 12px; vertical-align: middle; margin-right: 0.15rem;"></i> <span
-                  id="profile-card-points">120</span> Loyalty Points</span>
+              <p class="profile-email-label" id="profile-card-email" style="color:var(--text-secondary);font-size:0.78rem;margin:0.2rem 0 0.75rem;word-break:break-all;"></p>
+              <span class="profile-points-badge">
+                <i data-feather="award" style="width: 12px; height: 12px; vertical-align: middle; margin-right: 0.15rem;"></i>
+                <span id="profile-card-points">120</span> Loyalty Points
+              </span>
             </div>
 
+            <!-- Sidebar Nav -->
             <nav class="profile-nav">
-              <button class="profile-nav-btn" data-panel="profile-settings"><i data-feather="settings"
-                  style="width: 18px;"></i> Account Settings</button>
-              <button class="profile-nav-btn" data-panel="profile-orders"><i data-feather="list"
-                  style="width: 18px;"></i> Order History</button>
-              <button class="profile-nav-btn" data-panel="profile-payments"><i data-feather="credit-card"
-                  style="width: 18px;"></i> Payment History</button>
-              <button class="profile-nav-btn" data-panel="profile-wishlist"><i data-feather="heart"
-                  style="width: 18px;"></i> Wishlist Vault</button>
-              <button class="profile-nav-btn" id="profile-signout-btn" style="color: var(--color-danger);"><i
-                  data-feather="log-out" style="width: 18px; color: var(--color-danger);"></i> Sign Out</button>
+              <button class="profile-nav-btn" data-panel="profile-dashboard" id="profile-nav-home">
+                <span class="pnb-icon-wrap"><i data-feather="grid" style="width:17px;height:17px;"></i></span>
+                <span>Dashboard</span>
+              </button>
+              <button class="profile-nav-btn" data-panel="profile-settings">
+                <span class="pnb-icon-wrap"><i data-feather="settings" style="width:17px;height:17px;"></i></span>
+                <span>Account Settings</span>
+              </button>
+              <button class="profile-nav-btn" data-panel="profile-orders">
+                <span class="pnb-icon-wrap"><i data-feather="package" style="width:17px;height:17px;"></i></span>
+                <span>Order History</span>
+              </button>
+              <button class="profile-nav-btn" data-panel="profile-payments">
+                <span class="pnb-icon-wrap"><i data-feather="credit-card" style="width:17px;height:17px;"></i></span>
+                <span>Payment History</span>
+              </button>
+              <button class="profile-nav-btn" data-panel="profile-wishlist">
+                <span class="pnb-icon-wrap"><i data-feather="heart" style="width:17px;height:17px;"></i></span>
+                <span>Wishlist Vault</span>
+              </button>
+              <div class="profile-nav-divider"></div>
+              <button class="profile-nav-btn profile-signout-nav-btn" id="profile-signout-btn">
+                <span class="pnb-icon-wrap signout-icon"><i data-feather="log-out" style="width:17px;height:17px;"></i></span>
+                <span>Sign Out</span>
+              </button>
             </nav>
           </aside>
 
-          <!-- Profile Info Panels -->
-          <div>
-            <!-- Profile Wishlist Panel -->
-            <div class="glass-panel profile-panel" id="profile-wishlist">
-              <h3 class="profile-panel-title">Your Wishlist Vault</h3>
-              <div
-                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
-                <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">
-                  Manage items currently saved in your secure loyalty vault.
-                </p>
-                <div style="display: flex; gap: 0.5rem;" id="profile-wishlist-actions">
-                  <button type="button" class="product-card-add-btn" id="profile-wishlist-add-all-btn"
-                    style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
-                    Add All to Cart
-                  </button>
-                  <button type="button" class="product-card-add-btn" id="profile-wishlist-clear-btn"
-                    style="padding: 0.4rem 0.8rem; font-size: 0.8rem; background: var(--bg-tertiary); color: var(--text-primary); border-color: var(--glass-border);">
-                    Clear All
-                  </button>
+          <!-- ====== Profile Panels ====== -->
+          <div class="profile-panels-wrap">
+
+            <!-- ── DASHBOARD HOME PANEL ── -->
+            <div class="glass-panel profile-panel active" id="profile-dashboard">
+              <div class="dash-header">
+                <div>
+                  <h2 class="dash-greeting" id="dash-greeting-text">Welcome back!</h2>
+                  <p class="dash-subline">Manage your account, orders and wishlist from one place.</p>
+                </div>
+                <div class="dash-loyalty-chip">
+                  <i data-feather="award" style="width:18px;height:18px;color:#fbbf24;"></i>
+                  <span><strong id="dash-points-count">120</strong> pts</span>
                 </div>
               </div>
-              <div class="products-grid" id="profile-wishlist-items-grid"
-                style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem;">
+
+              <!-- Quick-Action Cards -->
+              <div class="dash-cards-grid">
+
+                <button class="dash-card" data-panel="profile-settings" onclick="window._profileGoToPanel('profile-settings')">
+                  <div class="dash-card-icon-wrap" style="--dc-clr:#8b5cf6;">
+                    <i data-feather="settings" style="width:26px;height:26px;"></i>
+                  </div>
+                  <h4 class="dash-card-title">Account Settings</h4>
+                  <p class="dash-card-desc">Update your name, address, email and personal details.</p>
+                  <span class="dash-card-arrow"><i data-feather="arrow-right" style="width:15px;height:15px;"></i></span>
+                </button>
+
+                <button class="dash-card" data-panel="profile-orders" onclick="window._profileGoToPanel('profile-orders')">
+                  <div class="dash-card-icon-wrap" style="--dc-clr:#06b6d4;">
+                    <i data-feather="package" style="width:26px;height:26px;"></i>
+                  </div>
+                  <h4 class="dash-card-title">Order History</h4>
+                  <p class="dash-card-desc">Track your previous purchases and order fulfilment status.</p>
+                  <span class="dash-card-arrow"><i data-feather="arrow-right" style="width:15px;height:15px;"></i></span>
+                </button>
+
+                <button class="dash-card" data-panel="profile-payments" onclick="window._profileGoToPanel('profile-payments')">
+                  <div class="dash-card-icon-wrap" style="--dc-clr:#10b981;">
+                    <i data-feather="credit-card" style="width:26px;height:26px;"></i>
+                  </div>
+                  <h4 class="dash-card-title">Payment History</h4>
+                  <p class="dash-card-desc">View all transactions and download receipts for your records.</p>
+                  <span class="dash-card-arrow"><i data-feather="arrow-right" style="width:15px;height:15px;"></i></span>
+                </button>
+
+                <button class="dash-card" data-panel="profile-wishlist" onclick="window._profileGoToPanel('profile-wishlist')">
+                  <div class="dash-card-icon-wrap" style="--dc-clr:#f43f5e;">
+                    <i data-feather="heart" style="width:26px;height:26px;"></i>
+                  </div>
+                  <h4 class="dash-card-title">Wishlist Vault</h4>
+                  <p class="dash-card-desc">Your saved items — add them all to cart in one click.</p>
+                  <span class="dash-card-arrow"><i data-feather="arrow-right" style="width:15px;height:15px;"></i></span>
+                </button>
+
+                <button class="dash-card dash-card-signout" id="dash-signout-card">
+                  <div class="dash-card-icon-wrap" style="--dc-clr:#ef4444;">
+                    <i data-feather="log-out" style="width:26px;height:26px;"></i>
+                  </div>
+                  <h4 class="dash-card-title">Sign Out</h4>
+                  <p class="dash-card-desc">Securely log out of your ToyzGuru member account.</p>
+                  <span class="dash-card-arrow"><i data-feather="arrow-right" style="width:15px;height:15px;"></i></span>
+                </button>
+
+              </div><!-- /.dash-cards-grid -->
+            </div><!-- /#profile-dashboard -->
+
+            <!-- ── WISHLIST VAULT PANEL ── -->
+            <div class="glass-panel profile-panel" id="profile-wishlist">
+              <div class="profile-panel-header">
+                <button class="panel-back-btn" onclick="window._profileGoToPanel('profile-dashboard')"><i data-feather="arrow-left" style="width:14px;height:14px;"></i> Dashboard</button>
+                <h3 class="profile-panel-title">Your Wishlist Vault</h3>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+                <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">Manage items currently saved in your secure loyalty vault.</p>
+                <div style="display: flex; gap: 0.5rem;" id="profile-wishlist-actions">
+                  <button type="button" class="product-card-add-btn" id="profile-wishlist-add-all-btn" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">Add All to Cart</button>
+                  <button type="button" class="product-card-add-btn" id="profile-wishlist-clear-btn" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; background: var(--bg-tertiary); color: var(--text-primary); border-color: var(--glass-border);">Clear All</button>
+                </div>
+              </div>
+              <div class="products-grid" id="profile-wishlist-items-grid" style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem;">
                 <!-- Dynamically populated via app.js -->
               </div>
             </div>
 
-            <!-- Order History Panel -->
+            <!-- ── ORDER HISTORY PANEL ── -->
             <div class="glass-panel profile-panel" id="profile-orders">
-              <h3 class="profile-panel-title">Your Order History</h3>
-
+              <div class="profile-panel-header">
+                <button class="panel-back-btn" onclick="window._profileGoToPanel('profile-dashboard')"><i data-feather="arrow-left" style="width:14px;height:14px;"></i> Dashboard</button>
+                <h3 class="profile-panel-title">Your Order History</h3>
+              </div>
               <div class="orders-table-wrap">
                 <table class="orders-table">
                   <thead>
@@ -1396,11 +1475,13 @@
               </div>
             </div>
 
-            <!-- Payment History Panel -->
+            <!-- ── PAYMENT HISTORY PANEL ── -->
             <div class="glass-panel profile-panel" id="profile-payments">
-              <h3 class="profile-panel-title">Payment History</h3>
+              <div class="profile-panel-header">
+                <button class="panel-back-btn" onclick="window._profileGoToPanel('profile-dashboard')"><i data-feather="arrow-left" style="width:14px;height:14px;"></i> Dashboard</button>
+                <h3 class="profile-panel-title">Payment History</h3>
+              </div>
               <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:1.5rem;">All transactions processed through your account. Download receipts or remove records below.</p>
-
               <div class="orders-table-wrap">
                 <table class="orders-table">
                   <thead>
@@ -1420,24 +1501,21 @@
               </div>
             </div>
 
-            <!-- Account Settings Panel -->
-            <div class="glass-panel profile-panel active" id="profile-settings">
-              <h3 class="profile-panel-title">Account Settings</h3>
+            <!-- ── ACCOUNT SETTINGS PANEL ── -->
+            <div class="glass-panel profile-panel" id="profile-settings">
+              <div class="profile-panel-header">
+                <button class="panel-back-btn" onclick="window._profileGoToPanel('profile-dashboard')"><i data-feather="arrow-left" style="width:14px;height:14px;"></i> Dashboard</button>
+                <h3 class="profile-panel-title">Account Settings</h3>
+              </div>
 
               <form id="profile-settings-form">
-                <h4 style="color: var(--color-brand); margin-bottom: 1rem; font-family: 'Space Grotesk', sans-serif;">
-                  Saved Delivery Addresses</h4>
-                <div
-                  style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 2rem;"
-                  id="member-addresses-container">
+                <h4 style="color: var(--color-brand); margin-bottom: 1rem; font-family: 'Space Grotesk', sans-serif;">Saved Delivery Addresses</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 2rem;" id="member-addresses-container">
                   <!-- Dynamically populated via app.js -->
                 </div>
 
-                <h4
-                  style="color: var(--color-brand); margin-bottom: 1rem; font-family: 'Space Grotesk', sans-serif; border-top: 1px solid var(--glass-border); padding-top: 1.5rem;">
-                  Home Address</h4>
-                <div class="checkout-form-grid"
-                  style="grid-template-columns: 1fr 1fr; gap: 1.25rem; display: grid; margin-bottom: 2rem;">
+                <h4 style="color: var(--color-brand); margin-bottom: 1rem; font-family: 'Space Grotesk', sans-serif; border-top: 1px solid var(--glass-border); padding-top: 1.5rem;">Home Address</h4>
+                <div class="checkout-form-grid" style="grid-template-columns: 1fr 1fr; gap: 1.25rem; display: grid; margin-bottom: 2rem;">
                   <div class="form-group">
                     <label class="form-label">Full Name *</label>
                     <input type="text" required class="form-input" id="user-setting-name" value="">
@@ -1458,8 +1536,7 @@
                   </div>
                   <div class="form-group" style="grid-column: span 2;">
                     <label class="form-label">Address *</label>
-                    <input type="text" required class="form-input" id="user-setting-address"
-                      placeholder="123 Street name, Apt / Suite">
+                    <input type="text" required class="form-input" id="user-setting-address" placeholder="123 Street name, Apt / Suite">
                   </div>
                   <div class="form-group">
                     <label class="form-label">City *</label>
@@ -1471,20 +1548,18 @@
                   </div>
                   <div class="form-group" style="grid-column: span 2;">
                     <label class="form-label">Country</label>
-                    <input type="text" id="user-setting-country" class="form-input" value="India" readonly
-                      style="background: rgba(255,255,255,0.03); color: var(--text-muted); cursor: not-allowed;">
+                    <input type="text" id="user-setting-country" class="form-input" value="India" readonly style="background: rgba(255,255,255,0.03); color: var(--text-muted); cursor: not-allowed;">
                   </div>
                 </div>
 
-
-                <button type="submit" class="checkout-btn"
-                  style="width: auto; padding: 0.75rem 2rem; margin-top: 1.5rem;">Save Settings</button>
+                <button type="submit" class="checkout-btn" style="width: auto; padding: 0.75rem 2rem; margin-top: 1.5rem;">Save Settings</button>
               </form>
             </div>
-          </div>
 
-        </div>
+          </div><!-- /.profile-panels-wrap -->
+        </div><!-- /.profile-grid -->
       </section>
+
 
       <!-- ================= WISHLIST VIEW ================= -->
       <section id="wishlist-view" class="view-panel" style="display: none;">
@@ -1576,7 +1651,9 @@
             </div>
 
             <nav class="admin-nav">
-              <button class="admin-nav-btn active" data-panel="admin-dashboard-panel"><i data-feather="activity"
+              <button class="admin-nav-btn active" data-panel="admin-home-panel" id="admin-nav-home"><i data-feather="grid"
+                  style="width: 18px;"></i> Control Dashboard</button>
+              <button class="admin-nav-btn" data-panel="admin-dashboard-panel"><i data-feather="activity"
                   style="width: 18px;"></i> Analytics Overview</button>
               <button class="admin-nav-btn" data-panel="admin-products-panel"><i data-feather="grid"
                   style="width: 18px;"></i> Product Inventory</button>
@@ -1601,10 +1678,119 @@
           </aside>
 
           <!-- Admin Panels -->
-          <div>
+          <div class="profile-panels-wrap">
+
+            <!-- Control Dashboard Panel -->
+            <div class="admin-panel active" id="admin-home-panel">
+              <div class="dash-header">
+                <div>
+                  <h2 class="dash-greeting" id="admin-dash-greeting-text">Admin Control Dashboard</h2>
+                  <p class="dash-subline">Central engine to manage all operations, inventory, orders and policies.</p>
+                </div>
+              </div>
+
+              <!-- Quick-Action Cards -->
+              <div class="dash-cards-grid">
+
+                <button class="dash-card" data-dc-clr="#a78bfa" onclick="window._adminGoToPanel('admin-dashboard-panel')">
+                  <div class="dash-card-icon-wrap" style="--dc-clr:#a78bfa;">
+                    <i data-feather="activity" style="width:26px;height:26px;"></i>
+                  </div>
+                  <h4 class="dash-card-title">Analytics Overview</h4>
+                  <p class="dash-card-desc">Review sales statistics, transaction totals, charts and core store performance metrics.</p>
+                  <span class="dash-card-arrow"><i data-feather="arrow-right" style="width:15px;height:15px;"></i></span>
+                </button>
+
+                <button class="dash-card" data-dc-clr="#38bdf8" onclick="window._adminGoToPanel('admin-products-panel')">
+                  <div class="dash-card-icon-wrap" style="--dc-clr:#38bdf8;">
+                    <i data-feather="grid" style="width:26px;height:26px;"></i>
+                  </div>
+                  <h4 class="dash-card-title">Product Inventory</h4>
+                  <p class="dash-card-desc">Create, read, update, delete or import ToyzGuru catalog products and manage stock levels.</p>
+                  <span class="dash-card-arrow"><i data-feather="arrow-right" style="width:15px;height:15px;"></i></span>
+                </button>
+
+                <button class="dash-card" data-dc-clr="#34d399" onclick="window._adminGoToPanel('admin-orders-panel')">
+                  <div class="dash-card-icon-wrap" style="--dc-clr:#34d399;">
+                    <i data-feather="truck" style="width:26px;height:26px;"></i>
+                  </div>
+                  <h4 class="dash-card-title">Order Operations</h4>
+                  <p class="dash-card-desc">Track and update the fulfillment workflow and details of all member order submissions.</p>
+                  <span class="dash-card-arrow"><i data-feather="arrow-right" style="width:15px;height:15px;"></i></span>
+                </button>
+
+                <button class="dash-card" data-dc-clr="#fb7185" onclick="window._adminGoToPanel('admin-members-panel')">
+                  <div class="dash-card-icon-wrap" style="--dc-clr:#fb7185;">
+                    <i data-feather="users" style="width:26px;height:26px;"></i>
+                  </div>
+                  <h4 class="dash-card-title">Member Registry</h4>
+                  <p class="dash-card-desc">Manage all registered site members, modify loyalty reward points and edit accounts.</p>
+                  <span class="dash-card-arrow"><i data-feather="arrow-right" style="width:15px;height:15px;"></i></span>
+                </button>
+
+                <button class="dash-card" data-dc-clr="#fb923c" onclick="window._adminGoToPanel('admin-feedback-panel')">
+                  <div class="dash-card-icon-wrap" style="--dc-clr:#fb923c;">
+                    <i data-feather="mail" style="width:26px;height:26px;"></i>
+                  </div>
+                  <h4 class="dash-card-title">Customer Feedback</h4>
+                  <p class="dash-card-desc">Read and process emails, queries and messages received through the customer contact forms.</p>
+                  <span class="dash-card-arrow"><i data-feather="arrow-right" style="width:15px;height:15px;"></i></span>
+                </button>
+
+                <button class="dash-card" data-dc-clr="#2dd4bf" onclick="window._adminGoToPanel('admin-delivery-panel')">
+                  <div class="dash-card-icon-wrap" style="--dc-clr:#2dd4bf;">
+                    <i data-feather="map-pin" style="width:26px;height:26px;"></i>
+                  </div>
+                  <h4 class="dash-card-title">Delivery Settings</h4>
+                  <p class="dash-card-desc">Configure logistics regions, shipping fees, courier service integration parameters.</p>
+                  <span class="dash-card-arrow"><i data-feather="arrow-right" style="width:15px;height:15px;"></i></span>
+                </button>
+
+                <button class="dash-card" data-dc-clr="#f43f5e" onclick="window._adminGoToPanel('admin-coupons-panel')">
+                  <div class="dash-card-icon-wrap" style="--dc-clr:#f43f5e;">
+                    <i data-feather="tag" style="width:26px;height:26px;"></i>
+                  </div>
+                  <h4 class="dash-card-title">Coupon Management</h4>
+                  <p class="dash-card-desc">Create discount coupons, set usage constraints and track valid sales campaigns.</p>
+                  <span class="dash-card-arrow"><i data-feather="arrow-right" style="width:15px;height:15px;"></i></span>
+                </button>
+
+                <button class="dash-card" data-dc-clr="#f59e0b" onclick="window._adminGoToPanel('admin-tax-panel')">
+                  <div class="dash-card-icon-wrap" style="--dc-clr:#f59e0b;">
+                    <i data-feather="percent" style="width:26px;height:26px;"></i>
+                  </div>
+                  <h4 class="dash-card-title">Tax & Finance</h4>
+                  <p class="dash-card-desc">Adjust tax rate percentages (SGST, IGST, CGST) for order transaction calculation rules.</p>
+                  <span class="dash-card-arrow"><i data-feather="arrow-right" style="width:15px;height:15px;"></i></span>
+                </button>
+
+                <button class="dash-card" data-dc-clr="#10b981" onclick="window._adminGoToPanel('admin-newsletter-panel')">
+                  <div class="dash-card-icon-wrap" style="--dc-clr:#10b981;">
+                    <i data-feather="send" style="width:26px;height:26px;"></i>
+                  </div>
+                  <h4 class="dash-card-title">Newsletter Subs</h4>
+                  <p class="dash-card-desc">View, manage and export database list entries for email marketing subscriptions.</p>
+                  <span class="dash-card-arrow"><i data-feather="arrow-right" style="width:15px;height:15px;"></i></span>
+                </button>
+
+                <button class="dash-card dash-card-signout" id="admin-signout-card">
+                  <div class="dash-card-icon-wrap" style="--dc-clr:#ef4444;">
+                    <i data-feather="log-out" style="width:26px;height:26px;"></i>
+                  </div>
+                  <h4 class="dash-card-title">Exit Terminal</h4>
+                  <p class="dash-card-desc">Terminate active administrator operations session and secure the panel.</p>
+                  <span class="dash-card-arrow"><i data-feather="arrow-right" style="width:15px;height:15px;"></i></span>
+                </button>
+
+              </div><!-- /.dash-cards-grid -->
+            </div><!-- /#admin-home-panel -->
 
             <!-- Dashboard / Analytics Panel -->
-            <div class="admin-panel active" id="admin-dashboard-panel">
+            <div class="admin-panel" id="admin-dashboard-panel">
+              <div class="profile-panel-header">
+                <button class="panel-back-btn" onclick="window._adminGoToPanel('admin-home-panel')"><i data-feather="arrow-left" style="width:14px;height:14px;"></i> Dashboard</button>
+                <h3 class="profile-panel-title">Analytics Overview</h3>
+              </div>
               <!-- Grid Stats -->
               <div class="admin-stats-grid">
                 <!-- Stat 1: Total Sales -->
@@ -1652,6 +1838,10 @@
 
             <!-- Product Inventory CRUD Management Panel -->
             <div class="admin-panel" id="admin-products-panel">
+              <div class="profile-panel-header">
+                <button class="panel-back-btn" onclick="window._adminGoToPanel('admin-home-panel')"><i data-feather="arrow-left" style="width:14px;height:14px;"></i> Dashboard</button>
+                <h3 class="profile-panel-title">Product Inventory</h3>
+              </div>
               <div class="admin-action-bar">
                 <div class="admin-search-box">
                   <input type="text" placeholder="Search inventory..." class="admin-search-input"
@@ -1699,7 +1889,10 @@
 
             <!-- Order Operations Panel -->
             <div class="admin-panel" id="admin-orders-panel">
-              <h3 style="font-size: 1.5rem; margin-bottom: 1.5rem;">Fulfillment & Operations Queue</h3>
+              <div class="profile-panel-header">
+                <button class="panel-back-btn" onclick="window._adminGoToPanel('admin-home-panel')"><i data-feather="arrow-left" style="width:14px;height:14px;"></i> Dashboard</button>
+                <h3 class="profile-panel-title">Order Operations</h3>
+              </div>
 
               <div class="glass-panel admin-table-wrap">
                 <table class="admin-table">
@@ -1724,8 +1917,9 @@
 
             <!-- Member Registry Panel -->
             <div class="admin-panel" id="admin-members-panel">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                <h3 style="font-size: 1.5rem; margin: 0;">Registered Member Registry</h3>
+              <div class="profile-panel-header">
+                <button class="panel-back-btn" onclick="window._adminGoToPanel('admin-home-panel')"><i data-feather="arrow-left" style="width:14px;height:14px;"></i> Dashboard</button>
+                <h3 class="profile-panel-title">Member Registry</h3>
                 <button id="admin-add-member-btn" class="checkout-btn" style="padding: 0.6rem 1.25rem; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 0.5rem;">
                   <i data-feather="user-plus" style="width: 16px; height: 16px;"></i> Create New Member
                 </button>
@@ -1753,7 +1947,10 @@
 
             <!-- Customer Feedback Panel -->
             <div class="admin-panel" id="admin-feedback-panel">
-              <h3 style="font-size: 1.5rem; margin-bottom: 1.5rem;">Customer Feedback Support Inbox</h3>
+              <div class="profile-panel-header">
+                <button class="panel-back-btn" onclick="window._adminGoToPanel('admin-home-panel')"><i data-feather="arrow-left" style="width:14px;height:14px;"></i> Dashboard</button>
+                <h3 class="profile-panel-title">Customer Feedback Inbox</h3>
+              </div>
 
               <div class="glass-panel admin-table-wrap">
                 <table class="admin-table">
@@ -1775,17 +1972,14 @@
 
             <!-- Delivery & Courier Settings Panel -->
             <div class="admin-panel" id="admin-delivery-panel">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                <div>
-                  <h3 style="font-size: 1.5rem;">Delivery & Courier Operations</h3>
-                  <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem;">Configure Indian
-                    state-wise delivery charges and assign shipping courier partners.</p>
-                </div>
+              <div class="profile-panel-header">
+                <button class="panel-back-btn" onclick="window._adminGoToPanel('admin-home-panel')"><i data-feather="arrow-left" style="width:14px;height:14px;"></i> Dashboard</button>
+                <h3 class="profile-panel-title">Delivery & Courier Settings</h3>
                 <button class="admin-primary-btn" id="admin-add-courier-btn">
-                  <i data-feather="plus" style="width: 16px; height: 16px; vertical-align: middle;"></i> Add Courier
-                  Agency
+                  <i data-feather="plus" style="width: 16px; height: 16px; vertical-align: middle;"></i> Add Courier Agency
                 </button>
               </div>
+              <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1.5rem;">Configure Indian state-wise delivery charges and assign shipping courier partners.</p>
 
               <!-- Grid configuration -->
               <div style="display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 1.5rem;">
@@ -1846,16 +2040,14 @@
 
             <!-- Coupon Management Panel -->
             <div class="admin-panel" id="admin-coupons-panel">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                <div>
-                  <h3 style="font-size: 1.5rem;">Coupon Management</h3>
-                  <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem;">Create, edit, delete,
-                    and toggle active status of promotional coupon codes.</p>
-                </div>
+              <div class="profile-panel-header">
+                <button class="panel-back-btn" onclick="window._adminGoToPanel('admin-home-panel')"><i data-feather="arrow-left" style="width:14px;height:14px;"></i> Dashboard</button>
+                <h3 class="profile-panel-title">Coupon Management</h3>
                 <button class="admin-primary-btn" id="admin-add-coupon-btn">
                   <i data-feather="plus" style="width: 16px; height: 16px; vertical-align: middle;"></i> Add New Coupon
                 </button>
               </div>
+              <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1.5rem;">Create, edit, delete, and toggle active status of promotional coupon codes.</p>
 
               <div class="glass-panel admin-table-wrap">
                 <table class="admin-table">
@@ -1881,13 +2073,11 @@
 
             <!-- Tax & Finance Panel -->
             <div class="admin-panel" id="admin-tax-panel">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                <div>
-                  <h3 style="font-size: 1.5rem;">Tax & Finance Configuration</h3>
-                  <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem;">Manage tax
-                    calculations like SGST, CGST, and IGST dynamically.</p>
-                </div>
+              <div class="profile-panel-header">
+                <button class="panel-back-btn" onclick="window._adminGoToPanel('admin-home-panel')"><i data-feather="arrow-left" style="width:14px;height:14px;"></i> Dashboard</button>
+                <h3 class="profile-panel-title">Tax & Finance Configuration</h3>
               </div>
+              <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1.5rem;">Manage tax calculations like SGST, CGST, and IGST dynamically.</p>
 
               <div class="glass-panel" style="padding: 2rem;">
                 <form id="admin-tax-form" class="horizontal-scroll-form">
@@ -1929,14 +2119,14 @@
 
             <!-- Newsletter Subscribers Panel -->
             <div class="admin-panel" id="admin-newsletter-panel">
+              <div class="profile-panel-header">
+                <button class="panel-back-btn" onclick="window._adminGoToPanel('admin-home-panel')"><i data-feather="arrow-left" style="width:14px;height:14px;"></i> Dashboard</button>
+                <h3 class="profile-panel-title">Newsletter Subscribers</h3>
+              </div>
+              <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1.5rem;">Manage drop-notification email subscribers from the footer sign-up form.</p>
+
               <!-- Header row -->
-              <div
-                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
-                <div>
-                  <h3 style="font-size: 1.5rem;">Newsletter Subscribers</h3>
-                  <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem;">Manage
-                    drop-notification email subscribers from the footer sign-up form.</p>
-                </div>
+              <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
                 <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
                   <!-- Subscriber count badge -->
                   <div class="glass-panel"

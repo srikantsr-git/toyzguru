@@ -24,7 +24,7 @@ window.supabaseClient = supabase;
 
 
 // State variables for admin
-let adminCurrentPanel = "admin-dashboard-panel";
+let adminCurrentPanel = "admin-home-panel";
 let adminInventorySearchQuery = "";
 let adminEditingProductId = null; // null if creating a new product
 let adminAuthenticated = localStorage.getItem("toyzguru_admin_auth") === "true";
@@ -44,7 +44,11 @@ function updateAdminAuthView() {
   if (adminAuthenticated) {
     if (loginWrapper) loginWrapper.style.display = "none";
     if (mainLayout) mainLayout.style.display = "grid";
-    adminRenderDashboard();
+    if (window._adminGoToPanel) {
+      window._adminGoToPanel("admin-home-panel");
+    } else {
+      adminRenderDashboard();
+    }
   } else {
     if (loginWrapper) {
       loginWrapper.style.display = "block";
@@ -75,44 +79,53 @@ function adminShowToast(title, desc, type) {
 
 // Navigation between Admin Sub-Panels
 function setupAdminNavigation() {
+  window._adminGoToPanel = (panelId) => {
+    const navBtns = document.querySelectorAll(".admin-nav-btn");
+    navBtns.forEach(btn => {
+      btn.classList.remove("active");
+      if (btn.getAttribute("data-panel") === panelId) {
+        btn.classList.add("active");
+      }
+    });
+
+    const panels = document.querySelectorAll(".admin-panel");
+    panels.forEach(p => p.classList.remove("active"));
+
+    // Show active panel
+    const targetEl = document.getElementById(panelId);
+    if (targetEl) {
+      targetEl.classList.add("active");
+      adminCurrentPanel = panelId;
+    }
+
+    // Re-render data for the panel
+    if (adminCurrentPanel === "admin-dashboard-panel") {
+      adminRenderDashboard();
+    } else if (adminCurrentPanel === "admin-products-panel") {
+      adminRenderInventoryTable();
+    } else if (adminCurrentPanel === "admin-orders-panel") {
+      adminRenderOrdersQueue();
+    } else if (adminCurrentPanel === "admin-members-panel") {
+      adminRenderMembersRegistry();
+    } else if (adminCurrentPanel === "admin-feedback-panel") {
+      adminRenderFeedbackInbox();
+    } else if (adminCurrentPanel === "admin-delivery-panel") {
+      adminRenderDeliveryPanel();
+    } else if (adminCurrentPanel === "admin-coupons-panel") {
+      adminRenderCouponsPanel();
+    } else if (adminCurrentPanel === "admin-tax-panel") {
+      adminRenderTaxPanel();
+    } else if (adminCurrentPanel === "admin-newsletter-panel") {
+      adminRenderNewsletterPanel();
+    }
+  };
+
   const navBtns = document.querySelectorAll(".admin-nav-btn");
   navBtns.forEach(btn => {
     btn.addEventListener("click", () => {
-      // Toggle nav styles
-      navBtns.forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-
-      // Hide all panels
       const targetPanel = btn.getAttribute("data-panel");
-      const panels = document.querySelectorAll(".admin-panel");
-      panels.forEach(p => p.classList.remove("active"));
-
-      // Show active panel
-      const targetEl = document.getElementById(targetPanel);
-      if (targetEl) {
-        targetEl.classList.add("active");
-        adminCurrentPanel = targetPanel;
-      }
-
-      // Re-render data for the panel
-      if (adminCurrentPanel === "admin-dashboard-panel") {
-        adminRenderDashboard();
-      } else if (adminCurrentPanel === "admin-products-panel") {
-        adminRenderInventoryTable();
-      } else if (adminCurrentPanel === "admin-orders-panel") {
-        adminRenderOrdersQueue();
-      } else if (adminCurrentPanel === "admin-members-panel") {
-        adminRenderMembersRegistry();
-      } else if (adminCurrentPanel === "admin-feedback-panel") {
-        adminRenderFeedbackInbox();
-      } else if (adminCurrentPanel === "admin-delivery-panel") {
-        adminRenderDeliveryPanel();
-      } else if (adminCurrentPanel === "admin-coupons-panel") {
-        adminRenderCouponsPanel();
-      } else if (adminCurrentPanel === "admin-tax-panel") {
-        adminRenderTaxPanel();
-      } else if (adminCurrentPanel === "admin-newsletter-panel") {
-        adminRenderNewsletterPanel();
+      if (targetPanel) {
+        window._adminGoToPanel(targetPanel);
       }
     });
   });
@@ -1622,6 +1635,14 @@ function setupAdminEventListeners() {
       adminShowToast("Terminal Locked", "Admin session terminated successfully.", "info");
       updateAdminAuthView();
       window.location.hash = "#home";
+    });
+  }
+
+  // Admin dashboard exit card click
+  const adminSignoutCard = document.getElementById("admin-signout-card");
+  if (adminSignoutCard) {
+    adminSignoutCard.addEventListener("click", () => {
+      if (signoutBtn) signoutBtn.click();
     });
   }
 

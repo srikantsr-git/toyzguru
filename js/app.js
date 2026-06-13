@@ -4192,25 +4192,44 @@ function setupEventListeners() {
   }
 
   // Profile navigation panel swappers
+  window._profileGoToPanel = (panelId) => {
+    const profileNavBtns = document.querySelectorAll(".profile-nav-btn");
+    profileNavBtns.forEach(btn => {
+      btn.classList.remove("active");
+      if (btn.getAttribute("data-panel") === panelId) {
+        btn.classList.add("active");
+      }
+    });
+
+    const panels = document.querySelectorAll(".profile-panel");
+    panels.forEach(p => {
+      p.classList.remove("active");
+      if (p.id === panelId) p.classList.add("active");
+    });
+
+    // Re-render wishlist when Wishlist Vault tab is opened
+    if (panelId === "profile-wishlist") {
+      renderProfileWishlist();
+    }
+  };
+
   const profileNavBtns = document.querySelectorAll(".profile-nav-btn");
   profileNavBtns.forEach(btn => {
     btn.addEventListener("click", () => {
-      profileNavBtns.forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-
       const targetPanel = btn.getAttribute("data-panel");
-      const panels = document.querySelectorAll(".profile-panel");
-      panels.forEach(p => {
-        p.classList.remove("active");
-        if (p.id === targetPanel) p.classList.add("active");
-      });
-
-      // Re-render wishlist when Wishlist Vault tab is opened
-      if (targetPanel === "profile-wishlist") {
-        renderProfileWishlist();
+      if (targetPanel) {
+        window._profileGoToPanel(targetPanel);
       }
     });
   });
+
+  const dashSignoutCard = document.getElementById("dash-signout-card");
+  if (dashSignoutCard) {
+    dashSignoutCard.addEventListener("click", () => {
+      const signOutBtn = document.getElementById("profile-signout-btn");
+      if (signOutBtn) signOutBtn.click();
+    });
+  }
 
 
   // Homepage Hero Carousel Dot Indicators
