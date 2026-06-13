@@ -3621,7 +3621,7 @@ function setupEventListeners() {
       const existingProfile = localProfiles.some(p => p.email && p.email.toLowerCase() === email.toLowerCase());
 
       if (existingProfile) {
-        showToast("Sign Up Failed", "An account with this email address already exists. Please sign in instead.", "warning");
+        showToast("Sign Up Failed", "Email ID already exists!", "warning");
         return;
       }
 
@@ -3634,7 +3634,7 @@ function setupEventListeners() {
             .ilike('email', email);
           
           if (!checkError && dbMems && dbMems.length > 0) {
-            showToast("Sign Up Failed", "An account with this email address already exists. Please sign in instead.", "warning");
+            showToast("Sign Up Failed", "Email ID already exists!", "warning");
             return;
           }
         } catch (err) {
@@ -3691,7 +3691,7 @@ function setupEventListeners() {
               
               let errMsg = syncError.message || "Failed to sync registration to database.";
               if (syncError.code === '23505' || errMsg.toLowerCase().includes("unique") || errMsg.toLowerCase().includes("exists")) {
-                errMsg = "An account with this email address already exists. Please sign in instead.";
+                errMsg = "Email ID already exists!";
               }
               
               showToast("Sign Up Failed", errMsg, "warning");
