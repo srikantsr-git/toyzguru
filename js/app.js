@@ -3658,9 +3658,27 @@ function setupEventListeners() {
           const dbPayload = { ...newProfile };
           delete dbPayload.password;
           delete dbPayload.email_confirmed;
-          await supabase.from('profiles').insert(dbPayload);
+          
+          const { error: syncError } = await supabase.from('profiles').insert(dbPayload);
+          if (syncError) {
+            console.error("Error saving profile to Supabase:", syncError);
+            
+            // Revert local profiles registry
+            let currentLocal = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
+            currentLocal = currentLocal.filter(p => p.id !== uuid);
+            localStorage.setItem("toyzguru_profiles", JSON.stringify(currentLocal));
+            
+            let errMsg = syncError.message || "Failed to sync registration to database.";
+            if (syncError.code === '23505' || errMsg.toLowerCase().includes("unique") || errMsg.toLowerCase().includes("exists")) {
+              errMsg = "An account with this email address already exists. Please sign in instead.";
+            }
+            
+            showToast("Sign Up Failed", errMsg, "warning");
+            return;
+          }
         } catch (err) {
-          console.warn("Could not backup profile to Supabase:", err);
+          console.warn("Could not backup profile to Supabase (offline fallback):", err);
+          // For network/offline errors, we allow offline fallback.
         }
       }
 

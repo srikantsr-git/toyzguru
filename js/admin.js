@@ -63,8 +63,9 @@ function updateAdminAuthView() {
 
 // Toast Helper
 function adminShowToast(title, desc, type) {
-  if (window.showToast) {
-    window.showToast(title, desc, type);
+  const toastFn = window.toyzToast || window.showToast;
+  if (toastFn) {
+    toastFn(title, desc, type);
   } else {
     alert(`${title}: ${desc}`);
   }
@@ -1168,12 +1169,12 @@ async function handleAdminMemberFormSubmit(e) {
   const password = isCreateMode ? (document.getElementById("admin-form-member-password") || {}).value : null;
 
   if (!name || !email) {
-    if (window.toyzToast) window.toyzToast("Missing Fields", "Name and Email are required.", "warning");
+    adminShowToast("Missing Fields", "Name and Email are required.", "warning");
     return;
   }
 
   if (isCreateMode && (!password || password.length < 6)) {
-    if (window.toyzToast) window.toyzToast("Weak Password", "Password must be at least 6 characters.", "warning");
+    adminShowToast("Weak Password", "Password must be at least 6 characters.", "warning");
     return;
   }
 
@@ -1199,7 +1200,7 @@ async function handleAdminMemberFormSubmit(e) {
       let localProfiles = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
       const existing = localProfiles.some(p => p.email.toLowerCase() === email.toLowerCase());
       if (existing) {
-        if (window.toyzToast) window.toyzToast("Email Exists", "A member with this email already exists.", "warning");
+        adminShowToast("Email Exists", "A member with this email already exists.", "warning");
         return;
       }
 
@@ -1229,13 +1230,29 @@ async function handleAdminMemberFormSubmit(e) {
             id: uuid,
             ...profilePayload
           });
-          if (profileError) console.error("Error saving member profile to Supabase:", profileError);
+          if (profileError) {
+            console.error("Error saving member profile to Supabase:", profileError);
+            
+            // Remove from local profiles registry since sync failed
+            let currentLocalProfiles = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
+            currentLocalProfiles = currentLocalProfiles.filter(p => p.id !== uuid);
+            localStorage.setItem("toyzguru_profiles", JSON.stringify(currentLocalProfiles));
+            
+            let errMsg = profileError.message || "Failed to sync member to cloud database.";
+            if (profileError.code === '23505' || errMsg.toLowerCase().includes("unique") || errMsg.toLowerCase().includes("exists")) {
+              errMsg = "A member with this email already exists in the system.";
+            }
+            
+            adminShowToast("Save Failed", errMsg, "danger");
+            return;
+          }
         } catch (err) {
           console.warn("Failed to sync new member to Supabase:", err);
+          // For network offline errors we allow offline fallback.
         }
       }
 
-      if (window.toyzToast) window.toyzToast("Member Created", `Account for ${name} has been created successfully.`, "success");
+      adminShowToast("Member Created", `Account for ${name} has been created successfully.`, "success");
       
       // Trigger outgoing verification email
       if (window.sendOutgoingVerificationEmail) {
@@ -1269,18 +1286,23 @@ async function handleAdminMemberFormSubmit(e) {
       if (supabase) {
         try {
           const { error } = await supabase.from('profiles').update(profilePayload).eq('id', profileId);
-          if (error) console.error("Error updating profile in Supabase:", error);
+          if (error) {
+            console.error("Error updating profile in Supabase:", error);
+            let errMsg = error.message || "Failed to update member in cloud database.";
+            adminShowToast("Save Failed", errMsg, "danger");
+            return;
+          }
         } catch (err) {
           console.warn("Failed to sync profile update to Supabase:", err);
         }
       }
 
-      if (window.toyzToast) window.toyzToast("Member Updated", `Successfully saved details for: ${name}`, "success");
+      adminShowToast("Member Updated", `Successfully saved details for: ${name}`, "success");
       adminCloseMemberModal();
       adminRenderMembersRegistry();
     }
   } catch (err) {
-    if (window.toyzToast) window.toyzToast("Save Failed", err.message || "Failed to save member details.", "danger");
+    adminShowToast("Save Failed", err.message || "Failed to save member details.", "danger");
     console.error(err);
   } finally {
     if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = isCreateMode ? "Create Member Account" : "Save Member Details"; }
