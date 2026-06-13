@@ -768,6 +768,209 @@ function showToast(title, description, type = "info") {
 }
 
 
+// ================= CUSTOM DIALOG SYSTEM =================
+function showCustomDialog(title, message, type = "warning", confirmCallbackOrIsConfirm = null) {
+  return new Promise((resolve) => {
+    // Prevent duplicate dialogs
+    const existing = document.querySelector(".custom-dialog-overlay");
+    if (existing) existing.remove();
+
+    let confirmCallback = null;
+    let isConfirm = false;
+    if (typeof confirmCallbackOrIsConfirm === "function") {
+      confirmCallback = confirmCallbackOrIsConfirm;
+      isConfirm = true;
+    } else if (typeof confirmCallbackOrIsConfirm === "boolean") {
+      isConfirm = confirmCallbackOrIsConfirm;
+    }
+
+    const overlay = document.createElement("div");
+    overlay.className = "custom-dialog-overlay";
+    overlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(8, 11, 17, 0.85);
+      z-index: 9999;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      font-family: 'Inter', sans-serif;
+      padding: 1rem;
+    `;
+
+    let iconName = "alert-triangle";
+    let themeColor = "var(--color-warning)"; // default yellow
+    let iconBg = "rgba(245, 158, 11, 0.1)";
+    let iconBorder = "rgba(245, 158, 11, 0.25)";
+
+    if (type === "error" || type === "danger") {
+      iconName = "x-circle";
+      themeColor = "var(--color-danger)"; // red
+      iconBg = "rgba(239, 68, 68, 0.1)";
+      iconBorder = "rgba(239, 68, 68, 0.25)";
+    } else if (type === "success") {
+      iconName = "check-circle";
+      themeColor = "var(--color-success)"; // green
+      iconBg = "rgba(16, 185, 129, 0.1)";
+      iconBorder = "rgba(16, 185, 129, 0.25)";
+    } else if (type === "info") {
+      iconName = "info";
+      themeColor = "var(--color-info)"; // blue
+      iconBg = "rgba(59, 130, 246, 0.1)";
+      iconBorder = "rgba(59, 130, 246, 0.25)";
+    }
+
+    const showCancel = isConfirm;
+
+    overlay.innerHTML = `
+      <div class="glass-panel" style="
+        background: var(--bg-secondary);
+        border: 1px solid ${iconBorder};
+        border-radius: var(--border-radius-md);
+        padding: 2.5rem;
+        max-width: 450px;
+        width: 100%;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 30px ${iconBg};
+        text-align: center;
+        position: relative;
+        color: var(--text-primary);
+        animation: dialogFadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: border-color var(--transition-normal);
+      ">
+        <button class="custom-dialog-close" style="
+          position: absolute;
+          top: 1.25rem;
+          right: 1.25rem;
+          background: rgba(0, 0, 0, 0.4);
+          border: 1px solid var(--glass-border);
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: var(--text-secondary);
+          cursor: pointer;
+          font-size: 1.25rem;
+          transition: all var(--transition-fast);
+        " aria-label="Close dialog">&times;</button>
+        
+        <div style="
+          width: 64px;
+          height: 64px;
+          border-radius: 50%;
+          background: ${iconBg};
+          border: 2px solid ${iconBorder};
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin: 0 auto 1.5rem;
+        ">
+          <i data-feather="${iconName}" style="width: 32px; height: 32px; color: ${themeColor};"></i>
+        </div>
+        
+        <h3 style="
+          font-size: 1.5rem;
+          font-family: 'Space Grotesk', sans-serif;
+          margin-bottom: 0.75rem;
+          color: var(--text-primary);
+          font-weight: 700;
+          letter-spacing: -0.01em;
+        ">${title}</h3>
+        
+        <p style="
+          font-size: 0.95rem;
+          color: var(--text-secondary);
+          line-height: 1.6;
+          margin-bottom: 2rem;
+        ">${message}</p>
+        
+        <div style="display: flex; gap: 0.75rem; justify-content: center; width: 100%;">
+          ${showCancel ? `
+            <button class="cancel-btn" style="
+              flex: 1;
+              padding: 0.8rem 1.5rem;
+              background: rgba(255, 255, 255, 0.04);
+              color: var(--text-primary);
+              border: 1px solid var(--glass-border);
+              font-weight: 600;
+              font-size: 0.9rem;
+              border-radius: var(--border-radius-sm);
+              cursor: pointer;
+              transition: all var(--transition-fast);
+            ">Cancel</button>
+          ` : ''}
+          <button class="confirm-btn" style="
+            flex: 1;
+            padding: 0.8rem 1.5rem;
+            background: var(--color-brand-gradient);
+            color: #fff;
+            border: none;
+            font-weight: 700;
+            font-size: 0.9rem;
+            border-radius: var(--border-radius-sm);
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+            transition: all var(--transition-fast);
+          ">${showCancel ? 'Confirm' : 'OK'}</button>
+        </div>
+      </div>
+    `;
+
+    // Inject CSS animation if not already injected
+    if (!document.getElementById("custom-dialog-animation-style")) {
+      const style = document.createElement("style");
+      style.id = "custom-dialog-animation-style";
+      style.textContent = `
+        @keyframes dialogFadeIn {
+          from { opacity: 0; transform: scale(0.95) translateY(10px); }
+          to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .custom-dialog-close:hover {
+          background: var(--color-danger) !important;
+          border-color: transparent !important;
+          color: white !important;
+        }
+        .custom-dialog-overlay .cancel-btn:hover {
+          background: rgba(255, 255, 255, 0.08) !important;
+          border-color: rgba(255, 255, 255, 0.15) !important;
+        }
+        .custom-dialog-overlay .confirm-btn:hover {
+          transform: translateY(-2px) !important;
+          box-shadow: 0 6px 20px rgba(139, 92, 246, 0.5) !important;
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    document.body.appendChild(overlay);
+    if (window.feather) feather.replace();
+
+    const closeBtn = overlay.querySelector(".custom-dialog-close");
+    const confirmBtn = overlay.querySelector(".confirm-btn");
+    const cancelBtn = overlay.querySelector(".cancel-btn");
+
+    const handleClose = (value) => {
+      overlay.remove();
+      if (value && confirmCallback) confirmCallback();
+      resolve(value);
+    };
+
+    closeBtn.addEventListener("click", () => handleClose(false));
+    confirmBtn.addEventListener("click", () => handleClose(true));
+    if (cancelBtn) {
+      cancelBtn.addEventListener("click", () => handleClose(false));
+    }
+  });
+}
+window.showCustomDialog = showCustomDialog;
+
+
 /// ================= REAL OUTGOING EMAIL VERIFICATION SYSTEM =================
 async function sendOutgoingVerificationEmail(userProfile) {
   const confirmLink = `${window.location.origin}${window.location.pathname}#confirm-email?email=${encodeURIComponent(userProfile.email)}`;
@@ -1221,7 +1424,7 @@ window.downloadOrderReceipt = async function(orderId) {
     showToast('Receipt Downloaded', 'Invoice saved to your downloads folder.', 'success');
   } catch (e) {
     console.error('downloadOrderReceipt error:', e);
-    alert('Failed to generate receipt: ' + e.message + '\n' + e.stack);
+    await showCustomDialog('Receipt Error', 'Failed to generate receipt: ' + e.message, 'error');
     showToast('Error', 'Failed to generate receipt. Please try again.', 'danger');
   } finally {
     btns.forEach(btn => {
@@ -2955,7 +3158,7 @@ function renderPaymentHistory(userOrders) {
 }
 
 window.deletePaymentRecord = async function(orderId) {
-  if (!confirm(`Remove order ${orderId} from your payment history? This only removes the local record — the actual order remains in the system.`)) return;
+  if (!await showCustomDialog("Delete Record", `Remove order ${orderId} from your payment history? This only removes the local record — the actual order remains in the system.`, "warning", true)) return;
 
   // Remove from ordersState memory
   ordersState = ordersState.filter(o => o.id !== orderId);
@@ -3038,7 +3241,7 @@ function refreshAddressCards() {
 }
 
 window.deleteAlternativeAddress = async function(idx) {
-  if (!confirm(`Delete Alternative Address ${idx}? This cannot be undone.`)) return;
+  if (!await showCustomDialog("Delete Address", `Delete Alternative Address ${idx}? This cannot be undone.`, "warning", true)) return;
   if (idx === 1) userState.address1 = null;
   if (idx === 2) userState.address2 = null;
 
@@ -3621,7 +3824,7 @@ function setupEventListeners() {
       const existingProfile = localProfiles.some(p => p.email && p.email.toLowerCase() === email.toLowerCase());
 
       if (existingProfile) {
-        alert("Email ID already exists!");
+        await showCustomDialog("Email Exists", "Email ID already exists!", "warning");
         showToast("Sign Up Failed", "Email ID already exists!", "warning");
         return;
       }
@@ -3635,7 +3838,7 @@ function setupEventListeners() {
             .ilike('email', email);
           
           if (!checkError && dbMems && dbMems.length > 0) {
-            alert("Email ID already exists!");
+            await showCustomDialog("Email Exists", "Email ID already exists!", "warning");
             showToast("Sign Up Failed", "Email ID already exists!", "warning");
             return;
           }
@@ -3695,8 +3898,7 @@ function setupEventListeners() {
               if (syncError.code === '23505' || errMsg.toLowerCase().includes("unique") || errMsg.toLowerCase().includes("exists")) {
                 errMsg = "Email ID already exists!";
               }
-              
-              alert(errMsg);
+              await showCustomDialog("Sign Up Failed", errMsg, "danger");
               showToast("Sign Up Failed", errMsg, "warning");
               return;
             }

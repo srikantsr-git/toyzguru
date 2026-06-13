@@ -66,6 +66,8 @@ function adminShowToast(title, desc, type) {
   const toastFn = window.toyzToast || window.showToast;
   if (toastFn) {
     toastFn(title, desc, type);
+  } else if (window.showCustomDialog) {
+    window.showCustomDialog(title, desc, type);
   } else {
     alert(`${title}: ${desc}`);
   }
@@ -279,7 +281,11 @@ async function adminRenderInventoryTable() {
 }
 
 async function adminDeleteProductTrigger(productId) {
-  if (confirm(`Are you sure you want to delete product "${productId}"? This will immediately remove it from public catalog.`)) {
+  const isConfirmed = window.showCustomDialog 
+    ? await window.showCustomDialog("Delete Product", `Are you sure you want to delete product "${productId}"? This will immediately remove it from public catalog.`, "danger", true)
+    : confirm(`Are you sure you want to delete product "${productId}"? This will immediately remove it from public catalog.`);
+  
+  if (isConfirmed) {
     if (supabase) {
       try {
         const { error } = await supabase.from('products').delete().eq('id', productId);
@@ -986,7 +992,11 @@ async function adminUpdateMemberPoints(profileId) {
 }
 
 async function adminDeleteMemberTrigger(profileId) {
-  if (confirm("Are you sure you want to delete this member and all their related data? This action cannot be undone.")) {
+  const isConfirmed = window.showCustomDialog
+    ? await window.showCustomDialog("Delete Member", "Are you sure you want to delete this member and all their related data? This action cannot be undone.", "danger", true)
+    : confirm("Are you sure you want to delete this member and all their related data? This action cannot be undone.");
+
+  if (isConfirmed) {
     // 1. Clean up from local storage in both offline and online modes
     try {
       let localProfiles = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
@@ -1206,8 +1216,12 @@ async function handleAdminMemberFormSubmit(e) {
       let localProfiles = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
       const existing = localProfiles.some(p => p.email && p.email.toLowerCase() === email.toLowerCase());
       if (existing) {
-        alert("Email ID already exists!");
-        adminShowToast("Email Exists", "Email ID already exists!", "warning");
+        if (window.showCustomDialog) {
+          await window.showCustomDialog("Email Exists", "Email ID already exists!", "warning");
+        } else {
+          adminShowToast("Email Exists", "Email ID already exists!", "warning");
+        }
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = "Create Member"; }
         return;
       }
 
@@ -1220,8 +1234,12 @@ async function handleAdminMemberFormSubmit(e) {
             .ilike('email', email);
           
           if (!checkError && dbMems && dbMems.length > 0) {
-            alert("Email ID already exists!");
-            adminShowToast("Email Exists", "Email ID already exists!", "warning");
+            if (window.showCustomDialog) {
+              await window.showCustomDialog("Email Exists", "Email ID already exists!", "warning");
+            } else {
+              adminShowToast("Email Exists", "Email ID already exists!", "warning");
+            }
+            if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = "Create Member"; }
             return;
           }
         } catch (err) {
@@ -1272,8 +1290,13 @@ async function handleAdminMemberFormSubmit(e) {
                 errMsg = "Email ID already exists!";
               }
               
-              alert(errMsg);
+              if (window.showCustomDialog) {
+                await window.showCustomDialog("Save Failed", errMsg, "danger");
+              } else {
+                alert(errMsg);
+              }
               adminShowToast("Save Failed", errMsg, "danger");
+              if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = "Create Member"; }
               return;
             }
           }
@@ -1393,7 +1416,11 @@ async function adminDeleteFeedbackTrigger(messageId) {
     return;
   }
 
-  if (confirm("Dismiss this support ticket?")) {
+  const isConfirmed = window.showCustomDialog
+    ? await window.showCustomDialog("Dismiss Ticket", "Dismiss this support ticket?", "warning", true)
+    : confirm("Dismiss this support ticket?");
+
+  if (isConfirmed) {
     try {
       const { error } = await supabase.from('contact_messages').delete().eq('id', messageId);
       if (error) throw error;
@@ -2157,7 +2184,11 @@ async function adminDeleteCourierTrigger(courierId) {
   const courier = window.couriersState.find(c => c.id === courierId);
   if (!courier) return;
 
-  if (confirm(`Are you sure you want to delete courier "${courier.name}"?`)) {
+  const isConfirmed = window.showCustomDialog
+    ? await window.showCustomDialog("Delete Courier", `Are you sure you want to delete courier "${courier.name}"?`, "danger", true)
+    : confirm(`Are you sure you want to delete courier "${courier.name}"?`);
+
+  if (isConfirmed) {
     try {
       if (window.supabase) {
         const { error } = await supabase.from('couriers').delete().eq('id', courierId);
@@ -2312,7 +2343,11 @@ async function adminToggleCouponStatus(code) {
 }
 
 async function adminDeleteCouponTrigger(code) {
-  if (confirm(`Are you sure you want to delete coupon "${code}"?`)) {
+  const isConfirmed = window.showCustomDialog
+    ? await window.showCustomDialog("Delete Coupon", `Are you sure you want to delete coupon "${code}"?`, "danger", true)
+    : confirm(`Are you sure you want to delete coupon "${code}"?`);
+
+  if (isConfirmed) {
     if (supabase) {
       try {
         const { error } = await supabase.from('coupons').delete().eq('code', code);
@@ -2666,7 +2701,11 @@ function adminFilterNewsletterTable(query) {
 }
 
 async function adminDeleteNewsletterSubscriber(id, email) {
-  if (!confirm(`Remove "${email}" from the newsletter list?\n\nThis cannot be undone.`)) return;
+  const isConfirmed = window.showCustomDialog
+    ? await window.showCustomDialog("Remove Subscriber", `Remove "${email}" from the newsletter list?\n\nThis cannot be undone.`, "danger", true)
+    : confirm(`Remove "${email}" from the newsletter list?\n\nThis cannot be undone.`);
+
+  if (!isConfirmed) return;
 
   if (!supabase) {
     adminShowToast('Not Available', 'Supabase connection required to delete subscribers.', 'warning');
