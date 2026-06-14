@@ -3994,38 +3994,17 @@ function setupEventListeners() {
           text: `Hi ${customerName},\n\nYou requested a password reset for your ToyzGuru account.\n\nReset link (expires in 30 minutes):\n${resetUrl}\n\nIf you did not request this, ignore this email.\n\nToyzGuru Support\nsupport@toyzguru.in | Ph: 9527652118`
         });
 
-        // Hide form, show "check your inbox" confirmation
+        // Reset form and return to Sign In
         authForgotPasswordForm.reset();
         authForgotPasswordForm.style.display = "none";
+        if (authSigninForm) authSigninForm.style.display = "block";
 
-        let confirmPanel = document.getElementById("forgot-pw-sent-panel");
-        if (!confirmPanel) {
-          confirmPanel = document.createElement("div");
-          confirmPanel.id = "forgot-pw-sent-panel";
-          authForgotPasswordForm.parentNode.insertBefore(confirmPanel, authForgotPasswordForm.nextSibling);
-        }
-        confirmPanel.style.cssText = "text-align:center;padding:1rem 0;";
-        confirmPanel.innerHTML = `
-          <div style="font-size:52px;margin-bottom:1rem;">&#128140;</div>
-          <h3 style="margin:0 0 0.6rem;font-size:1.3rem;color:var(--text-primary);font-family:'Space Grotesk',sans-serif;">Check Your Inbox</h3>
-          <p style="color:var(--text-secondary);font-size:0.88rem;line-height:1.65;margin:0 0 1.5rem;">
-            A password reset link has been sent to<br>
-            <strong style="color:var(--color-brand);">${email}</strong><br><br>
-            Click the link in the email to set your new password.<br>
-            <span style="font-size:0.78rem;opacity:0.65;">Link expires in 30 minutes. Check your spam folder if not found.</span>
-          </p>
-          <button type="button" id="forgot-back-to-signin-btn"
-            style="padding:0.5rem 1.4rem;font-size:0.85rem;background:transparent;border:1px solid var(--glass-border);border-radius:6px;color:var(--text-secondary);cursor:pointer;transition:all 0.2s;">
-            &larr; Back to Sign In
-          </button>
-        `;
-        confirmPanel.style.display = "block";
-        document.getElementById("forgot-back-to-signin-btn").addEventListener("click", () => {
-          confirmPanel.style.display = "none";
-          authForgotPasswordForm.style.display = "block";
-          authForgotPasswordForm.style.display = "none";
-          authSigninForm.style.display = "block";
-        });
+        // Show a custom dialog box indicating the email was sent
+        showCustomDialog(
+          "Check Your Inbox", 
+          `A password reset link has been sent to ${email}.\n\nPlease check your inbox (and spam folder) and click the link to set your new password.`, 
+          "success"
+        );
 
       } catch (err) {
         console.error("Password reset email error:", err);
