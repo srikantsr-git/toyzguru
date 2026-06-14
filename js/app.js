@@ -67,7 +67,7 @@ Object.defineProperty(window, 'storeSettings', {
 
 // Initial default user profile
 const defaultUser = {
-  name: "Srikant SR",
+  name: "Srikant Swami",
   email: "srikantsr@gmail.com",
   country: "IN",
   state: "Maharashtra",
@@ -1029,12 +1029,12 @@ async function sendEmailViaServer({ to, subject, html, text = "" }) {
       headers,
       body: JSON.stringify({ to, subject, html, text }),
     });
-    
+
     // Attempt to parse JSON response safely
     let json;
     try {
       json = await res.json();
-    } catch(e) {
+    } catch (e) {
       throw new Error("Invalid response from email server.");
     }
 
@@ -1744,7 +1744,7 @@ function setupRouting() {
           // Valid token — prepare reset session
           localStorage.setItem("toyzguru_reset_email", email);
           showToast("Link Verified", "Please enter your new password.", "success");
-          
+
           // Clear URL parameters to prevent copy-pasting the token
           history.replaceState(null, "", window.location.pathname + '#reset-password');
         } else {
@@ -4015,8 +4015,8 @@ function setupEventListeners() {
 
         // Show a custom dialog box indicating the email was sent
         showCustomDialog(
-          "Check Your Inbox", 
-          `A password reset link has been sent to ${email}.\n\nPlease check your inbox (and spam folder) and click the link to set your new password.`, 
+          "Check Your Inbox",
+          `A password reset link has been sent to ${email}.\n\nPlease check your inbox (and spam folder) and click the link to set your new password.`,
           "success"
         );
 
