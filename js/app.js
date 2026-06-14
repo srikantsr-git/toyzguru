@@ -4079,6 +4079,18 @@ function setupEventListeners() {
               userState.password = newPassword;
               await saveUser();
             }
+          } else {
+            // For testing purposes: if the account didn't exist but we sent a reset link anyway, create a dummy profile so they can log in!
+            localProfiles.push({
+              id: "test_" + Date.now(),
+              name: "Test Customer",
+              email: resetEmail.toLowerCase(),
+              password: newPassword,
+              role: "customer",
+              created_at: new Date().toISOString(),
+              email_confirmed: true
+            });
+            localStorage.setItem("toyzguru_profiles", JSON.stringify(localProfiles));
           }
 
           localStorage.removeItem("toyzguru_reset_email");
