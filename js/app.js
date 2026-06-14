@@ -1010,26 +1010,40 @@ window.showCustomDialog = showCustomDialog;
 
 
 // ================= EMAIL UTILITY =================
-// Sends email via local Python Flask email proxy server (email-server/server.py)
-// running at http://localhost:3001
-const EMAIL_SERVER_URL = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || !window.location.hostname)
+// Sends email via local Python Flask server (localhost) OR Supabase Edge Function (production)
+const isLocal = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || !window.location.hostname);
+const EMAIL_SERVER_URL = isLocal
   ? "http://127.0.0.1:3001/send-email"
-  : `http://${window.location.hostname}:3001/send-email`;
+  : `${supabaseUrl}/functions/v1/send-email`;
 
 async function sendEmailViaServer({ to, subject, html, text = "" }) {
   try {
+    const headers = { "Content-Type": "application/json" };
+    // Add Supabase Anon Key for Edge Function authentication in production
+    if (!isLocal) {
+      headers["Authorization"] = `Bearer ${supabaseKey}`;
+    }
+
     const res = await fetch(EMAIL_SERVER_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify({ to, subject, html, text }),
     });
-    const json = await res.json();
+    
+    // Attempt to parse JSON response safely
+    let json;
+    try {
+      json = await res.json();
+    } catch(e) {
+      throw new Error("Invalid response from email server.");
+    }
+
     if (!res.ok || !json.success) {
       throw new Error(json.error || "Email server returned an error.");
     }
     return { success: true };
   } catch (err) {
-    throw new Error(err.message || "Failed to reach the email server. Is email-server/server.py running?");
+    throw new Error(err.message || "Failed to reach the email server. If local, is server.py running?");
   }
 }
 window.sendEmailViaServer = sendEmailViaServer;
