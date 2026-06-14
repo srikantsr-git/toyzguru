@@ -2891,6 +2891,9 @@ img {
 }
 
 /* Brand Story Page View */
+.about-cards-grid {
+  grid-template-columns: 1fr 1fr;
+}
 .about-hero {
   text-align: center;
   padding: 4rem 0;
@@ -3263,7 +3266,7 @@ img {
   }
   
   .products-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
     gap: 1rem;
   }
   
@@ -3298,8 +3301,12 @@ img {
     grid-template-columns: 1fr;
   }
   
+  .about-cards-grid {
+    grid-template-columns: 1fr;
+  }
+  
   .admin-stats-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
   }
   
   .checkout-form-grid {
@@ -3395,7 +3402,7 @@ img {
 
 @media (max-width: 768px) {
   .instagram-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
     gap: 1rem;
   }
 }
