@@ -1012,7 +1012,7 @@ window.showCustomDialog = showCustomDialog;
 // ================= EMAIL UTILITY =================
 // Sends email via local Python Flask email proxy server (email-server/server.py)
 // running at http://localhost:3001
-const EMAIL_SERVER_URL = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
+const EMAIL_SERVER_URL = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || !window.location.hostname)
   ? "http://127.0.0.1:3001/send-email"
   : `http://${window.location.hostname}:3001/send-email`;
 
