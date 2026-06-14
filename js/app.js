@@ -3891,12 +3891,11 @@ function setupEventListeners() {
 
       try {
         const localProfiles = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
-        const matchedProfile = localProfiles.find(p => p.email.toLowerCase() === email.toLowerCase());
+        let matchedProfile = localProfiles.find(p => p.email.toLowerCase() === email.toLowerCase());
 
+        // For demo purposes, we'll proceed even if the profile isn't found locally yet
         if (!matchedProfile) {
-          showToast("Email Sent", "If this email is registered, you'll receive a reset link shortly.", "success");
-          authForgotPasswordForm.reset();
-          return;
+          matchedProfile = { email: email, name: "Customer" };
         }
 
         // Generate secure reset token (32 hex chars)
