@@ -3179,9 +3179,10 @@ img {
   }
   
   .header .logo {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
+    position: relative;
+    left: 0;
+    transform: none;
+    margin-right: auto;
   }
 
   .logo-img {
