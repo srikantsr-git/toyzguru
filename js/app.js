@@ -1452,7 +1452,7 @@ async function generateOrderReceiptPDF(order, autoDownload = true) {
     doc.setFillColor(...green);
     doc.roundedRect(pageW - 46, 31, 36, 9, 2, 2, 'F');
     doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...white);
-    doc.text('✔  PAYMENT RECEIVED', pageW - 28, 37, { align: 'center' });
+    doc.text('[PAID] PAYMENT RECEIVED', pageW - 28, 37, { align: 'center' });
 
     // ── 3. Seller & Buyer Blocks ──
     let y = 33;
@@ -1547,11 +1547,11 @@ async function generateOrderReceiptPDF(order, autoDownload = true) {
       doc.setTextColor(...darkText); doc.setFont('helvetica', 'normal'); doc.setFontSize(7);
       doc.text(hsnCode, colX[2] + colW[2] - 1, rowY + 6, { align: 'right' });
       doc.text(String(qty), colX[3] + colW[3] - 1, rowY + 6, { align: 'right' });
-      doc.text(`\u20b9${unitP.toFixed(2)}`, colX[4] + colW[4] - 1, rowY + 6, { align: 'right' });
+      doc.text(`Rs.${unitP.toFixed(2)}`, colX[4] + colW[4] - 1, rowY + 6, { align: 'right' });
       doc.text(`${taxPct}%`, colX[5] + colW[5] - 1, rowY + 6, { align: 'right' });
-      doc.text(`\u20b9${lineGst.toFixed(2)}`, colX[6] + colW[6] - 1, rowY + 6, { align: 'right' });
+      doc.text(`Rs.${lineGst.toFixed(2)}`, colX[6] + colW[6] - 1, rowY + 6, { align: 'right' });
       doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5);
-      doc.text(`\u20b9${lineTot.toFixed(2)}`, colX[7] + colW[7] - 1, rowY + 6, { align: 'right' });
+      doc.text(`Rs.${lineTot.toFixed(2)}`, colX[7] + colW[7] - 1, rowY + 6, { align: 'right' });
     });
     y += items.length * 12 + 4;
 
@@ -1567,14 +1567,14 @@ async function generateOrderReceiptPDF(order, autoDownload = true) {
     const totalVal    = parseFloat(order.total) || 0;
 
     const totalsData = [
-      ['Subtotal (before tax)', `\u20b9${computedSubtotal.toFixed(2)}`],
-      ...((discountVal > 0) ? [['Coupon Discount', `-\u20b9${discountVal.toFixed(2)}`]] : []),
-      ...(shippingVal > 0 ? [['Shipping & Handling', `\u20b9${shippingVal.toFixed(2)}`]] : [['Shipping & Handling', 'FREE']]),
+      ['Subtotal (before tax)', `Rs.${computedSubtotal.toFixed(2)}`],
+      ...((discountVal > 0) ? [['Coupon Discount', `-Rs.${discountVal.toFixed(2)}`]] : []),
+      ...(shippingVal > 0 ? [['Shipping & Handling', `Rs.${shippingVal.toFixed(2)}`]] : [['Shipping & Handling', 'FREE']]),
     ];
     if (window.storeSettings && window.storeSettings.tax_enabled) {
-      if (sgst > 0) totalsData.push([`SGST @ ${window.storeSettings.sgst_pct}%`, `\u20b9${sgst.toFixed(2)}`]);
-      if (cgst > 0) totalsData.push([`CGST @ ${window.storeSettings.cgst_pct}%`, `\u20b9${cgst.toFixed(2)}`]);
-      if (igst > 0) totalsData.push([`IGST @ ${window.storeSettings.igst_pct}%`, `\u20b9${igst.toFixed(2)}`]);
+      if (sgst > 0) totalsData.push([`SGST @ ${window.storeSettings.sgst_pct}%`, `Rs.${sgst.toFixed(2)}`]);
+      if (cgst > 0) totalsData.push([`CGST @ ${window.storeSettings.cgst_pct}%`, `Rs.${cgst.toFixed(2)}`]);
+      if (igst > 0) totalsData.push([`IGST @ ${window.storeSettings.igst_pct}%`, `Rs.${igst.toFixed(2)}`]);
     }
 
     const totColLabelX = 110, totColValX = 195;
@@ -1593,7 +1593,7 @@ async function generateOrderReceiptPDF(order, autoDownload = true) {
     doc.roundedRect(110, grandTotalY, 90, 12, 2, 2, 'F');
     doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(...white);
     doc.text('GRAND TOTAL', 113, grandTotalY + 8);
-    doc.text(`\u20b9${totalVal.toFixed(2)}`, totColValX, grandTotalY + 8, { align: 'right' });
+    doc.text(`Rs.${totalVal.toFixed(2)}`, totColValX, grandTotalY + 8, { align: 'right' });
 
     // ── 7. QR Code ──
     if (typeof QRCode !== 'undefined') {
@@ -1646,8 +1646,13 @@ async function generateOrderReceiptPDF(order, autoDownload = true) {
       const link = document.createElement('a');
       link.href  = url;
       link.download = `ToyzGuru_Invoice_${orderIdStr}.pdf`;
+      link.style.display = 'none';
+      document.body.appendChild(link);
       link.click();
-      URL.revokeObjectURL(url);
+      setTimeout(() => {
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }, 150);
     }
 
     return receiptUrl;
@@ -3359,7 +3364,8 @@ function initProfileView() {
 
   listContainer.innerHTML = userOrders.map(ord => {
     const orderDate = new Date(ord.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-    const itemsSummary = ord.items.map(i => `${i.title} (${i.option}) x${i.quantity}`).join("<br>");
+    const parsedItems = Array.isArray(ord.items) ? ord.items : (typeof ord.items === 'string' ? (() => { try { return JSON.parse(ord.items); } catch(e) { return []; } })() : []);
+    const itemsSummary = parsedItems.map(i => `${i.title || ''} (${i.option || ''}) x${i.quantity || 1}`).join("<br>");
 
     return `
       <tr>
