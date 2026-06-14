@@ -23,12 +23,7 @@ PORT      = 3001
 
 # ─── App setup ───────────────────────────────────────────────────────────────
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "https://toyzguru.in",
-    "https://www.toyzguru.in",
-]}})
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s  %(levelname)s  %(message)s")
 log = logging.getLogger("toyzguru-mail")
