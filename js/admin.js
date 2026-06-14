@@ -926,9 +926,14 @@ async function adminRenderMembersRegistry() {
           created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString()
         }
       ];
-      localStorage.setItem("toyzguru_profiles", JSON.stringify(defaultMembers));
+      const deletedProfiles = JSON.parse(localStorage.getItem("toyzguru_deleted_profiles")) || [];
+      const filteredDefaultMembers = defaultMembers.filter(m => {
+        const isDeleted = deletedProfiles.includes(m.email.toLowerCase()) || deletedProfiles.includes(m.id);
+        return !isDeleted;
+      });
+      localStorage.setItem("toyzguru_profiles", JSON.stringify(filteredDefaultMembers));
       if (isOfflineFallback) {
-        members = defaultMembers;
+        members = filteredDefaultMembers;
       }
     }
 
@@ -1024,6 +1029,22 @@ async function adminDeleteMemberTrigger(profileId) {
 
       localProfiles = localProfiles.filter(p => p.id !== profileId);
       localStorage.setItem("toyzguru_profiles", JSON.stringify(localProfiles));
+
+      // Keep track of deleted profiles to prevent them from being re-seeded from users.json or defaultMembers
+      let deletedProfiles = JSON.parse(localStorage.getItem("toyzguru_deleted_profiles")) || [];
+      if (member) {
+        if (member.email && !deletedProfiles.includes(member.email.toLowerCase())) {
+          deletedProfiles.push(member.email.toLowerCase());
+        }
+        if (member.id && !deletedProfiles.includes(member.id)) {
+          deletedProfiles.push(member.id);
+        }
+      } else {
+        if (!deletedProfiles.includes(profileId)) {
+          deletedProfiles.push(profileId);
+        }
+      }
+      localStorage.setItem("toyzguru_deleted_profiles", JSON.stringify(deletedProfiles));
 
       // If deleted user matches active login session
       if (window.userState && window.userState.id === profileId) {

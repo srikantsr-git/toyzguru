@@ -272,8 +272,12 @@ async function initDatabase() {
   }
 
   let localProfiles = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
+  const deletedProfiles = JSON.parse(localStorage.getItem("toyzguru_deleted_profiles")) || [];
   let updated = false;
   seedUsers.forEach(seedUser => {
+    const isDeleted = deletedProfiles.includes(seedUser.email.toLowerCase()) || deletedProfiles.includes(seedUser.id);
+    if (isDeleted) return;
+
     const existingIndex = localProfiles.findIndex(p => p.email.toLowerCase() === seedUser.email.toLowerCase());
     if (existingIndex === -1) {
       localProfiles.push(seedUser);
