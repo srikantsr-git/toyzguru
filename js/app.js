@@ -342,7 +342,7 @@ async function initDatabase() {
     // Load local user profile session
     userState = JSON.parse(localStorage.getItem("toyzguru_user"));
     cartState = JSON.parse(localStorage.getItem("toyzguru_cart")) || [];
-    
+
     // Fetch orders for this user from Supabase/localStorage fallback
     if (supabase && userState) {
       try {
@@ -363,7 +363,7 @@ async function initDatabase() {
     } catch (err) {
       console.warn("Failed to get session from Supabase:", err);
     }
-    
+
     if (session) {
       const user = session.user;
       try {
@@ -391,7 +391,7 @@ async function initDatabase() {
       // Convert legacy session to mock session
       localStorage.setItem("toyzguru_mock_session", "true");
       localStorage.setItem("toyzguru_user", JSON.stringify(userState));
-      
+
       // Fetch cart
       try {
         const { data: cartData, error } = await supabase.from('cart').select('items').eq('user_id', user.id).single();
@@ -562,7 +562,7 @@ async function saveProducts() {
 
 async function saveUser() {
   localStorage.setItem("toyzguru_user", JSON.stringify(userState));
-  
+
   // Also sync changes to the master local profiles registry
   if (userState && userState.email) {
     let localProfiles = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
@@ -622,7 +622,7 @@ window.saveCouriers = saveCouriers;
 async function fetchInstagramFeed() {
   const token = "IGAAVoYTHswZANBZAFJzR1JRaVlqdXNrN3g3Y2JiTnNlVkI1NldrS2JhR0dvWng5WnJRdTVCdUVTTEFaYmhVN1RVMnAyUXBxN0pQVDVvYWotQUVoWlFqTy1NOWFSZAC1FcXA3aUl6N204eTVkdE44c2pRaWxlZAmtWb2ZAuQlNrbGoyOAZDZD";
   const url = `https://graph.instagram.com/me/media?fields=id,caption,media_type,media_url,permalink,thumbnail_url&access_token=${token}`;
-  
+
   const container = document.getElementById("instagram-feed-grid");
   if (!container) {
     console.warn("fetchInstagramFeed: Element #instagram-feed-grid not found in DOM.");
@@ -637,11 +637,11 @@ async function fetchInstagramFeed() {
     }
     const data = await res.json();
     console.log("fetchInstagramFeed: Successfully fetched data from Instagram API:", data);
-    
+
     if (data && data.data && data.data.length > 0) {
-      const validMedia = data.data.filter(item => 
-        item.media_type === "IMAGE" || 
-        item.media_type === "CAROUSEL_ALBUM" || 
+      const validMedia = data.data.filter(item =>
+        item.media_type === "IMAGE" ||
+        item.media_type === "CAROUSEL_ALBUM" ||
         item.media_type === "VIDEO"
       );
       console.log(`fetchInstagramFeed: Found ${validMedia.length} valid media items.`);
@@ -673,7 +673,7 @@ function renderInstagramFeed(mediaList) {
     const comments = mockComments[idx % mockComments.length];
     const imgUrl = item.media_type === "VIDEO" ? (item.thumbnail_url || item.media_url) : item.media_url;
     const caption = item.caption || "ToyzGuru premium collector showcase";
-    
+
     return `
       <a href="${item.permalink}" target="_blank" rel="noopener noreferrer" class="instagram-card glass-panel">
         <img src="${imgUrl}" alt="${caption}" class="instagram-img" loading="lazy">
@@ -709,11 +709,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const getParam = (key) => hashParams.get(key) || searchParams.get(key);
 
-    const type        = getParam('type');
+    const type = getParam('type');
     const accessToken = getParam('access_token');
-    const refreshToken= getParam('refresh_token');
-    const errorDesc   = getParam('error_description');
-    const error       = getParam('error');
+    const refreshToken = getParam('refresh_token');
+    const errorDesc = getParam('error_description');
+    const error = getParam('error');
 
     // If any parameters exist, we should intercept and handle them
     if (type === 'recovery' || accessToken || error || errorDesc) {
@@ -724,7 +724,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // Show error modal after DOM is ready
         setTimeout(() => {
           const errModal = document.getElementById('pw-reset-error-modal');
-          const errMsg   = document.getElementById('pw-reset-error-msg');
+          const errMsg = document.getElementById('pw-reset-error-msg');
           if (errModal) {
             if (errMsg) errMsg.textContent = decodeURIComponent((errorDesc || error || 'Invalid or expired reset link.')).replace(/\+/g, ' ');
             errModal.style.display = 'flex';
@@ -1403,32 +1403,32 @@ window.requestEmailOtpVerification = requestEmailOtpVerification;
 // ============================================================
 function generateOrderReceiptHTML(order) {
   try {
-    const orderIdStr  = order.id || 'N/A';
-    const invoiceNum  = `INV-${orderIdStr}`;
+    const orderIdStr = order.id || 'N/A';
+    const invoiceNum = `INV-${orderIdStr}`;
     const invoiceDate = new Date(order.date || Date.now()).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-    const custName    = order.customer_name || order.name || order.email || 'Customer';
-    const method      = (order.payment_method || order.method || 'Online').toUpperCase();
-    const hsnCode     = '9505';
-    const gstin       = 'N/A';
+    const custName = order.customer_name || order.name || order.email || 'Customer';
+    const method = (order.payment_method || order.method || 'Online').toUpperCase();
+    const hsnCode = '9505';
+    const gstin = 'N/A';
 
     // Safely parse items regardless of string/array storage
     let items = [];
     if (Array.isArray(order.items)) {
       items = order.items;
     } else if (typeof order.items === 'string') {
-      try { items = JSON.parse(order.items); } catch(e) { items = []; }
+      try { items = JSON.parse(order.items); } catch (e) { items = []; }
     }
 
-    const taxPct      = (window.storeSettings && window.storeSettings.tax_enabled) ? (window.storeSettings.cgst_pct || 0) : 0;
+    const taxPct = (window.storeSettings && window.storeSettings.tax_enabled) ? (window.storeSettings.cgst_pct || 0) : 0;
     const discountVal = parseFloat(order.discount) || 0;
     const shippingVal = parseFloat(order.shipping) || 0;
-    const totalVal    = parseFloat(order.total) || 0;
+    const totalVal = parseFloat(order.total) || 0;
 
     let computedSubtotal = 0;
     const itemRows = items.map((item, idx) => {
       if (!item) return '';
-      const unitP   = typeof item.price === 'number' ? item.price : parseFloat(item.price) || 0;
-      const qty     = item.quantity || 1;
+      const unitP = typeof item.price === 'number' ? item.price : parseFloat(item.price) || 0;
+      const qty = item.quantity || 1;
       const lineTot = unitP * qty;
       const lineGst = lineTot * (taxPct / 100);
       computedSubtotal += lineTot;
@@ -1546,7 +1546,7 @@ function generateOrderReceiptHTML(order) {
   <div class="parties">
     <div class="party">
       <div class="party-label">Sold By</div>
-      <div class="party-name">ToyzGuru India Pvt. Ltd.</div>
+      <div class="party-name">Shree Enterprises</div>
       <div class="party-detail">601, TNR Grandilla, Street 4, Road no. 29<br>Alkapoor Township, Neknampur<br>Hyderabad &ndash; 500089, Telangana, India<br>Ph: 9527652118<br>GSTIN: ${gstin}</div>
     </div>
     <div class="party">
@@ -1622,11 +1622,11 @@ function generateOrderReceiptHTML(order) {
       win.focus();
     } else {
       const blob = new Blob([html], { type: 'text/html' });
-      const url  = URL.createObjectURL(blob);
+      const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.href  = url;
+      link.href = url;
       link.target = '_blank';
-      link.rel   = 'noopener';
+      link.rel = 'noopener';
       link.style.display = 'none';
       document.body.appendChild(link);
       link.click();
@@ -1641,13 +1641,13 @@ function generateOrderReceiptHTML(order) {
 window.generateOrderReceiptHTML = generateOrderReceiptHTML;
 
 // Keep old name as alias so any existing call sites still work
-window.generateOrderReceiptPDF = function(order) {
+window.generateOrderReceiptPDF = function (order) {
   generateOrderReceiptHTML(order);
   return Promise.resolve(null);
 };
 
 // ── Open receipt for a given order ID ──
-window.downloadOrderReceipt = async function(orderId) {
+window.downloadOrderReceipt = async function (orderId) {
   const btns = document.querySelectorAll(`.receipt-btn-${orderId}`);
   btns.forEach(btn => {
     btn.style.pointerEvents = 'none';
@@ -1783,7 +1783,7 @@ function setupRouting() {
       if (signinForm) signinForm.reset();
       if (signupForm) signupForm.reset();
       if (forgotForm) forgotForm.reset();
-      
+
       const elements = [
         "auth-signin-email", "auth-signin-password",
         "auth-signup-name", "auth-signup-email", "auth-signup-password",
@@ -2450,7 +2450,7 @@ function parseNormalAddress(addrStr) {
   if (addrStr.trim().startsWith('{')) {
     try {
       return JSON.parse(addrStr);
-    } catch (e) {}
+    } catch (e) { }
   }
   const parts = addrStr.split(', ');
   if (parts.length >= 8) {
@@ -2487,14 +2487,14 @@ function initCheckoutView() {
   const addrContainer = document.getElementById("checkout-addresses-container");
   if (addrContainer) {
     let html = '';
-    
+
     // 1. Saved Address
     let dName = userState ? (userState.delivery_name || userState.name || "") : "";
     let dAddr = userState ? (userState.delivery_address || userState.address || "") : "";
     let dCity = userState ? (userState.delivery_city || userState.city || "") : "";
     let dState = userState ? (userState.delivery_state || userState.state || "") : "";
     let savedDesc = (dName || dAddr) ? `${dName} | ${dAddr}, ${dCity}, ${dState}` : "No saved delivery address found. Home address will be used.";
-    
+
     html += `
       <label style="display: flex; align-items: flex-start; gap: 0.75rem; cursor: pointer; padding: 1rem; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--glass-border); border-radius: 8px;">
         <input type="radio" name="checkout-address-option" value="saved" checked style="accent-color: var(--color-brand); margin-top: 0.25rem;">
@@ -2577,7 +2577,7 @@ function initCheckoutView() {
 
 function applyCheckoutAddressSelection() {
   const selectedOption = document.querySelector('input[name="checkout-address-option"]:checked')?.value || "saved";
-  
+
   if (selectedOption === "saved") {
     // Fill saved delivery address or home address fallback
     const fullName = userState ? (userState.delivery_name || userState.name || "") : "";
@@ -2588,7 +2588,7 @@ function applyCheckoutAddressSelection() {
     document.getElementById("ship-address").value = userState ? (userState.delivery_address || userState.address || "") : "";
     document.getElementById("ship-city").value = userState ? (userState.delivery_city || userState.city || "") : "";
     document.getElementById("ship-zip").value = userState ? (userState.delivery_zip || userState.zip || "") : "";
-    
+
     const stateVal = userState ? (userState.delivery_state || userState.state || "") : "";
     const stateSelect = document.getElementById("ship-state");
     if (stateSelect && stateVal) {
@@ -2637,12 +2637,12 @@ function applyCheckoutAddressSelection() {
   if (wrapper) {
     // Always show the address fields so user can see what address is being used
     wrapper.style.display = "grid";
-    
+
     // Make fields read-only when using saved address, editable for new address
     const inputs = wrapper.querySelectorAll("input:not([type=hidden])");
     const selects = wrapper.querySelectorAll("select");
     const saveBtn = document.getElementById("checkout-save-address-btn");
-    
+
     if (selectedOption === "saved" || selectedOption === "alt1" || selectedOption === "alt2") {
       inputs.forEach(input => {
         input.readOnly = true;
@@ -2839,7 +2839,7 @@ async function applyCoupon() {
   activeCoupon = coupon;
   isCouponApplied = true;
   renderCheckoutSummary();
-  
+
   const discountLabel = coupon.type === 'percentage' ? `${coupon.value}%` : `₹${coupon.value}`;
   showToast("Coupon Applied", `Coupon code ${coupon.code} verified: ${discountLabel} Discount Applied.`, "success");
 }
@@ -3051,7 +3051,7 @@ async function handleCheckoutSubmit(e) {
       const receiptLink = document.getElementById('success-receipt-link');
       if (receiptWrap && receiptLink) {
         receiptLink.href = 'javascript:void(0)';
-        receiptLink.onclick = function(e) { e.preventDefault(); window.downloadOrderReceipt(newOrderObj.id); };
+        receiptLink.onclick = function (e) { e.preventDefault(); window.downloadOrderReceipt(newOrderObj.id); };
         receiptWrap.style.display = '';
         if (typeof feather !== 'undefined') feather.replace();
       }
@@ -3115,7 +3115,7 @@ async function handleCheckoutSubmit(e) {
           }
         },
         modal: {
-          ondismiss: function() {
+          ondismiss: function () {
             showToast("Payment Cancelled", "You closed the payment window.", "warning");
           }
         }
@@ -3325,7 +3325,7 @@ function initProfileView() {
 
   listContainer.innerHTML = userOrders.map(ord => {
     const orderDate = new Date(ord.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-    const parsedItems = Array.isArray(ord.items) ? ord.items : (typeof ord.items === 'string' ? (() => { try { return JSON.parse(ord.items); } catch(e) { return []; } })() : []);
+    const parsedItems = Array.isArray(ord.items) ? ord.items : (typeof ord.items === 'string' ? (() => { try { return JSON.parse(ord.items); } catch (e) { return []; } })() : []);
     const itemsSummary = parsedItems.map(i => `${i.title || ''} (${i.option || ''}) x${i.quantity || 1}`).join("<br>");
 
     return `
@@ -3398,7 +3398,7 @@ function renderPaymentHistory(userOrders) {
   if (typeof feather !== "undefined") feather.replace();
 }
 
-window.deletePaymentRecord = async function(orderId) {
+window.deletePaymentRecord = async function (orderId) {
   if (!await showCustomDialog("Delete Record", `Remove order ${orderId} from your payment history? This only removes the local record — the actual order remains in the system.`, "warning", true)) return;
 
   // Remove from ordersState memory
@@ -3461,7 +3461,7 @@ function refreshAddressCards() {
   const addrContainer = document.getElementById('member-addresses-container');
   if (!addrContainer) return;
   addrContainer.innerHTML = '';
-  [1, 2].forEach(function(i) {
+  [1, 2].forEach(function (i) {
     const val = i === 1 ? userState.address1 : userState.address2;
     if (val) {
       addrContainer.innerHTML += `
@@ -3481,7 +3481,7 @@ function refreshAddressCards() {
   }
 }
 
-window.deleteAlternativeAddress = async function(idx) {
+window.deleteAlternativeAddress = async function (idx) {
   if (!await showCustomDialog("Delete Address", `Delete Alternative Address ${idx}? This cannot be undone.`, "warning", true)) return;
   if (idx === 1) userState.address1 = null;
   if (idx === 2) userState.address2 = null;
@@ -3501,7 +3501,7 @@ window.deleteAlternativeAddress = async function(idx) {
   }
 };
 
-window.editAlternativeAddress = function(idx) {
+window.editAlternativeAddress = function (idx) {
   const current = (idx === 1 ? userState.address1 : userState.address2) || '';
 
   // Remove any existing address edit modal
@@ -3524,10 +3524,10 @@ window.editAlternativeAddress = function(idx) {
   `;
   document.body.appendChild(modal);
 
-  document.getElementById('addr-edit-cancel').onclick = function() { modal.remove(); };
-  modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
+  document.getElementById('addr-edit-cancel').onclick = function () { modal.remove(); };
+  modal.onclick = function (e) { if (e.target === modal) modal.remove(); };
 
-  document.getElementById('addr-edit-save').onclick = async function() {
+  document.getElementById('addr-edit-save').onclick = async function () {
     const newVal = document.getElementById('addr-edit-input').value.trim();
     if (!newVal) {
       showToast('Validation Error', 'Address cannot be empty.', 'danger');
@@ -3676,7 +3676,7 @@ function setupEventListeners() {
       const stateName = document.getElementById("ship-state").value;
       const country = document.getElementById("ship-country").value || "IN";
       const phone = document.getElementById("ship-phone").value;
-      
+
       const countryVal = country === "IN" ? "India" : country;
       const newAddrStr = `${firstName} ${lastName}, ${email}, ${phone}, ${address}, ${city}, ${zip}, ${stateName}, ${countryVal}`;
 
@@ -3702,7 +3702,7 @@ function setupEventListeners() {
           }
           await saveUser();
           showToast("Address Saved", "Delivery address saved to your profile settings successfully.", "success");
-          
+
           // Re-populate and sync address selection choices
           initCheckoutView();
         } catch (err) {
@@ -3823,14 +3823,14 @@ function setupEventListeners() {
       authTabSignup.classList.remove("active");
       authSigninForm.style.display = "block";
       authSignupForm.style.display = "none";
-      if(authForgotPasswordForm) authForgotPasswordForm.style.display = "none";
+      if (authForgotPasswordForm) authForgotPasswordForm.style.display = "none";
     });
     authTabSignup.addEventListener("click", () => {
       authTabSignup.classList.add("active");
       authTabSignin.classList.remove("active");
       authSignupForm.style.display = "block";
       authSigninForm.style.display = "none";
-      if(authForgotPasswordForm) authForgotPasswordForm.style.display = "none";
+      if (authForgotPasswordForm) authForgotPasswordForm.style.display = "none";
     });
   }
 
@@ -3876,10 +3876,10 @@ function setupEventListeners() {
   if (authResetPasswordForm) {
     authResetPasswordForm.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const newPassword     = document.getElementById("auth-reset-new-password").value;
+      const newPassword = document.getElementById("auth-reset-new-password").value;
       const confirmPassword = document.getElementById("auth-reset-confirm-password");
-      const matchLabel      = document.getElementById("reset-pw-match-label");
-      const submitBtn       = document.getElementById("auth-reset-submit-btn");
+      const matchLabel = document.getElementById("reset-pw-match-label");
+      const submitBtn = document.getElementById("auth-reset-submit-btn");
 
       // Validate password length
       if (newPassword.length < 6) {
@@ -3913,7 +3913,7 @@ function setupEventListeners() {
           if (idx !== -1) {
             localProfiles[idx].password = newPassword;
             localStorage.setItem("toyzguru_profiles", JSON.stringify(localProfiles));
-            
+
             // Sync with Supabase profiles table if the profile is currently active
             if (userState && userState.email.toLowerCase() === resetEmail.toLowerCase()) {
               userState.password = newPassword;
@@ -4020,7 +4020,7 @@ function setupEventListeners() {
         }
         localStorage.setItem("toyzguru_mock_session", "true");
         localStorage.setItem("toyzguru_user", JSON.stringify(matchedProfile));
-        
+
         showToast("Signed In", "Welcome back to ToyzGuru!", "success");
         await initDatabase();
         window.location.hash = "#profile";
@@ -4077,7 +4077,7 @@ function setupEventListeners() {
             .from('profiles')
             .select('id')
             .ilike('email', email);
-          
+
           if (!checkError && dbMems && dbMems.length > 0) {
             await showCustomDialog("Email Exists", "Email ID already exists!", "warning");
             showToast("Sign Up Failed", "Email ID already exists!", "warning");
@@ -4098,7 +4098,7 @@ function setupEventListeners() {
       }
 
       // Generate a UUID v4 so it can sync with Supabase profiles table
-      const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
         var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
         return v.toString(16);
       });
@@ -4131,11 +4131,11 @@ function setupEventListeners() {
           const dbPayload = { ...newProfile };
           delete dbPayload.password;
           delete dbPayload.email_confirmed;
-          
+
           const { error: syncError } = await supabase.from('profiles').insert(dbPayload);
           if (syncError) {
             console.error("Error saving profile to Supabase:", syncError);
-            
+
             // Bypass foreign key constraint warning on local auth
             if (syncError.code === '23503') {
               console.warn("Bypassed foreign key constraint on database sync. Saved locally.");
@@ -4144,7 +4144,7 @@ function setupEventListeners() {
               let currentLocal = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
               currentLocal = currentLocal.filter(p => p.id !== uuid);
               localStorage.setItem("toyzguru_profiles", JSON.stringify(currentLocal));
-              
+
               let errMsg = syncError.message || "Failed to sync registration to database.";
               if (syncError.code === '23505' || errMsg.toLowerCase().includes("unique") || errMsg.toLowerCase().includes("exists")) {
                 errMsg = "Email ID already exists!";
@@ -4548,7 +4548,7 @@ function setupEventListeners() {
     if (addedCount > 0) {
       saveCart();
       showToast("Vault Stashed", `Successfully stashed ${addedCount} wishlist items to your cart.`, "success");
-      
+
       // Move stashed items out of wishlist
       wishlistState = wishlistState.filter(productId => {
         const product = productsState.find(p => p.id === productId);
@@ -4703,7 +4703,7 @@ function updateResetPasswordStrength(value) {
   const len = value.length;
   let strength = 0;
 
-  if (len >= 6)  strength++;
+  if (len >= 6) strength++;
   if (len >= 10) strength++;
   if (/[A-Z]/.test(value)) strength++;
   if (/[0-9]/.test(value)) strength++;
@@ -4816,10 +4816,10 @@ function toggleWishlist(productId) {
   if (hash.startsWith("#wishlist")) {
     initWishlistView();
   }
-  
+
   // Refresh wishlist inside member profile settings too
   renderProfileWishlist();
-  
+
   // Trigger admin panel lists updates if admin view is active
   if (window.adminRenderMembersRegistry) {
     window.adminRenderMembersRegistry();
@@ -4847,11 +4847,11 @@ function initWishlistView() {
         </a>
       </div>
     `;
-    
+
     // Hide actions container if empty
     const actionsContainer = document.getElementById("wishlist-actions-container");
     if (actionsContainer) actionsContainer.style.display = "none";
-    
+
     feather.replace();
     return;
   }
