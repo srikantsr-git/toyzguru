@@ -1529,7 +1529,7 @@ function generateOrderReceiptHTML(order) {
     <div>
       <div class="brand-name">ToyzGuru</div>
       <div class="brand-tag">Premium Collectibles &nbsp;&bull;&nbsp; toyzguru.in</div>
-      <div class="brand-contact">support@toyzguru.in &nbsp;|&nbsp; HITEC City, Hyderabad</div>
+      <div class="brand-contact">support@toyzguru.in &nbsp;|&nbsp; Ph: 9527652118 &nbsp;|&nbsp; Neknampur, Hyderabad</div>
     </div>
     <div class="inv-meta">
       <div class="inv-title">TAX INVOICE</div>
@@ -1547,7 +1547,7 @@ function generateOrderReceiptHTML(order) {
     <div class="party">
       <div class="party-label">Sold By</div>
       <div class="party-name">ToyzGuru India Pvt. Ltd.</div>
-      <div class="party-detail">4th Floor, Cyber Towers, HITEC City<br>Hyderabad, Telangana &ndash; 500081, India<br>GSTIN: ${gstin}</div>
+      <div class="party-detail">601, TNR Grandilla, Street 4, Road no. 29<br>Alkapoor Township, Neknampur<br>Hyderabad &ndash; 500089, Telangana, India<br>Ph: 9527652118<br>GSTIN: ${gstin}</div>
     </div>
     <div class="party">
       <div class="party-label">Bill To / Ship To</div>
@@ -1603,7 +1603,7 @@ function generateOrderReceiptHTML(order) {
     <strong>Terms &amp; Conditions</strong><br>
     All sales are final. For returns/exchanges, contact support within 7 days of delivery.
     This is a computer-generated invoice &mdash; no physical signature required.<br>
-    ToyzGuru India Pvt. Ltd. &nbsp;|&nbsp; HITEC City, Hyderabad &nbsp;|&nbsp; support@toyzguru.in &nbsp;|&nbsp; toyzguru.in
+    ToyzGuru &nbsp;|&nbsp; 601, TNR Grandilla, Street 4, Road no. 29, Alkapoor Township, Neknampur, Hyderabad &ndash; 500089 &nbsp;|&nbsp; Ph: 9527652118 &nbsp;|&nbsp; support@toyzguru.in &nbsp;|&nbsp; toyzguru.in
   </div>
 
   <div class="action-bar">
