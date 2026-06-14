@@ -1732,7 +1732,7 @@ function setupRouting() {
           showToast("Link Verified", "Please enter your new password.", "success");
           
           // Clear URL parameters to prevent copy-pasting the token
-          history.replaceState(null, null, ' ' + window.location.pathname + '#reset-password');
+          history.replaceState(null, "", window.location.pathname + '#reset-password');
         } else {
           // Invalid or expired token
           showToast("Link Expired", "This password reset link is invalid or has expired.", "danger");
@@ -4089,13 +4089,9 @@ function setupEventListeners() {
           if (lbl) lbl.textContent = '';
           if (matchLabel) { matchLabel.textContent = ''; }
 
-          // Show success modal
-          const successModal = document.getElementById('pw-reset-success-modal');
-          if (successModal) {
-            successModal.style.display = 'flex';
-            document.body.style.overflow = 'hidden';
-            if (window.feather) feather.replace();
-          }
+          // Redirect immediately to login with a success toast
+          showToast("Password Updated", "Your password has been successfully reset. Please sign in.", "success");
+          window.location.hash = "#auth";
         } catch (err) {
           console.error('Password reset error:', err);
           showToast("Update Failed", err.message || "Failed to update password. Please try again.", "danger");
