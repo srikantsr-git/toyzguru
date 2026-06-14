@@ -1397,284 +1397,267 @@ window.requestEmailOtpVerification = requestEmailOtpVerification;
 
 
 
-// Standalone — works for ANY order object: new checkout orders AND existing orders.
-// Returns: public receipt URL (string) if uploaded to Supabase, or null if offline.
-async function generateOrderReceiptPDF(order, autoDownload = true) {
+// ============================================================
+//  HTML Receipt Generator — Zero CDN dependency, native ₹ support
+//  Opens a styled, printable invoice in a new browser tab.
+// ============================================================
+function generateOrderReceiptHTML(order) {
   try {
-    let doc;
-    if (window.jspdf && window.jspdf.jsPDF) {
-      doc = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
-    } else if (window.jsPDF) {
-      doc = new window.jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
-    } else {
-      console.error('jsPDF not loaded');
-      return null;
-    }
-    const pageW  = doc.internal.pageSize.getWidth();
-    const pageH  = doc.internal.pageSize.getHeight();
-
-    // ── Color Palette ──
-    const blue       = [26, 90, 160];
-    const lightBlue  = [232, 241, 255];
-    const darkText   = [20, 20, 30];
-    const mutedText  = [100, 110, 130];
-    const white      = [255, 255, 255];
-    const green      = [34, 153, 84];
-    const borderGray = [210, 218, 230];
-    const rowAlt     = [247, 250, 255];
-
-    // ── Invoice Metadata ──
     const orderIdStr  = order.id || 'N/A';
     const invoiceNum  = `INV-${orderIdStr}`;
     const invoiceDate = new Date(order.date || Date.now()).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-    const hsnCode     = '9505';
-    const gstin       = 'N/A';
-    const sellerName  = 'ToyzGuru India Pvt. Ltd.';
-    const sellerAddr  = '4th Floor, Cyber Towers, HITEC City,\nHyderabad, Telangana - 500081, India';
     const custName    = order.customer_name || order.name || order.email || 'Customer';
     const method      = (order.payment_method || order.method || 'Online').toUpperCase();
+    const hsnCode     = '9505';
+    const gstin       = 'N/A';
 
-    // ── 1. Header Banner ──
-    doc.setFillColor(...blue);
-    doc.rect(0, 0, pageW, 28, 'F');
-    doc.setFont('helvetica', 'bold');   doc.setFontSize(22); doc.setTextColor(...white);
-    doc.text('ToyzGuru', 10, 13);
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
-    doc.text('Premium Collectibles — toyzguru.in', 10, 19);
-    doc.text('support@toyzguru.in  |  HITEC City, Hyderabad', 10, 24);
-    doc.setFont('helvetica', 'bold');   doc.setFontSize(16);
-    doc.text('TAX INVOICE', pageW - 10, 13, { align: 'right' });
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
-    doc.text(`Invoice No: ${invoiceNum}`, pageW - 10, 19, { align: 'right' });
-    doc.text(`Date: ${invoiceDate}`, pageW - 10, 24, { align: 'right' });
-
-    // ── 2. Payment Badge ──
-    doc.setFillColor(...green);
-    doc.roundedRect(pageW - 46, 31, 36, 9, 2, 2, 'F');
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...white);
-    doc.text('[PAID] PAYMENT RECEIVED', pageW - 28, 37, { align: 'center' });
-
-    // ── 3. Seller & Buyer Blocks ──
-    let y = 33;
-    // Seller
-    doc.setFillColor(...lightBlue);
-    doc.rect(10, y, 88, 36, 'F');
-    doc.setDrawColor(...borderGray); doc.setLineWidth(0.3); doc.rect(10, y, 88, 36);
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(...blue);
-    doc.text('SOLD BY', 13, y + 6);
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...darkText);
-    doc.text(sellerName, 13, y + 13);
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(...mutedText);
-    doc.text(doc.splitTextToSize(sellerAddr, 82), 13, y + 19);
-    doc.text(`GSTIN: ${gstin}`, 13, y + 31);
-
-    // Buyer
-    doc.setFillColor(250, 250, 252);
-    doc.rect(102, y, 98, 36, 'F');
-    doc.setDrawColor(...borderGray); doc.rect(102, y, 98, 36);
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(...blue);
-    doc.text('BILL TO / SHIP TO', 105, y + 6);
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...darkText);
-    doc.text(custName, 105, y + 13);
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(...mutedText);
-    const addrLines = doc.splitTextToSize(order.address || 'Address not recorded', 92);
-    doc.text(addrLines, 105, y + 19);
-    doc.text(`Email: ${order.email || '—'}`, 105, y + 31);
-
-    // ── 4. Order Meta Strip ──
-    y += 41;
-    doc.setFillColor(...blue); doc.rect(10, y, 190, 8, 'F');
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(...white);
-    doc.text(`Order ID: ${orderIdStr}`, 13, y + 5.5);
-    doc.text(`Date: ${invoiceDate}`, 80, y + 5.5);
-    doc.text(`Payment: ${method}`, 130, y + 5.5);
-    doc.text('Status: PAID', 175, y + 5.5, { align: 'right' });
-
-    // ── 5. Product Table ──
-    y += 13;
-    const colX = [10, 18, 85, 105, 120, 140, 163, 185];
-    const colW = [8,  67, 20,  15,  20,  23,  22,  15];
-    doc.setFillColor(...blue); doc.rect(10, y, 190, 9, 'F');
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.setTextColor(...white);
-    ['#','PRODUCT DESCRIPTION','HSN','QTY','UNIT PRICE','GST %','GST AMT','TOTAL'].forEach((h, i) => {
-      const align = i >= 3 ? 'right' : 'left';
-      doc.text(h, i >= 3 ? colX[i] + colW[i] - 1 : colX[i] + 1.5, y + 6, { align });
-    });
-    y += 9;
-
-    const taxPct = (window.storeSettings && window.storeSettings.tax_enabled) ? (window.storeSettings.cgst_pct || 0) : 0;
-    
+    // Safely parse items regardless of string/array storage
     let items = [];
     if (Array.isArray(order.items)) {
       items = order.items;
     } else if (typeof order.items === 'string') {
-      try {
-        items = JSON.parse(order.items);
-      } catch (e) {
-        console.error('Failed to parse order items JSON:', e);
-      }
+      try { items = JSON.parse(order.items); } catch(e) { items = []; }
     }
-    
-    let computedSubtotal = 0;
 
-    items.forEach((item, idx) => {
-      if (!item) return;
-      const rowY    = y + idx * 12;
+    const taxPct      = (window.storeSettings && window.storeSettings.tax_enabled) ? (window.storeSettings.cgst_pct || 0) : 0;
+    const discountVal = parseFloat(order.discount) || 0;
+    const shippingVal = parseFloat(order.shipping) || 0;
+    const totalVal    = parseFloat(order.total) || 0;
+
+    let computedSubtotal = 0;
+    const itemRows = items.map((item, idx) => {
+      if (!item) return '';
       const unitP   = typeof item.price === 'number' ? item.price : parseFloat(item.price) || 0;
       const qty     = item.quantity || 1;
       const lineTot = unitP * qty;
       const lineGst = lineTot * (taxPct / 100);
       computedSubtotal += lineTot;
+      return `
+        <tr class="${idx % 2 === 0 ? 'row-alt' : ''}">
+          <td class="center">${idx + 1}</td>
+          <td><strong>${item.title || ''}</strong>${item.option ? `<br><span class="muted">Variant: ${item.option}</span>` : ''}</td>
+          <td class="center">${hsnCode}</td>
+          <td class="center">${qty}</td>
+          <td class="right">&#8377;${unitP.toFixed(2)}</td>
+          <td class="center">${taxPct}%</td>
+          <td class="right">&#8377;${lineGst.toFixed(2)}</td>
+          <td class="right bold">&#8377;${lineTot.toFixed(2)}</td>
+        </tr>`;
+    }).join('');
 
-      doc.setFillColor(...(idx % 2 === 0 ? rowAlt : white));
-      doc.rect(10, rowY, 190, 12, 'F');
-      doc.setDrawColor(...borderGray); doc.setLineWidth(0.2);
-      doc.line(10, rowY + 12, 200, rowY + 12);
+    const sgst = (window.storeSettings && window.storeSettings.tax_enabled) ? computedSubtotal * ((window.storeSettings.sgst_pct || 0) / 100) : 0;
+    const cgst = (window.storeSettings && window.storeSettings.tax_enabled) ? computedSubtotal * ((window.storeSettings.cgst_pct || 0) / 100) : 0;
+    const igst = (window.storeSettings && window.storeSettings.tax_enabled) ? computedSubtotal * ((window.storeSettings.igst_pct || 0) / 100) : 0;
 
-      doc.setTextColor(...darkText);
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(7);
-      doc.text(String(idx + 1), colX[0] + 1.5, rowY + 5);
-
-      // Product name
-      const titleLines = doc.splitTextToSize(item.title || '', 64);
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5);
-      doc.text(titleLines[0] || '', colX[1] + 1, rowY + 5);
-      if (item.option) {
-        doc.setFont('helvetica', 'normal'); doc.setFontSize(6.5); doc.setTextColor(...mutedText);
-        doc.text(`Variant: ${item.option}`, colX[1] + 1, rowY + 10);
-      }
-
-      doc.setTextColor(...darkText); doc.setFont('helvetica', 'normal'); doc.setFontSize(7);
-      doc.text(hsnCode, colX[2] + colW[2] - 1, rowY + 6, { align: 'right' });
-      doc.text(String(qty), colX[3] + colW[3] - 1, rowY + 6, { align: 'right' });
-      doc.text(`Rs.${unitP.toFixed(2)}`, colX[4] + colW[4] - 1, rowY + 6, { align: 'right' });
-      doc.text(`${taxPct}%`, colX[5] + colW[5] - 1, rowY + 6, { align: 'right' });
-      doc.text(`Rs.${lineGst.toFixed(2)}`, colX[6] + colW[6] - 1, rowY + 6, { align: 'right' });
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5);
-      doc.text(`Rs.${lineTot.toFixed(2)}`, colX[7] + colW[7] - 1, rowY + 6, { align: 'right' });
-    });
-    y += items.length * 12 + 4;
-
-    // ── 6. Tax & Totals ──
-    doc.setDrawColor(...blue); doc.setLineWidth(0.5); doc.line(10, y, 200, y); y += 5;
-
-    const sgst = window.storeSettings && window.storeSettings.tax_enabled ? (computedSubtotal * ((window.storeSettings.sgst_pct || 0) / 100)) : 0;
-    const cgst = window.storeSettings && window.storeSettings.tax_enabled ? (computedSubtotal * ((window.storeSettings.cgst_pct || 0) / 100)) : 0;
-    const igst = window.storeSettings && window.storeSettings.tax_enabled ? (computedSubtotal * ((window.storeSettings.igst_pct || 0) / 100)) : 0;
-    
-    const discountVal = parseFloat(order.discount) || 0;
-    const shippingVal = parseFloat(order.shipping) || 0;
-    const totalVal    = parseFloat(order.total) || 0;
-
-    const totalsData = [
-      ['Subtotal (before tax)', `Rs.${computedSubtotal.toFixed(2)}`],
-      ...((discountVal > 0) ? [['Coupon Discount', `-Rs.${discountVal.toFixed(2)}`]] : []),
-      ...(shippingVal > 0 ? [['Shipping & Handling', `Rs.${shippingVal.toFixed(2)}`]] : [['Shipping & Handling', 'FREE']]),
-    ];
-    if (window.storeSettings && window.storeSettings.tax_enabled) {
-      if (sgst > 0) totalsData.push([`SGST @ ${window.storeSettings.sgst_pct}%`, `Rs.${sgst.toFixed(2)}`]);
-      if (cgst > 0) totalsData.push([`CGST @ ${window.storeSettings.cgst_pct}%`, `Rs.${cgst.toFixed(2)}`]);
-      if (igst > 0) totalsData.push([`IGST @ ${window.storeSettings.igst_pct}%`, `Rs.${igst.toFixed(2)}`]);
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>ToyzGuru Invoice &mdash; ${invoiceNum}</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Segoe UI',Arial,sans-serif;background:#eef2f7;color:#141420;font-size:13px}
+    .page{max-width:860px;margin:24px auto;background:#fff;box-shadow:0 6px 32px rgba(0,0,0,.14);border-radius:10px;overflow:hidden}
+    /* Header */
+    .hdr{background:linear-gradient(135deg,#1a5aa0 0%,#0d3d7a 100%);color:#fff;padding:28px 32px;display:flex;justify-content:space-between;align-items:flex-start}
+    .brand-name{font-size:30px;font-weight:800;letter-spacing:-.5px}
+    .brand-tag{font-size:11px;opacity:.8;margin-top:3px}
+    .brand-contact{font-size:10.5px;opacity:.7;margin-top:5px}
+    .inv-meta{text-align:right}
+    .inv-title{font-size:22px;font-weight:700;letter-spacing:1px}
+    .inv-sub{font-size:11px;opacity:.85;margin-top:5px}
+    /* Status bar */
+    .status-bar{background:#f5f9ff;border-bottom:1px solid #dce8fa;padding:9px 32px;display:flex;align-items:center;gap:12px}
+    .paid-badge{background:#1a9645;color:#fff;padding:4px 14px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.5px}
+    .status-note{color:#667;font-size:11px}
+    /* Parties */
+    .parties{display:grid;grid-template-columns:1fr 1fr}
+    .party{padding:20px 28px}
+    .party:first-child{background:#f0f6ff;border-right:1px solid #dce8fa}
+    .party-label{font-size:10px;font-weight:700;color:#1a5aa0;text-transform:uppercase;letter-spacing:1px;margin-bottom:7px}
+    .party-name{font-size:14px;font-weight:700;margin-bottom:4px}
+    .party-detail{font-size:11.5px;color:#667;line-height:1.6}
+    /* Meta strip */
+    .meta-strip{background:#1a5aa0;color:#fff;padding:9px 28px;display:flex;gap:36px;font-size:11px;font-weight:600;flex-wrap:wrap}
+    .meta-strip span{opacity:.9}
+    /* Table */
+    .tbl-wrap{padding:0 16px}
+    table{width:100%;border-collapse:collapse}
+    thead tr{background:#1a5aa0;color:#fff}
+    thead th{padding:9px 8px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap}
+    .th-l{text-align:left}
+    .th-c{text-align:center}
+    .th-r{text-align:right}
+    tbody tr{border-bottom:1px solid #e5edf8}
+    tbody tr.row-alt{background:#f5f9ff}
+    tbody td{padding:10px 8px;vertical-align:middle}
+    .center{text-align:center}
+    .right{text-align:right}
+    .bold{font-weight:700}
+    .muted{font-size:11px;color:#889}
+    /* Totals */
+    .totals-wrap{display:flex;justify-content:flex-end;padding:16px 16px 4px}
+    .totals-box{min-width:300px}
+    .t-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed #e5edf8;font-size:12.5px}
+    .t-row:last-child{border:none}
+    .t-label{color:#778}
+    .t-val{font-weight:600;color:#141420}
+    .t-val.disc{color:#c0392b}
+    .grand{background:linear-gradient(135deg,#1a5aa0,#0d3d7a);color:#fff;margin:12px 16px;border-radius:7px;padding:13px 22px;display:flex;justify-content:space-between;align-items:center}
+    .grand-label{font-size:14px;font-weight:700;letter-spacing:.5px}
+    .grand-val{font-size:22px;font-weight:800}
+    /* Footer */
+    .receipt-footer{background:#1a5aa0;color:#fff;padding:16px 28px;margin-top:20px;font-size:10.5px;line-height:1.75;opacity:.95}
+    .receipt-footer strong{font-weight:700}
+    /* Action bar */
+    .action-bar{padding:14px 28px;background:#f5f9ff;border-top:1px solid #dce8fa;display:flex;gap:10px;justify-content:flex-end}
+    .btn-print{background:#1a5aa0;color:#fff;border:none;padding:9px 22px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background .2s}
+    .btn-print:hover{background:#0d3d7a}
+    .btn-close{background:transparent;color:#667;border:1px solid #ccd;padding:9px 18px;border-radius:6px;font-size:13px;cursor:pointer;transition:background .2s}
+    .btn-close:hover{background:#eee}
+    @media print{
+      body{background:#fff}
+      .page{box-shadow:none;margin:0;border-radius:0;max-width:100%}
+      .action-bar{display:none}
     }
+  </style>
+</head>
+<body>
+<div class="page">
+  <div class="hdr">
+    <div>
+      <div class="brand-name">ToyzGuru</div>
+      <div class="brand-tag">Premium Collectibles &nbsp;&bull;&nbsp; toyzguru.in</div>
+      <div class="brand-contact">support@toyzguru.in &nbsp;|&nbsp; HITEC City, Hyderabad</div>
+    </div>
+    <div class="inv-meta">
+      <div class="inv-title">TAX INVOICE</div>
+      <div class="inv-sub">Invoice No: <strong>${invoiceNum}</strong></div>
+      <div class="inv-sub">Date: ${invoiceDate}</div>
+    </div>
+  </div>
 
-    const totColLabelX = 110, totColValX = 195;
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
-    totalsData.forEach((row, i) => {
-      doc.setTextColor(row[0].startsWith('Coupon') ? [200, 50, 50] : mutedText);
-      doc.text(row[0], totColLabelX, y + i * 7);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(row[1].startsWith('-') ? [200, 50, 50] : darkText);
-      doc.text(row[1], totColValX, y + i * 7, { align: 'right' });
-      doc.setFont('helvetica', 'normal');
-    });
+  <div class="status-bar">
+    <span class="paid-badge">&#10004; PAYMENT RECEIVED</span>
+    <span class="status-note">Order successfully placed and confirmed</span>
+  </div>
 
-    const grandTotalY = y + totalsData.length * 7 + 3;
-    doc.setFillColor(...blue);
-    doc.roundedRect(110, grandTotalY, 90, 12, 2, 2, 'F');
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(...white);
-    doc.text('GRAND TOTAL', 113, grandTotalY + 8);
-    doc.text(`Rs.${totalVal.toFixed(2)}`, totColValX, grandTotalY + 8, { align: 'right' });
+  <div class="parties">
+    <div class="party">
+      <div class="party-label">Sold By</div>
+      <div class="party-name">ToyzGuru India Pvt. Ltd.</div>
+      <div class="party-detail">4th Floor, Cyber Towers, HITEC City<br>Hyderabad, Telangana &ndash; 500081, India<br>GSTIN: ${gstin}</div>
+    </div>
+    <div class="party">
+      <div class="party-label">Bill To / Ship To</div>
+      <div class="party-name">${custName}</div>
+      <div class="party-detail">${(order.address || 'Address not recorded').replace(/\n/g, '<br>')}<br>Email: ${order.email || '&mdash;'}</div>
+    </div>
+  </div>
 
-    // ── 7. QR Code ──
-    if (typeof QRCode !== 'undefined') {
-      const qrDiv = document.createElement('div');
-      new QRCode(qrDiv, { text: `${window.location.origin}/#tracking?id=${orderIdStr}`, width: 96, height: 96, correctLevel: QRCode.CorrectLevel.H });
-      await new Promise(res => setTimeout(res, 350));
-      const qrCanvas = qrDiv.querySelector('canvas');
-      const qrImg    = qrDiv.querySelector('img');
-      const qrDataUrl = qrCanvas ? qrCanvas.toDataURL('image/png') : (qrImg ? qrImg.src : null);
-      if (qrDataUrl) {
-        doc.addImage(qrDataUrl, 'PNG', 12, y, 28, 28);
-        doc.setFont('helvetica', 'normal'); doc.setFontSize(6); doc.setTextColor(...mutedText);
-        doc.text('Scan to verify order', 26, y + 31, { align: 'center' });
-      }
-    }
+  <div class="meta-strip">
+    <span>Order ID: <strong>${orderIdStr}</strong></span>
+    <span>Date: <strong>${invoiceDate}</strong></span>
+    <span>Payment: <strong>${method}</strong></span>
+    <span>Status: <strong>PAID</strong></span>
+  </div>
 
-    // ── 8. Footer ──
-    const footerY = Math.max(grandTotalY + 22, pageH - 28);
-    doc.setFillColor(...blue); doc.rect(0, footerY, pageW, pageH - footerY, 'F');
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(...white);
-    doc.text('Terms: All sales are final. For returns/exchanges contact support within 7 days of delivery.', 10, footerY + 7);
-    doc.text(`Computer-generated invoice — no physical signature required. | ${invoiceDate}`, 10, footerY + 13);
-    doc.text('ToyzGuru India Pvt. Ltd. | HITEC City, Hyderabad | support@toyzguru.in | toyzguru.in', pageW / 2, footerY + 19, { align: 'center' });
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th class="th-c" style="width:30px">#</th>
+          <th class="th-l">Product Description</th>
+          <th class="th-c">HSN</th>
+          <th class="th-c">Qty</th>
+          <th class="th-r">Unit Price</th>
+          <th class="th-c">GST%</th>
+          <th class="th-r">GST Amt</th>
+          <th class="th-r">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${itemRows || '<tr><td colspan="8" style="text-align:center;padding:20px;color:#889;">No items found</td></tr>'}
+      </tbody>
+    </table>
+  </div>
 
-    // ── Save locally + upload to Supabase ──
-    const pdfBlob  = doc.output('blob');
-    const filePath = `receipts/${orderIdStr}_${Date.now()}.pdf`;
-    let receiptUrl = null;
+  <div class="totals-wrap">
+    <div class="totals-box">
+      <div class="t-row"><span class="t-label">Subtotal (before tax)</span><span class="t-val">&#8377;${computedSubtotal.toFixed(2)}</span></div>
+      ${discountVal > 0 ? `<div class="t-row"><span class="t-label">Coupon Discount</span><span class="t-val disc">&minus;&#8377;${discountVal.toFixed(2)}</span></div>` : ''}
+      <div class="t-row"><span class="t-label">Shipping &amp; Handling</span><span class="t-val">${shippingVal > 0 ? '&#8377;' + shippingVal.toFixed(2) : 'FREE'}</span></div>
+      ${sgst > 0 ? `<div class="t-row"><span class="t-label">SGST @ ${window.storeSettings.sgst_pct}%</span><span class="t-val">&#8377;${sgst.toFixed(2)}</span></div>` : ''}
+      ${cgst > 0 ? `<div class="t-row"><span class="t-label">CGST @ ${window.storeSettings.cgst_pct}%</span><span class="t-val">&#8377;${cgst.toFixed(2)}</span></div>` : ''}
+      ${igst > 0 ? `<div class="t-row"><span class="t-label">IGST @ ${window.storeSettings.igst_pct}%</span><span class="t-val">&#8377;${igst.toFixed(2)}</span></div>` : ''}
+    </div>
+  </div>
 
-    if (window.supabase || window.supabaseClient) {
-      const sb = window.supabase || window.supabaseClient;
-      try {
-        const { error: uploadError } = await sb.storage
-          .from('order-receipts')
-          .upload(filePath, pdfBlob, { contentType: 'application/pdf', upsert: true });
-        if (!uploadError) {
-          const res = sb.storage.from('order-receipts').getPublicUrl(filePath);
-          receiptUrl = (res.data && res.data.publicUrl) || res.publicURL || null;
-        } else {
-          console.warn('PDF upload error:', uploadError);
-        }
-      } catch (e) {
-        console.warn('Supabase upload failed, saving locally:', e);
-      }
-    }
+  <div class="grand">
+    <span class="grand-label">GRAND TOTAL</span>
+    <span class="grand-val">&#8377;${totalVal.toFixed(2)}</span>
+  </div>
 
-    // Trigger local browser download of the PDF blob to completely bypass popup blocker
-    if (autoDownload) {
-      const url  = URL.createObjectURL(pdfBlob);
+  <div class="receipt-footer">
+    <strong>Terms &amp; Conditions</strong><br>
+    All sales are final. For returns/exchanges, contact support within 7 days of delivery.
+    This is a computer-generated invoice &mdash; no physical signature required.<br>
+    ToyzGuru India Pvt. Ltd. &nbsp;|&nbsp; HITEC City, Hyderabad &nbsp;|&nbsp; support@toyzguru.in &nbsp;|&nbsp; toyzguru.in
+  </div>
+
+  <div class="action-bar">
+    <button class="btn-close" onclick="window.close()">Close</button>
+    <button class="btn-print" onclick="window.print()">&#128438; Print / Save as PDF</button>
+  </div>
+</div>
+</body>
+</html>`;
+
+    // Open in new tab; fall back to blob URL if popups blocked
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.write(html);
+      win.document.close();
+      win.focus();
+    } else {
+      const blob = new Blob([html], { type: 'text/html' });
+      const url  = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href  = url;
-      link.download = `ToyzGuru_Invoice_${orderIdStr}.pdf`;
+      link.target = '_blank';
+      link.rel   = 'noopener';
       link.style.display = 'none';
       document.body.appendChild(link);
       link.click();
-      setTimeout(() => {
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      }, 150);
+      setTimeout(() => { document.body.removeChild(link); URL.revokeObjectURL(url); }, 300);
     }
-
-    return receiptUrl;
+    return null; // No remote URL for HTML receipts
   } catch (err) {
-    console.error('generateOrderReceiptPDF error:', err);
-    return null;
+    console.error('generateOrderReceiptHTML error:', err);
+    throw err;
   }
 }
-window.generateOrderReceiptPDF = generateOrderReceiptPDF;
+window.generateOrderReceiptHTML = generateOrderReceiptHTML;
 
-// Helper: generate receipt on demand and download immediately
+// Keep old name as alias so any existing call sites still work
+window.generateOrderReceiptPDF = function(order) {
+  generateOrderReceiptHTML(order);
+  return Promise.resolve(null);
+};
+
+// ── Open receipt for a given order ID ──
 window.downloadOrderReceipt = async function(orderId) {
   const btns = document.querySelectorAll(`.receipt-btn-${orderId}`);
   btns.forEach(btn => {
     btn.style.pointerEvents = 'none';
     btn.style.opacity = '0.6';
     btn.dataset.oldHtml = btn.innerHTML;
-    btn.textContent = 'Generating...';
+    btn.textContent = 'Opening...';
   });
 
   try {
-    // Find order from state or Supabase
+    // Locate order — ordersState first, then Supabase
     let order = (window.ordersState || []).find(o => o.id === orderId);
     if (!order && (window.supabase || window.supabaseClient)) {
       const sb = window.supabase || window.supabaseClient;
@@ -1683,33 +1666,22 @@ window.downloadOrderReceipt = async function(orderId) {
     }
     if (!order) { showToast('Order Not Found', 'Could not locate order data.', 'danger'); return; }
 
-    // Call PDF generation with autoDownload = true to trigger a direct local blob download
-    const receiptUrl = await generateOrderReceiptPDF(order, true);
-    if (receiptUrl) {
-      // Update order in memory + DB in the background
-      const memIdx = (window.ordersState || []).findIndex(o => o.id === orderId);
-      if (memIdx !== -1) window.ordersState[memIdx].receipt_url = receiptUrl;
-      if (window.supabase || window.supabaseClient) {
-        const sb = window.supabase || window.supabaseClient;
-        await sb.from('orders').update({ receipt_url: receiptUrl }).eq('id', orderId);
-      }
-    }
-    showToast('Receipt Downloaded', 'Invoice saved to your downloads folder.', 'success');
+    generateOrderReceiptHTML(order);
+    showToast('Receipt Opened', 'Invoice opened in a new tab. Use Print &#8594; Save as PDF to download.', 'success');
   } catch (e) {
     console.error('downloadOrderReceipt error:', e);
-    await showCustomDialog('Receipt Error', 'Failed to generate receipt: ' + e.message, 'error');
-    showToast('Error', 'Failed to generate receipt. Please try again.', 'danger');
+    showToast('Error', 'Failed to generate receipt: ' + (e.message || e), 'danger');
   } finally {
     btns.forEach(btn => {
       btn.style.pointerEvents = '';
       btn.style.opacity = '';
-      btn.innerHTML = btn.dataset.oldHtml || 'Download Receipt';
+      btn.innerHTML = btn.dataset.oldHtml || 'View Receipt';
     });
-    if (typeof feather !== 'undefined') {
-      feather.replace();
-    }
+    if (typeof feather !== 'undefined') feather.replace();
   }
 };
+
+
 
 // ================= ROUTING SYSTEM =================
 
@@ -2977,20 +2949,8 @@ async function handleCheckoutSubmit(e) {
         localStorage.setItem("toyzguru_orders", JSON.stringify(localOrders));
       }
 
-      // ----- Generate Professional PDF Receipt (Amazon/Flipkart Style) -----
-      try {
-        const receiptUrl = await generateOrderReceiptPDF(newOrderObj, false);
-        if (receiptUrl) {
-          newOrderObj.receipt_url = receiptUrl;
-          if (supabase) {
-            await supabase.from('orders').update({ receipt_url: receiptUrl }).eq('id', newOrderObj.id);
-            const memIdx = ordersState.findIndex(o => o.id === newOrderObj.id);
-            if (memIdx !== -1) ordersState[memIdx].receipt_url = receiptUrl;
-          }
-        }
-      } catch (e) {
-        console.error('Receipt generation error:', e);
-      }
+      // ----- Receipt ready: HTML receipt opens on-demand via View Receipt button -----
+      // (No PDF generation needed; see generateOrderReceiptHTML)
 
 
       // 2. Adjust Products Inventory Stock levels
@@ -3086,11 +3046,12 @@ async function handleCheckoutSubmit(e) {
       document.getElementById("success-shipping-address").textContent = fullAddress;
       document.getElementById("success-total-paid").textContent = `₹${total.toFixed(2)}`;
 
-      // Show receipt download link if generated
+      // Always show the View Receipt button — HTML receipt generated on demand
       const receiptWrap = document.getElementById('success-receipt-wrap');
       const receiptLink = document.getElementById('success-receipt-link');
-      if (receiptWrap && receiptLink && newOrderObj.receipt_url) {
-        receiptLink.href = newOrderObj.receipt_url;
+      if (receiptWrap && receiptLink) {
+        receiptLink.href = 'javascript:void(0)';
+        receiptLink.onclick = function(e) { e.preventDefault(); window.downloadOrderReceipt(newOrderObj.id); };
         receiptWrap.style.display = '';
         if (typeof feather !== 'undefined') feather.replace();
       }
