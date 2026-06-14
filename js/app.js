@@ -1717,6 +1717,35 @@ function setupRouting() {
       return;
     }
 
+    // 1. Password Reset Token Interception
+    if (viewName === "reset-password") {
+      const token = params.token;
+      const email = params.email ? decodeURIComponent(params.email).toLowerCase() : null;
+
+      if (token && email) {
+        const resetTokens = JSON.parse(localStorage.getItem("toyzguru_reset_tokens") || "{}");
+        const tokenData = resetTokens[email];
+
+        if (tokenData && tokenData.token === token && tokenData.expiresAt > Date.now()) {
+          // Valid token — prepare reset session
+          localStorage.setItem("toyzguru_reset_email", email);
+          showToast("Link Verified", "Please enter your new password.", "success");
+          
+          // Clear URL parameters to prevent copy-pasting the token
+          history.replaceState(null, null, ' ' + window.location.pathname + '#reset-password');
+        } else {
+          // Invalid or expired token
+          showToast("Link Expired", "This password reset link is invalid or has expired.", "danger");
+          window.location.hash = "#auth";
+          return;
+        }
+      } else if (!localStorage.getItem("toyzguru_reset_email")) {
+        // Direct access to #reset-password without a token or active reset session
+        window.location.hash = "#auth";
+        return;
+      }
+    }
+
     // Auth redirection rules for protected routes
     if (viewName === "profile" || viewName === "checkout") {
       let isAuthenticated = false;
@@ -3847,28 +3876,167 @@ function setupEventListeners() {
     });
   }
 
-  // Auth Forgot Password Submit
+  // Auth Forgot Password Submit — sends real email with token link
   if (authForgotPasswordForm) {
     authForgotPasswordForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       const email = document.getElementById("auth-forgot-email").value.trim();
-
-      const localProfiles = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
-      const matchedProfile = localProfiles.find(p => p.email.toLowerCase() === email.toLowerCase());
+      if (!email) return;
 
       const submitBtn = authForgotPasswordForm.querySelector('button[type="submit"]');
-      if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Sending...'; }
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Sending...';
+      }
 
-      setTimeout(() => {
-        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Send Reset Link'; }
-        if (matchedProfile) {
-          localStorage.setItem("toyzguru_reset_email", email);
-          showToast("Reset Link Simulated ✓", `A password reset flow has been prepared for ${email}. Proceeding directly.`, "success");
-          window.location.hash = "#reset-password";
-        } else {
-          showToast("Reset Failed", "Profile with this email was not found in our registry.", "danger");
+      try {
+        const localProfiles = JSON.parse(localStorage.getItem("toyzguru_profiles")) || [];
+        const matchedProfile = localProfiles.find(p => p.email.toLowerCase() === email.toLowerCase());
+
+        if (!matchedProfile) {
+          showToast("Email Sent", "If this email is registered, you'll receive a reset link shortly.", "success");
+          authForgotPasswordForm.reset();
+          return;
         }
-      }, 1000);
+
+        // Generate secure reset token (32 hex chars)
+        const token = Array.from(crypto.getRandomValues(new Uint8Array(16)))
+          .map(b => b.toString(16).padStart(2, '0')).join('');
+        const expiresAt = Date.now() + 30 * 60 * 1000; // 30 minutes
+
+        // Store token in localStorage keyed by email
+        const resetTokens = JSON.parse(localStorage.getItem("toyzguru_reset_tokens") || "{}");
+        resetTokens[email.toLowerCase()] = { token, expiresAt };
+        localStorage.setItem("toyzguru_reset_tokens", JSON.stringify(resetTokens));
+
+        // Build the reset URL
+        const baseUrl = window.location.origin + window.location.pathname;
+        const resetUrl = `${baseUrl}#reset-password?token=${token}&email=${encodeURIComponent(email)}`;
+        const customerName = matchedProfile.name || "Valued Customer";
+
+        // Build professional reset email HTML
+        const resetEmailHtml = `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background-color:#0a0d14;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#0a0d14;padding:40px 20px;">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:linear-gradient(145deg,#0f1420 0%,#111827 100%);border-radius:16px;border:1px solid rgba(139,92,246,0.18);box-shadow:0 20px 60px rgba(0,0,0,0.6);overflow:hidden;">
+
+<!-- Header -->
+<tr><td style="background:linear-gradient(135deg,#1a0a2e 0%,#0d1b3e 60%,#0a1628 100%);padding:36px 40px;text-align:center;border-bottom:1px solid rgba(139,92,246,0.15);">
+  <div style="font-size:28px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;margin-bottom:4px;">ToyzGuru</div>
+  <div style="font-size:11px;color:#8b5cf6;font-weight:600;text-transform:uppercase;letter-spacing:2px;">Premium Collector Store</div>
+</td></tr>
+
+<!-- Icon + Heading -->
+<tr><td style="padding:40px 40px 20px;text-align:center;">
+  <div style="font-size:48px;margin-bottom:16px;">&#128272;</div>
+  <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#ffffff;">Password Reset Request</h1>
+  <p style="margin:0;color:#9ca3af;font-size:14px;">We received a request to reset your account password</p>
+</td></tr>
+
+<!-- Body -->
+<tr><td style="padding:0 40px 32px;">
+  <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 24px;">
+    Hi <strong style="color:#ffffff;">${customerName}</strong>,<br><br>
+    Someone requested a password reset for the ToyzGuru account linked to
+    <strong style="color:#a78bfa;">${email}</strong>.
+    If this was you, click the button below to create a new password.
+  </p>
+
+  <!-- CTA Button -->
+  <div style="text-align:center;margin:28px 0 32px;">
+    <a href="${resetUrl}"
+       style="display:inline-block;background:linear-gradient(135deg,#7c3aed 0%,#8b5cf6 100%);color:#ffffff;text-decoration:none;font-size:16px;font-weight:700;padding:16px 44px;border-radius:10px;letter-spacing:0.3px;box-shadow:0 8px 24px rgba(139,92,246,0.45);">
+      Reset My Password &rarr;
+    </a>
+  </div>
+
+  <!-- Warning box -->
+  <div style="background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.22);border-radius:10px;padding:16px 20px;margin-bottom:24px;">
+    <p style="margin:0;color:#fbbf24;font-size:13px;line-height:1.65;">
+      <strong>&#9200; This link expires in 30 minutes.</strong><br>
+      If you did not request a password reset, you can safely ignore this email &mdash; your password will not change.
+    </p>
+  </div>
+
+  <!-- Manual link -->
+  <p style="color:#6b7280;font-size:11.5px;line-height:1.6;margin:0;">
+    If the button above does not work, paste this URL into your browser:<br>
+    <span style="color:#8b5cf6;word-break:break-all;">${resetUrl}</span>
+  </p>
+</td></tr>
+
+<!-- Divider -->
+<tr><td style="padding:0 40px;"><div style="border-top:1px solid rgba(255,255,255,0.06);"></div></td></tr>
+
+<!-- Footer -->
+<tr><td style="padding:22px 40px 34px;text-align:center;">
+  <p style="margin:0 0 5px;color:#4b5563;font-size:11.5px;line-height:1.7;">
+    ToyzGuru &nbsp;|&nbsp; 601, TNR Grandilla, Street 4, Road no. 29, Neknampur, Hyderabad &ndash; 500089<br>
+    <a href="mailto:support@toyzguru.in" style="color:#8b5cf6;text-decoration:none;">support@toyzguru.in</a>
+    &nbsp;|&nbsp; Ph: 9527652118
+  </p>
+  <p style="margin:6px 0 0;color:#374151;font-size:11px;">&copy; 2025 ToyzGuru. All rights reserved.</p>
+</td></tr>
+
+</table>
+</td></tr>
+</table>
+</body>
+</html>`;
+
+        // Send email via server
+        await sendEmailViaServer({
+          to: email,
+          subject: "Reset Your ToyzGuru Password",
+          html: resetEmailHtml,
+          text: `Hi ${customerName},\n\nYou requested a password reset for your ToyzGuru account.\n\nReset link (expires in 30 minutes):\n${resetUrl}\n\nIf you did not request this, ignore this email.\n\nToyzGuru Support\nsupport@toyzguru.in | Ph: 9527652118`
+        });
+
+        // Hide form, show "check your inbox" confirmation
+        authForgotPasswordForm.reset();
+        authForgotPasswordForm.style.display = "none";
+
+        let confirmPanel = document.getElementById("forgot-pw-sent-panel");
+        if (!confirmPanel) {
+          confirmPanel = document.createElement("div");
+          confirmPanel.id = "forgot-pw-sent-panel";
+          authForgotPasswordForm.parentNode.insertBefore(confirmPanel, authForgotPasswordForm.nextSibling);
+        }
+        confirmPanel.style.cssText = "text-align:center;padding:1rem 0;";
+        confirmPanel.innerHTML = `
+          <div style="font-size:52px;margin-bottom:1rem;">&#128140;</div>
+          <h3 style="margin:0 0 0.6rem;font-size:1.3rem;color:var(--text-primary);font-family:'Space Grotesk',sans-serif;">Check Your Inbox</h3>
+          <p style="color:var(--text-secondary);font-size:0.88rem;line-height:1.65;margin:0 0 1.5rem;">
+            A password reset link has been sent to<br>
+            <strong style="color:var(--color-brand);">${email}</strong><br><br>
+            Click the link in the email to set your new password.<br>
+            <span style="font-size:0.78rem;opacity:0.65;">Link expires in 30 minutes. Check your spam folder if not found.</span>
+          </p>
+          <button type="button" id="forgot-back-to-signin-btn"
+            style="padding:0.5rem 1.4rem;font-size:0.85rem;background:transparent;border:1px solid var(--glass-border);border-radius:6px;color:var(--text-secondary);cursor:pointer;transition:all 0.2s;">
+            &larr; Back to Sign In
+          </button>
+        `;
+        confirmPanel.style.display = "block";
+        document.getElementById("forgot-back-to-signin-btn").addEventListener("click", () => {
+          confirmPanel.style.display = "none";
+          authForgotPasswordForm.style.display = "block";
+          authForgotPasswordForm.style.display = "none";
+          authSigninForm.style.display = "block";
+        });
+
+      } catch (err) {
+        console.error("Password reset email error:", err);
+        showToast("Email Failed", "Could not send reset email. Please ensure the email server is running (email-server/server.py on port 3001).", "danger");
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Send Reset Link';
+        }
+      }
     });
   }
 
@@ -3922,6 +4090,13 @@ function setupEventListeners() {
           }
 
           localStorage.removeItem("toyzguru_reset_email");
+
+          // Clear the reset token to prevent reuse
+          if (resetEmail) {
+            const resetTokens = JSON.parse(localStorage.getItem("toyzguru_reset_tokens") || "{}");
+            delete resetTokens[resetEmail.toLowerCase()];
+            localStorage.setItem("toyzguru_reset_tokens", JSON.stringify(resetTokens));
+          }
 
           // Sign the user out so they must log in fresh with the new password
           localStorage.removeItem("toyzguru_mock_session");
