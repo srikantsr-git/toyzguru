@@ -1143,12 +1143,13 @@
                     placeholder="email@example.com" autocomplete="off">
                 </div>
                 <div class="form-group">
-                  <div style="display: flex; justify-content: space-between;">
-                    <label class="form-label">Password *</label>
-                    <a href="#" id="forgot-password-link"
-                      style="font-size: 0.8rem; color: var(--color-brand); text-decoration: none;">Forgot Password?</a>
-                  </div>
+                  <label class="form-label">Password *</label>
                   <input type="password" required class="form-input" id="auth-signin-password" placeholder="••••••••" autocomplete="new-password">
+                  <div style="text-align: right; margin-top: 0.45rem;">
+                    <a href="#" id="forgot-password-link"
+                      style="font-size: 0.8rem; color: var(--color-brand); text-decoration: none; transition: opacity 0.2s;"
+                      onmouseover="this.style.opacity='0.75'" onmouseout="this.style.opacity='1'">Forgot Password?</a>
+                  </div>
                 </div>
               </div>
               <button type="submit" class="checkout-btn" style="margin-top: 2rem; width: 100%;">Sign In <i
