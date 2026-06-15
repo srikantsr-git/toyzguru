@@ -1150,7 +1150,7 @@ async function sendOrderConfirmationEmail(order) {
       <div style="display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap;">
         <div style="flex: 1; min-width: 180px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; padding: 1rem;">
           <p style="margin: 0 0 0.3rem 0; color: #6b7280; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.07em; font-weight: 600;">Shipping To</p>
-          <p style="margin: 0; color: #e5e7eb; font-size: 0.88rem; line-height: 1.5;">${order.address || order.shipping_address || "—"}</p>
+          <p style="margin: 0; color: #e5e7eb; font-size: 0.88rem; line-height: 1.5;">${(order.address || order.shipping_address || "—").split(" | Txn ID: ")[0]}</p>
         </div>
         <div style="flex: 1; min-width: 180px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; padding: 1rem;">
           <p style="margin: 0 0 0.3rem 0; color: #6b7280; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.07em; font-weight: 600;">Est. Delivery</p>
@@ -1422,6 +1422,9 @@ function generateOrderReceiptHTML(order) {
     const invoiceDate = new Date(order.date || Date.now()).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
     const custName = order.customer_name || order.name || order.email || 'Customer';
     const method = (order.payment_method || order.method || 'Online').toUpperCase();
+    const addressParts = (order.address || '').split(" | Txn ID: ");
+    const cleanAddress = addressParts[0] || 'Address not recorded';
+    const transactionId = addressParts[1] || order.receipt_url || order.transaction_id || `TXN-${orderIdStr.replace('TG-', '')}`;
     const hsnCode = '9505';
     const gstin = 'N/A';
 
@@ -1549,6 +1552,7 @@ function generateOrderReceiptHTML(order) {
       <div class="inv-title">TAX INVOICE</div>
       <div class="inv-sub">Invoice No: <strong>${invoiceNum}</strong></div>
       <div class="inv-sub">Date: ${invoiceDate}</div>
+      <div class="inv-sub">Txn ID: <strong>${transactionId}</strong></div>
     </div>
   </div>
 
@@ -1566,7 +1570,7 @@ function generateOrderReceiptHTML(order) {
     <div class="party">
       <div class="party-label">Bill To / Ship To</div>
       <div class="party-name">${custName}</div>
-      <div class="party-detail">${(order.address || 'Address not recorded').replace(/\n/g, '<br>')}<br>Email: ${order.email || '&mdash;'}</div>
+      <div class="party-detail">${cleanAddress.replace(/\n/g, '<br>')}<br>Email: ${order.email || '&mdash;'}</div>
     </div>
   </div>
 
@@ -1574,6 +1578,7 @@ function generateOrderReceiptHTML(order) {
     <span>Order ID: <strong>${orderIdStr}</strong></span>
     <span>Date: <strong>${invoiceDate}</strong></span>
     <span>Payment: <strong>${method}</strong></span>
+    <span>Txn ID: <strong>${transactionId}</strong></span>
     <span>Status: <strong>PAID</strong></span>
   </div>
 
@@ -2998,15 +3003,24 @@ async function handleCheckoutSubmit(e) {
       date: new Date().toISOString()
     };
 
-    const executeSaveOrder = async () => {
+    const executeSaveOrder = async (rzpPaymentId = null) => {
+      const txnId = rzpPaymentId || `TXN-DEMO-${Math.floor(100000 + Math.random() * 900000)}`;
+      newOrderObj.receipt_url = txnId;
+      newOrderObj.transaction_id = txnId;
+      newOrderObj.address = `${newOrderObj.address} | Txn ID: ${txnId}`;
+
       // 1. Save order (Supabase if available, localStorage fallback always)
       if (supabase) {
-        const { error: orderError } = await supabase.from('orders').insert(newOrderObj);
+        const dbOrderObj = { ...newOrderObj };
+        delete dbOrderObj.transaction_id; // prevent column does not exist error on Supabase
+        delete dbOrderObj.receipt_url; // prevent column does not exist error on Supabase since receipt_url doesn't exist remotely
+
+        const { error: orderError } = await supabase.from('orders').insert(dbOrderObj);
         if (orderError) {
           // If foreign key constraint on user_id fails (since mock users aren't in auth.users), retry with user_id: null
           if (orderError.code === '23503' || (orderError.message && orderError.message.includes("user_id"))) {
             console.warn("Bypassed foreign key constraint on orders. Bypassing user_id linkage.");
-            const fallbackOrder = { ...newOrderObj, user_id: null };
+            const fallbackOrder = { ...dbOrderObj, user_id: null };
             const { error: fallbackError } = await supabase.from('orders').insert(fallbackOrder);
             if (fallbackError) throw fallbackError;
           } else {
@@ -3115,6 +3129,7 @@ async function handleCheckoutSubmit(e) {
       document.getElementById("success-est-delivery").textContent = new Date(Date.now() + 8 * 24 * 60 * 60 * 1000).toLocaleDateString("en-US", { month: 'long', day: 'numeric', year: 'numeric' });
       document.getElementById("success-shipping-address").textContent = fullAddress;
       document.getElementById("success-total-paid").textContent = `₹${total.toFixed(2)}`;
+      document.getElementById("success-txn-id").textContent = txnId;
 
       // Always show the View Receipt button — HTML receipt generated on demand
       const receiptWrap = document.getElementById('success-receipt-wrap');
@@ -3177,7 +3192,7 @@ async function handleCheckoutSubmit(e) {
             loaderDesc.textContent = "Payment successful. Finalizing your order...";
           }
           try {
-            await executeSaveOrder();
+            await executeSaveOrder(response.razorpay_payment_id);
           } catch (e) {
             await showCustomDialog("Checkout Failed", (e.message || e) + "\n\nIf you were charged, please contact our support desk at support@toyzguru.in with your transaction details.", "danger");
             paymentForm.style.display = "block";

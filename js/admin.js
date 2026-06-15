@@ -773,6 +773,17 @@ async function adminShowOrderDetailsTrigger(orderId) {
         </div>
       </div>
 
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem;">
+        <div>
+          <strong style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase;">Payment Method:</strong>
+          <div style="font-size: 0.95rem; margin-top: 0.25rem; text-transform: uppercase;">${(order.payment_method || order.method || 'Online')}</div>
+        </div>
+        <div>
+          <strong style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase;">Transaction ID:</strong>
+          <div style="font-family: monospace; font-size: 0.95rem; margin-top: 0.25rem;">${order.address.includes(" | Txn ID: ") ? order.address.split(" | Txn ID: ")[1] : (order.receipt_url || order.transaction_id || ('TXN-' + order.id.replace('TG-', '')))}</div>
+        </div>
+      </div>
+
       <div style="border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem;">
         <strong style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase; display: block; margin-bottom: 0.5rem;">Purchased Items:</strong>
         <div style="max-height: 180px; overflow-y: auto;">
@@ -783,7 +794,7 @@ async function adminShowOrderDetailsTrigger(orderId) {
       <div style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 1rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem;">
         <div>
           <strong style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase;">Delivery Address:</strong>
-          <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem; line-height: 1.4;">${order.address}</div>
+          <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem; line-height: 1.4;">${order.address.split(" | Txn ID: ")[0]}</div>
         </div>
         <div style="display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.85rem;">
           <div style="display: flex; justify-content: space-between;">
