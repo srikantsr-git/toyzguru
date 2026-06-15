@@ -3533,6 +3533,22 @@ async function handleCheckoutSubmit(e) {
       isCouponApplied = false;
       activeCoupon = null;
 
+      // Automatically sign out user upon payment receipt and order completion
+      try {
+        if (supabase) {
+          await supabase.auth.signOut();
+        }
+      } catch (err) {
+        console.warn("Autosignout error:", err);
+      }
+      userState = null;
+      ordersState = [];
+      localStorage.removeItem("toyzguru_user");
+      localStorage.removeItem("toyzguru_mock_session");
+      localStorage.removeItem("toyzguru_cart");
+      localStorage.removeItem("toyzguru_orders");
+      updateProfileAvatar();
+
       // Refresh memory states
       if (supabase) {
         if (userId) {
