@@ -1617,7 +1617,7 @@ function setupAdminEventListeners() {
   // Admin login form submit
   const loginForm = document.getElementById("admin-login-form");
   if (loginForm) {
-    loginForm.addEventListener("submit", (e) => {
+    loginForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       const email = document.getElementById("admin-login-email").value.trim();
       const password = document.getElementById("admin-login-password").value;
