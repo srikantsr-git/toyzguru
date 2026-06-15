@@ -331,6 +331,25 @@ async function adminDeleteProductTrigger(productId) {
   }
 }
 
+function adminPopulateProductTaxCategoryDropdown(selectedValue) {
+  const selectEl = document.getElementById("admin-form-tax-category");
+  if (!selectEl) return;
+  
+  const activeRates = taxRatesState.filter(r => r.is_active);
+  selectEl.innerHTML = activeRates.map(r => `<option value="${r.id}">${r.name} (${r.total_tax_pct}%)</option>`).join("");
+  
+  if (selectedValue) {
+    selectEl.value = selectedValue;
+  } else if (activeRates.length > 0) {
+    // If no explicit category select, and window.storeSettings default category is set, use it
+    if (window.storeSettings && window.storeSettings.default_tax_category_id) {
+      selectEl.value = window.storeSettings.default_tax_category_id;
+    } else {
+      selectEl.selectedIndex = 0;
+    }
+  }
+}
+
 // Open modal for editing product details
 function adminEditProductTrigger(productId) {
   const products = window.productsState || [];
@@ -352,6 +371,12 @@ function adminEditProductTrigger(productId) {
   document.getElementById("admin-form-stock").value = product.stock;
   document.getElementById("admin-form-image").value = product.image;
   document.getElementById("admin-form-desc").value = product.description;
+
+  // Populate dynamic product GST tax categories
+  adminPopulateProductTaxCategoryDropdown(product.gst_category_id);
+  document.getElementById("admin-form-tax-applicable").value = product.tax_applicable === false ? "no" : "yes";
+  document.getElementById("admin-form-hsn-code").value = product.hsn_code || "";
+  document.getElementById("admin-form-sac-code").value = product.sac_code || "";
 
   // Show image preview
   const previewContainer = document.getElementById("admin-form-image-preview-container");
@@ -397,6 +422,12 @@ function adminCreateProductTrigger() {
   document.getElementById("admin-form-image").value = "";
   document.getElementById("admin-form-options").value = "";
   document.getElementById("admin-form-specs-json").value = "";
+
+  // Set default product GST tax configurations
+  adminPopulateProductTaxCategoryDropdown("");
+  document.getElementById("admin-form-tax-applicable").value = "yes";
+  document.getElementById("admin-form-hsn-code").value = "";
+  document.getElementById("admin-form-sac-code").value = "";
 
   // Reset file upload and preview
   const fileInput = document.getElementById("admin-form-image-file");
@@ -456,6 +487,11 @@ async function handleAdminProductFormSubmit(e) {
     if (k2 && v2) specs[k2] = v2;
   }
 
+  const tax_applicable = document.getElementById("admin-form-tax-applicable").value === "yes";
+  const gst_category_id = document.getElementById("admin-form-tax-category").value || null;
+  const hsn_code = document.getElementById("admin-form-hsn-code").value.trim() || null;
+  const sac_code = document.getElementById("admin-form-sac-code").value.trim() || null;
+
   try {
     if (supabase) {
       if (adminEditingProductId) {
@@ -472,7 +508,11 @@ async function handleAdminProductFormSubmit(e) {
           rating: rating,
           reviews_count: reviews_count,
           options: options,
-          specs: specs
+          specs: specs,
+          tax_applicable: tax_applicable,
+          gst_category_id: gst_category_id,
+          hsn_code: hsn_code,
+          sac_code: sac_code
         };
 
         const { error } = await supabase.from('products').update(updateData).eq('id', adminEditingProductId);
@@ -499,7 +539,11 @@ async function handleAdminProductFormSubmit(e) {
           description: desc,
           options: options,
           specs: specs,
-          stock: stock
+          stock: stock,
+          tax_applicable: tax_applicable,
+          gst_category_id: gst_category_id,
+          hsn_code: hsn_code,
+          sac_code: sac_code
         };
 
         const { error } = await supabase.from('products').insert(newProd);
@@ -530,6 +574,10 @@ async function handleAdminProductFormSubmit(e) {
           match.reviewsCount = reviews_count;
           match.options = options;
           match.specs = specs;
+          match.tax_applicable = tax_applicable;
+          match.gst_category_id = gst_category_id;
+          match.hsn_code = hsn_code;
+          match.sac_code = sac_code;
         }
         localStorage.setItem("toyzguru_products", JSON.stringify(products));
         if (window.toyzToast) {
@@ -555,7 +603,11 @@ async function handleAdminProductFormSubmit(e) {
           description: desc,
           options: options,
           specs: specs,
-          stock: stock
+          stock: stock,
+          tax_applicable: tax_applicable,
+          gst_category_id: gst_category_id,
+          hsn_code: hsn_code,
+          sac_code: sac_code
         };
 
         products.push(newProd);
@@ -2578,35 +2630,157 @@ window.handleAdminCouponFormSubmit = handleAdminCouponFormSubmit;
 
 // ================= TAX CONFIGURATION =================
 
-async function adminRenderTaxPanel() {
-  if (!supabase) return;
-  try {
-    const { data, error } = await supabase.from('store_settings').select('*').eq('id', 1).single();
-    if (error && error.code !== 'PGRST116') throw error;
+// taxRatesState is declared globally in js/app.js
 
-    if (data) {
-      document.getElementById('admin-tax-enabled').checked = data.tax_enabled;
-      document.getElementById('admin-tax-sgst').value = data.sgst_pct;
-      document.getElementById('admin-tax-igst').value = data.igst_pct;
-      const sgst = parseFloat(data.sgst_pct) || 0;
-      const igst = parseFloat(data.igst_pct) || 0;
-      document.getElementById('admin-tax-cgst').value = (sgst + igst).toFixed(2);
+async function adminFetchTaxRates() {
+  if (supabase) {
+    try {
+      const { data: remoteRates, error } = await supabase.from('gst_tax_rates').select('*').order('created_at', { ascending: false });
+      if (error) throw error;
+      taxRatesState = remoteRates || [];
+    } catch (err) {
+      console.warn("Failed to fetch tax rates from Supabase, falling back to local storage:", err);
+      taxRatesState = JSON.parse(localStorage.getItem("toyzguru_tax_rates")) || [];
     }
-  } catch (err) {
-    console.error("Error fetching tax settings:", err);
-    adminShowToast("Error", "Could not load Tax Settings", "danger");
+  } else {
+    taxRatesState = JSON.parse(localStorage.getItem("toyzguru_tax_rates")) || [];
+  }
+  localStorage.setItem("toyzguru_tax_rates", JSON.stringify(taxRatesState));
+}
+
+async function adminSaveTaxRates() {
+  localStorage.setItem("toyzguru_tax_rates", JSON.stringify(taxRatesState));
+  if (supabase) {
+    try {
+      const { error } = await supabase.from('gst_tax_rates').upsert(taxRatesState);
+      if (error) console.error("Error upserting tax rates to Supabase:", error);
+    } catch (err) {
+      console.error(err);
+    }
   }
 }
 
-document.getElementById('admin-tax-form').addEventListener('submit', async (e) => {
+async function adminRenderTaxPanel() {
+  if (!adminAuthenticated) return;
+  
+  // 1. Fetch tax rates and render table
+  await adminFetchTaxRates();
+  adminRenderTaxRatesTable();
+
+  // 2. Load GST Configuration Settings
+  await adminLoadGSTSettings();
+}
+
+async function adminLoadGSTSettings() {
+  // Populate business state select in GST Configuration Settings
+  const stateSelect = document.getElementById("admin-gst-business-state");
+  if (stateSelect) {
+    const states = window.stateChargesState || [];
+    stateSelect.innerHTML = states.map(s => `<option value="${s.state_name}">${s.state_name}</option>`).join("");
+  }
+
+  // Populate Default Tax Category dropdown
+  const defaultCategorySelect = document.getElementById("admin-gst-default-category");
+  if (defaultCategorySelect) {
+    const activeRates = taxRatesState.filter(r => r.is_active);
+    defaultCategorySelect.innerHTML = `<option value="">No Default</option>` + activeRates.map(r => `<option value="${r.id}">${r.name}</option>`).join("");
+  }
+
+  // Fetch settings from supabase/local
+  if (supabase) {
+    try {
+      const { data, error } = await supabase.from('store_settings').select('*').eq('id', 1).single();
+      if (error && error.code !== 'PGRST116') throw error;
+      
+      if (data) {
+        const gstEnabledEl = document.getElementById('admin-gst-enabled');
+        const sellerGstinEl = document.getElementById('admin-gst-seller-gstin');
+        const displayInclusiveEl = document.getElementById('admin-gst-display-inclusive');
+        const displayExclusiveEl = document.getElementById('admin-gst-display-exclusive');
+
+        if (gstEnabledEl) gstEnabledEl.checked = data.gst_enabled !== false;
+        if (sellerGstinEl) sellerGstinEl.value = data.seller_gstin || "";
+        if (data.business_state && stateSelect) stateSelect.value = data.business_state;
+        if (data.default_tax_category_id && defaultCategorySelect) defaultCategorySelect.value = data.default_tax_category_id;
+        if (displayInclusiveEl) displayInclusiveEl.checked = data.display_prices_including_tax !== false;
+        if (displayExclusiveEl) displayExclusiveEl.checked = !!data.display_prices_excluding_tax;
+        
+        // Also update window storeSettings
+        window.storeSettings = {
+          ...window.storeSettings,
+          gst_enabled: data.gst_enabled !== false,
+          seller_gstin: data.seller_gstin || "",
+          business_state: data.business_state || "Telangana",
+          default_tax_category_id: data.default_tax_category_id || "",
+          display_prices_including_tax: data.display_prices_including_tax !== false,
+          display_prices_excluding_tax: !!data.display_prices_excluding_tax
+        };
+      }
+    } catch (err) {
+      console.error("Error loading GST settings:", err);
+    }
+  }
+}
+
+function adminRenderTaxRatesTable() {
+  const tableBody = document.getElementById("admin-tax-rates-body");
+  if (!tableBody) return;
+
+  if (taxRatesState.length === 0) {
+    tableBody.innerHTML = `
+      <tr>
+        <td colspan="6" style="text-align: center; color: var(--text-secondary); padding: 1.5rem;">
+          No tax categories registered.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tableBody.innerHTML = taxRatesState.map(r => {
+    const statusClass = r.is_active ? "status-delivered" : "status-cancelled";
+    const statusText = r.is_active ? "ACTIVE" : "INACTIVE";
+    const toggleTitle = r.is_active ? "Deactivate Rate" : "Activate Rate";
+
+    return `
+      <tr>
+        <td style="font-weight: 600;">${r.name}</td>
+        <td style="font-family: monospace; font-size: 0.85rem;">${r.code}</td>
+        <td style="font-size: 0.85rem;">${r.tax_type}</td>
+        <td style="font-weight: 700; color: var(--text-primary);">${r.total_tax_pct}%</td>
+        <td>
+          <span class="order-status-badge ${statusClass}" style="cursor: pointer;" onclick="adminToggleTaxRateStatus('${r.id}')" title="${toggleTitle}">
+            ${statusText}
+          </span>
+        </td>
+        <td>
+          <div class="crud-btn-wrap">
+            <button class="crud-btn crud-edit" onclick="adminEditTaxRateTrigger('${r.id}')" title="Edit Tax Rate">
+              <i data-feather="edit" style="width: 14px; height: 14px;"></i>
+            </button>
+            <button class="crud-btn crud-delete" onclick="adminDeleteTaxRateTrigger('${r.id}')" title="Delete Tax Rate">
+              <i data-feather="trash-2" style="width: 14px; height: 14px;"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join("");
+
+  feather.replace();
+}
+
+async function handleGSTSettingsSubmit(e) {
   e.preventDefault();
   if (!supabase) return;
 
   const payload = {
-    tax_enabled: document.getElementById('admin-tax-enabled').checked,
-    sgst_pct: parseFloat(document.getElementById('admin-tax-sgst').value),
-    cgst_pct: parseFloat(document.getElementById('admin-tax-cgst').value),
-    igst_pct: parseFloat(document.getElementById('admin-tax-igst').value),
+    gst_enabled: document.getElementById('admin-gst-enabled').checked,
+    seller_gstin: document.getElementById('admin-gst-seller-gstin').value.trim(),
+    business_state: document.getElementById('admin-gst-business-state').value,
+    default_tax_category_id: document.getElementById('admin-gst-default-category').value || null,
+    display_prices_including_tax: document.getElementById('admin-gst-display-inclusive').checked,
+    display_prices_excluding_tax: document.getElementById('admin-gst-display-exclusive').checked,
     updated_at: new Date().toISOString()
   };
 
@@ -2614,23 +2788,251 @@ document.getElementById('admin-tax-form').addEventListener('submit', async (e) =
     const { error } = await supabase.from('store_settings').upsert({ id: 1, ...payload });
     if (error) throw error;
 
-    window.storeSettings = payload;
-    adminShowToast("Settings Saved", "Tax Configuration updated successfully", "success");
+    window.storeSettings = {
+      ...window.storeSettings,
+      ...payload
+    };
+    adminShowToast("Settings Saved", "GST Configuration updated successfully", "success");
   } catch (err) {
-    console.error("Error saving tax settings:", err);
-    adminShowToast("Save Failed", "Could not save Tax Settings", "danger");
+    console.error("Error saving GST settings:", err);
+    adminShowToast("Save Failed", "Could not save GST Configuration settings", "danger");
   }
-});
-
-window.adminRenderTaxPanel = adminRenderTaxPanel;
-
-function adminUpdateCGSTField() {
-  const sgst = parseFloat(document.getElementById('admin-tax-sgst').value) || 0;
-  const igst = parseFloat(document.getElementById('admin-tax-igst').value) || 0;
-  document.getElementById('admin-tax-cgst').value = (sgst + igst).toFixed(2);
 }
-document.getElementById('admin-tax-sgst').addEventListener('input', adminUpdateCGSTField);
-document.getElementById('admin-tax-igst').addEventListener('input', adminUpdateCGSTField);
+
+function adminCreateTaxRateTrigger() {
+  document.getElementById("admin-form-tax-rate-id").value = "";
+  document.getElementById("admin-tax-rate-modal-title").textContent = "Create New Tax Rate";
+  document.getElementById("admin-tax-rate-form").reset();
+  document.getElementById("admin-tax-rate-active").checked = true;
+
+  document.getElementById("admin-tax-rate-modal-overlay").classList.add("active");
+  document.body.style.overflow = "hidden";
+}
+
+function adminEditTaxRateTrigger(rateId) {
+  const rateObj = taxRatesState.find(r => r.id === rateId);
+  if (!rateObj) return;
+
+  document.getElementById("admin-form-tax-rate-id").value = rateObj.id;
+  document.getElementById("admin-tax-rate-modal-title").textContent = `Edit Tax Rate: ${rateObj.name}`;
+  document.getElementById("admin-tax-rate-name").value = rateObj.name;
+  document.getElementById("admin-tax-rate-active").checked = rateObj.is_active;
+  document.getElementById("admin-tax-rate-code").value = rateObj.code;
+  document.getElementById("admin-tax-rate-type").value = rateObj.tax_type;
+  document.getElementById("admin-tax-rate-cgst").value = Number(rateObj.cgst_pct).toFixed(2);
+  document.getElementById("admin-tax-rate-sgst").value = Number(rateObj.sgst_pct).toFixed(2);
+  document.getElementById("admin-tax-rate-igst").value = Number(rateObj.igst_pct).toFixed(2);
+  document.getElementById("admin-tax-rate-total").value = Number(rateObj.total_tax_pct).toFixed(2);
+  document.getElementById("admin-tax-rate-description").value = rateObj.description || "";
+
+  document.getElementById("admin-tax-rate-modal-overlay").classList.add("active");
+  document.body.style.overflow = "hidden";
+}
+
+function adminCloseTaxRateModal() {
+  document.getElementById("admin-tax-rate-modal-overlay").classList.remove("active");
+  document.body.style.overflow = "";
+}
+
+async function handleTaxRateSubmit(e) {
+  e.preventDefault();
+
+  const rateId = document.getElementById("admin-form-tax-rate-id").value;
+  const name = document.getElementById("admin-tax-rate-name").value.trim();
+  const code = document.getElementById("admin-tax-rate-code").value.trim().toUpperCase();
+  const is_active = document.getElementById("admin-tax-rate-active").checked;
+  const tax_type = document.getElementById("admin-tax-rate-type").value;
+  const cgst_pct = parseFloat(document.getElementById("admin-tax-rate-cgst").value) || 0;
+  const sgst_pct = parseFloat(document.getElementById("admin-tax-rate-sgst").value) || 0;
+  const igst_pct = parseFloat(document.getElementById("admin-tax-rate-igst").value) || 0;
+  const total_tax_pct = parseFloat(document.getElementById("admin-tax-rate-total").value) || 0;
+  const description = document.getElementById("admin-tax-rate-description").value.trim();
+
+  if (!code) {
+    adminShowToast("Validation Error", "Tax Code is required", "warning");
+    return;
+  }
+
+  const ratePayload = {
+    name,
+    code,
+    is_active,
+    tax_type,
+    cgst_pct,
+    sgst_pct,
+    igst_pct,
+    total_tax_pct,
+    description
+  };
+
+  try {
+    if (rateId) {
+      // Edit mode
+      ratePayload.id = rateId;
+      if (supabase) {
+        const { error } = await supabase.from('gst_tax_rates').update(ratePayload).eq('id', rateId);
+        if (error) throw error;
+      }
+      const matchIdx = taxRatesState.findIndex(r => r.id === rateId);
+      if (matchIdx >= 0) {
+        taxRatesState[matchIdx] = { ...taxRatesState[matchIdx], ...ratePayload };
+      }
+      adminShowToast("Tax Rate Saved", `Updated rate details: ${name}`, "success");
+    } else {
+      // Create mode
+      const duplicate = taxRatesState.some(r => r.code === code);
+      if (duplicate) {
+        adminShowToast("Duplicate Code", `A tax category with code "${code}" already exists.`, "warning");
+        return;
+      }
+
+      if (supabase) {
+        const { data, error } = await supabase.from('gst_tax_rates').insert(ratePayload).select();
+        if (error) throw error;
+        if (data && data[0]) {
+          taxRatesState.push(data[0]);
+        } else {
+          taxRatesState.push({ id: `tr_${Math.floor(1000 + Math.random() * 9000)}`, ...ratePayload });
+        }
+      } else {
+        taxRatesState.push({ id: `tr_${Math.floor(1000 + Math.random() * 9000)}`, ...ratePayload });
+      }
+      adminShowToast("Tax Rate Created", `Added tax category: ${name}`, "success");
+    }
+
+    await adminSaveTaxRates();
+    adminCloseTaxRateModal();
+    adminRenderTaxRatesTable();
+    
+    // Refresh GST Configuration Default Tax Category Dropdown
+    const defaultCategorySelect = document.getElementById("admin-gst-default-category");
+    if (defaultCategorySelect) {
+      const activeRates = taxRatesState.filter(r => r.is_active);
+      const curVal = defaultCategorySelect.value;
+      defaultCategorySelect.innerHTML = `<option value="">No Default</option>` + activeRates.map(r => `<option value="${r.id}">${r.name}</option>`).join("");
+      defaultCategorySelect.value = curVal;
+    }
+  } catch (err) {
+    console.error("Failed to save tax rate details:", err);
+    await window.showCustomDialog("Save Failed", err.message || "Failed to save tax rate details.", "danger");
+  }
+}
+
+async function adminToggleTaxRateStatus(rateId) {
+  const rateObj = taxRatesState.find(r => r.id === rateId);
+  if (!rateObj) return;
+
+  const newStatus = !rateObj.is_active;
+  if (supabase) {
+    try {
+      const { error } = await supabase.from('gst_tax_rates').update({ is_active: newStatus }).eq('id', rateId);
+      if (error) throw error;
+    } catch (err) {
+      console.error("Supabase toggle status failed:", err);
+      const errMsg = err.message || "Failed to update tax status in database.";
+      await window.showCustomDialog("Status Update Failed", errMsg, "danger");
+      return;
+    }
+  }
+
+  rateObj.is_active = newStatus;
+  await adminSaveTaxRates();
+  adminShowToast("Status Updated", `Tax rate ${rateObj.name} is now ${newStatus ? "ACTIVE" : "INACTIVE"}.`, "success");
+  adminRenderTaxRatesTable();
+}
+
+async function adminDeleteTaxRateTrigger(rateId) {
+  const rateObj = taxRatesState.find(r => r.id === rateId);
+  if (!rateObj) return;
+
+  const isConfirmed = await window.showCustomDialog("Delete Tax Rate", `Are you sure you want to delete tax rate "${rateObj.name}"?\n\nProducts using this category will fall back to default tax settings.`, "danger", true);
+
+  if (isConfirmed) {
+    try {
+      if (supabase) {
+        const { error } = await supabase.from('gst_tax_rates').delete().eq('id', rateId);
+        if (error) throw error;
+      }
+      taxRatesState = taxRatesState.filter(r => r.id !== rateId);
+      await adminSaveTaxRates();
+      adminShowToast("Tax Rate Deleted", `Removed tax rate: ${rateObj.name}`, "danger");
+      adminRenderTaxRatesTable();
+    } catch (err) {
+      await window.showCustomDialog("Delete Failed", err.message || "Failed to remove tax rate.", "danger");
+    }
+  }
+}
+
+// Global Event Registration helpers
+function setupAdminGstEventListeners() {
+  const gstSettingsForm = document.getElementById("admin-gst-settings-form");
+  if (gstSettingsForm) {
+    gstSettingsForm.removeEventListener("submit", handleGSTSettingsSubmit);
+    gstSettingsForm.addEventListener("submit", handleGSTSettingsSubmit);
+  }
+
+  const taxRateForm = document.getElementById("admin-tax-rate-form");
+  if (taxRateForm) {
+    taxRateForm.removeEventListener("submit", handleTaxRateSubmit);
+    taxRateForm.addEventListener("submit", handleTaxRateSubmit);
+  }
+
+  const addTaxRateBtn = document.getElementById("admin-add-tax-rate-btn");
+  if (addTaxRateBtn) {
+    addTaxRateBtn.removeEventListener("click", adminCreateTaxRateTrigger);
+    addTaxRateBtn.addEventListener("click", adminCreateTaxRateTrigger);
+  }
+
+  const closeTaxRateModalBtn = document.getElementById("close-admin-tax-rate-modal-btn");
+  if (closeTaxRateModalBtn) {
+    closeTaxRateModalBtn.removeEventListener("click", adminCloseTaxRateModal);
+    closeTaxRateModalBtn.addEventListener("click", adminCloseTaxRateModal);
+  }
+
+  const typeSelect = document.getElementById("admin-tax-rate-type");
+  if (typeSelect) {
+    typeSelect.addEventListener("change", (e) => {
+      const type = e.target.value;
+      let cgst = 0, sgst = 0, igst = 0, total = 0;
+      if (type === "GST 5%") {
+        cgst = 2.5; sgst = 2.5; igst = 5; total = 5;
+      } else if (type === "GST 12%") {
+        cgst = 6; sgst = 6; igst = 12; total = 12;
+      } else if (type === "GST 18%") {
+        cgst = 9; sgst = 9; igst = 18; total = 18;
+      }
+      document.getElementById("admin-tax-rate-cgst").value = cgst.toFixed(2);
+      document.getElementById("admin-tax-rate-sgst").value = sgst.toFixed(2);
+      document.getElementById("admin-tax-rate-igst").value = igst.toFixed(2);
+      document.getElementById("admin-tax-rate-total").value = total.toFixed(2);
+    });
+  }
+
+  const cgstInput = document.getElementById("admin-tax-rate-cgst");
+  const sgstInput = document.getElementById("admin-tax-rate-sgst");
+  const igstInput = document.getElementById("admin-tax-rate-igst");
+  
+  const updateTotalField = () => {
+    const cgst = parseFloat(cgstInput.value) || 0;
+    const sgst = parseFloat(sgstInput.value) || 0;
+    const igst = parseFloat(igstInput.value) || 0;
+    const total = igst > 0 ? igst : (cgst + sgst);
+    document.getElementById("admin-tax-rate-total").value = total.toFixed(2);
+  };
+
+  if (cgstInput) cgstInput.addEventListener("input", updateTotalField);
+  if (sgstInput) sgstInput.addEventListener("input", updateTotalField);
+  if (igstInput) igstInput.addEventListener("input", updateTotalField);
+}
+
+// Add setupAdminGstEventListeners to adminInit or event registration
+const oldSetupAdminEventListeners = setupAdminEventListeners;
+setupAdminEventListeners = function() {
+  if (typeof oldSetupAdminEventListeners === "function") {
+    oldSetupAdminEventListeners();
+  }
+  setupAdminGstEventListeners();
+};
 
 
 // ================= NEWSLETTER SUBSCRIBERS MANAGEMENT =================

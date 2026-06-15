@@ -30,6 +30,7 @@ let wishlistState = [];
 let stateChargesState = [];
 let couriersState = [];
 let storeSettings = { tax_enabled: false, sgst_pct: 0, cgst_pct: 0, igst_pct: 0 };
+let taxRatesState = [];
 
 // Expose states to the window object as live getter/setter properties
 Object.defineProperty(window, 'productsState', {
@@ -63,6 +64,10 @@ Object.defineProperty(window, 'couriersState', {
 Object.defineProperty(window, 'storeSettings', {
   get: () => storeSettings,
   set: (val) => { storeSettings = val; }
+});
+Object.defineProperty(window, 'taxRatesState', {
+  get: () => taxRatesState,
+  set: (val) => { taxRatesState = val; }
 });
 
 // Initial default user profile
@@ -494,21 +499,82 @@ async function initDatabase() {
   localStorage.setItem("toyzguru_couriers", JSON.stringify(couriersState));
 
   // Load store settings (tax configuration)
+  const defaultStoreSettings = {
+    id: 1,
+    seller_gstin: "36AAAAA1111A1Z1", // Telangana seller GSTIN seed
+    business_state: "Telangana",
+    default_tax_category_id: "1-18",
+    gst_enabled: true,
+    display_prices_including_tax: true,
+    display_prices_excluding_tax: false,
+    tax_enabled: true,
+    cgst_pct: 9.00,
+    sgst_pct: 9.00,
+    igst_pct: 18.00
+  };
+
   if (supabase) {
     try {
-      const { data: settings, error } = await supabase.from('store_settings').select('*').eq('id', 1).single();
+      const { data: settings, error } = await supabase.from('store_settings').select('*').eq('id', 1).maybeSingle();
       if (!error && settings) {
         storeSettings = {
-          ...settings,
-          sgst_pct: parseFloat(settings.sgst_pct) || 0,
-          cgst_pct: parseFloat(settings.cgst_pct) || 0,
-          igst_pct: parseFloat(settings.igst_pct) || 0
+          ...defaultStoreSettings,
+          ...settings
         };
+      } else {
+        const localSettings = localStorage.getItem("toyzguru_store_settings");
+        storeSettings = localSettings ? JSON.parse(localSettings) : defaultStoreSettings;
       }
     } catch (err) {
       console.warn("Could not load store settings:", err);
+      try {
+        storeSettings = JSON.parse(localStorage.getItem("toyzguru_store_settings")) || defaultStoreSettings;
+      } catch (e) {
+        storeSettings = defaultStoreSettings;
+      }
+    }
+  } else {
+    try {
+      storeSettings = JSON.parse(localStorage.getItem("toyzguru_store_settings")) || defaultStoreSettings;
+    } catch (e) {
+      storeSettings = defaultStoreSettings;
     }
   }
+  localStorage.setItem("toyzguru_store_settings", JSON.stringify(storeSettings));
+
+  // Load GST Tax Rates
+  const defaultTaxRates = [
+    { id: '1-0', name: 'No Tax (0%)', code: 'GST0', tax_type: 'GST 0%', cgst_pct: 0.00, sgst_pct: 0.00, igst_pct: 0.00, total_tax_pct: 0.00, is_active: true, description: 'Zero tax category' },
+    { id: '1-5', name: 'GST 5%', code: 'GST5', tax_type: 'GST 5%', cgst_pct: 2.50, sgst_pct: 2.50, igst_pct: 5.00, total_tax_pct: 5.00, is_active: true, description: 'GST 5% tax category' },
+    { id: '1-12', name: 'GST 12%', code: 'GST12', tax_type: 'GST 12%', cgst_pct: 6.00, sgst_pct: 6.00, igst_pct: 12.00, total_tax_pct: 12.00, is_active: true, description: 'GST 12% tax category' },
+    { id: '1-18', name: 'GST 18%', code: 'GST18', tax_type: 'GST 18%', cgst_pct: 9.00, sgst_pct: 9.00, igst_pct: 18.00, total_tax_pct: 18.00, is_active: true, description: 'GST 18% tax category' }
+  ];
+
+  if (supabase) {
+    try {
+      const { data: remoteRates, error } = await supabase.from('gst_tax_rates').select('*').order('created_at', { ascending: false });
+      if (!error && remoteRates && remoteRates.length > 0) {
+        taxRatesState = remoteRates;
+      } else {
+        const localRates = localStorage.getItem("toyzguru_tax_rates");
+        taxRatesState = localRates ? JSON.parse(localRates) : defaultTaxRates;
+      }
+    } catch (err) {
+      console.warn("Failed to fetch tax rates from Supabase, checking local storage:", err);
+      try {
+        taxRatesState = JSON.parse(localStorage.getItem("toyzguru_tax_rates")) || defaultTaxRates;
+      } catch (e) {
+        taxRatesState = defaultTaxRates;
+      }
+    }
+  } else {
+    try {
+      taxRatesState = JSON.parse(localStorage.getItem("toyzguru_tax_rates")) || defaultTaxRates;
+    } catch (e) {
+      taxRatesState = defaultTaxRates;
+    }
+  }
+  localStorage.setItem("toyzguru_tax_rates", JSON.stringify(taxRatesState));
 
   // Update DOM displays
   updateCartBadges();
@@ -1425,8 +1491,10 @@ function generateOrderReceiptHTML(order) {
     const addressParts = (order.address || '').split(" | Txn ID: ");
     const cleanAddress = addressParts[0] || 'Address not recorded';
     const transactionId = addressParts[1] || order.receipt_url || order.transaction_id || `TXN-${orderIdStr.replace('TG-', '')}`;
-    const hsnCode = '9505';
-    const gstin = 'N/A';
+
+    const sellerGstin = order.seller_gstin || storeSettings.seller_gstin || '36AAAAA1111A1Z1';
+    const buyerGstin = order.buyer_gstin || '';
+    const buyerGstinHTML = buyerGstin ? `<br><strong>GSTIN:</strong> ${buyerGstin}` : '';
 
     // Safely parse items regardless of string/array storage
     let items = [];
@@ -1436,10 +1504,22 @@ function generateOrderReceiptHTML(order) {
       try { items = JSON.parse(order.items); } catch (e) { items = []; }
     }
 
-    const taxPct = (window.storeSettings && window.storeSettings.tax_enabled) ? (window.storeSettings.cgst_pct || 0) : 0;
     const discountVal = parseFloat(order.discount) || 0;
     const shippingVal = parseFloat(order.shipping) || 0;
     const totalVal = parseFloat(order.total) || 0;
+
+    let orderCgst = order.cgst_amount !== undefined ? parseFloat(order.cgst_amount) : 0;
+    let orderSgst = order.sgst_amount !== undefined ? parseFloat(order.sgst_amount) : 0;
+    let orderIgst = order.igst_amount !== undefined ? parseFloat(order.igst_amount) : 0;
+
+    if (orderCgst === 0 && orderSgst === 0 && orderIgst === 0 && parseFloat(order.tax) > 0) {
+      // Legacy order fallback: split the tax equally between CGST and SGST
+      const halfTax = parseFloat(order.tax) / 2;
+      orderCgst = halfTax;
+      orderSgst = halfTax;
+    }
+
+    const isIntra = orderIgst === 0;
 
     let computedSubtotal = 0;
     const itemRows = items.map((item, idx) => {
@@ -1447,24 +1527,90 @@ function generateOrderReceiptHTML(order) {
       const unitP = typeof item.price === 'number' ? item.price : parseFloat(item.price) || 0;
       const qty = item.quantity || 1;
       const lineTot = unitP * qty;
-      const lineGst = lineTot * (taxPct / 100);
+
+      const hsn = item.hsn_code || item.sac_code || '9503';
+      const itemTaxPct = item.total_tax_pct !== undefined ? item.total_tax_pct : 18; // default to 18
+      const itemTaxAmt = item.total_tax_amount !== undefined ? item.total_tax_amount : (lineTot * (itemTaxPct / 100));
+
       computedSubtotal += lineTot;
+
       return `
         <tr class="${idx % 2 === 0 ? 'row-alt' : ''}">
           <td class="center">${idx + 1}</td>
           <td><strong>${item.title || ''}</strong>${item.option ? `<br><span class="muted">Variant: ${item.option}</span>` : ''}</td>
-          <td class="center">${hsnCode}</td>
+          <td class="center">${hsn}</td>
           <td class="center">${qty}</td>
           <td class="right">&#8377;${unitP.toFixed(2)}</td>
-          <td class="center">${taxPct}%</td>
-          <td class="right">&#8377;${lineGst.toFixed(2)}</td>
+          <td class="center">${itemTaxPct}%</td>
+          <td class="right">&#8377;${parseFloat(itemTaxAmt).toFixed(2)}</td>
           <td class="right bold">&#8377;${lineTot.toFixed(2)}</td>
         </tr>`;
     }).join('');
 
-    const sgst = (window.storeSettings && window.storeSettings.tax_enabled) ? computedSubtotal * ((window.storeSettings.sgst_pct || 0) / 100) : 0;
-    const cgst = (window.storeSettings && window.storeSettings.tax_enabled) ? computedSubtotal * ((window.storeSettings.cgst_pct || 0) / 100) : 0;
-    const igst = (window.storeSettings && window.storeSettings.tax_enabled) ? computedSubtotal * ((window.storeSettings.igst_pct || 0) / 100) : 0;
+    // Group tax details by HSN and tax rate
+    const taxSummaryMap = {};
+    items.forEach(item => {
+      if (!item) return;
+      const unitP = typeof item.price === 'number' ? item.price : parseFloat(item.price) || 0;
+      const qty = item.quantity || 1;
+      const lineTot = unitP * qty;
+      const share = computedSubtotal > 0 ? (lineTot / computedSubtotal) : 0;
+      const itemDisc = discountVal * share;
+      const taxableVal = lineTot - itemDisc;
+
+      const hsn = item.hsn_code || item.sac_code || '9503';
+      const cgstPct = item.cgst_pct !== undefined ? parseFloat(item.cgst_pct) : (orderIgst > 0 ? 0 : 9); // default 9% cgst
+      const sgstPct = item.sgst_pct !== undefined ? parseFloat(item.sgst_pct) : (orderIgst > 0 ? 0 : 9); // default 9% sgst
+      const igstPct = item.igst_pct !== undefined ? parseFloat(item.igst_pct) : (orderIgst > 0 ? 18 : 0); // default 18% igst
+      
+      const cgstAmt = item.cgst_amount !== undefined ? parseFloat(item.cgst_amount) : (isIntra ? taxableVal * (cgstPct / 100) : 0);
+      const sgstAmt = item.sgst_amount !== undefined ? parseFloat(item.sgst_amount) : (isIntra ? taxableVal * (sgstPct / 100) : 0);
+      const igstAmt = item.igst_amount !== undefined ? parseFloat(item.igst_amount) : (isIntra ? 0 : taxableVal * (igstPct / 100));
+
+      const key = `${hsn}_${cgstPct}_${sgstPct}_${igstPct}`;
+      if (!taxSummaryMap[key]) {
+        taxSummaryMap[key] = {
+          hsn,
+          taxableVal: 0,
+          cgstPct,
+          cgstAmt: 0,
+          sgstPct,
+          sgstAmt: 0,
+          igstPct,
+          igstAmt: 0,
+          totalGst: 0
+        };
+      }
+      
+      taxSummaryMap[key].taxableVal += taxableVal;
+      taxSummaryMap[key].cgstAmt += cgstAmt;
+      taxSummaryMap[key].sgstAmt += sgstAmt;
+      taxSummaryMap[key].igstAmt += igstAmt;
+      taxSummaryMap[key].totalGst += (cgstAmt + sgstAmt + igstAmt);
+    });
+
+    const taxSummaryRows = Object.values(taxSummaryMap).map(row => {
+      const cgstCell = row.cgstAmt > 0 || row.cgstPct > 0 
+        ? `${row.cgstPct}%<br><span class="muted">&#8377;${row.cgstAmt.toFixed(2)}</span>` 
+        : '0%<br><span class="muted">&#8377;0.00</span>';
+      const sgstCell = row.sgstAmt > 0 || row.sgstPct > 0 
+        ? `${row.sgstPct}%<br><span class="muted">&#8377;${row.sgstAmt.toFixed(2)}</span>` 
+        : '0%<br><span class="muted">&#8377;0.00</span>';
+      const igstCell = row.igstAmt > 0 || row.igstPct > 0 
+        ? `${row.igstPct}%<br><span class="muted">&#8377;${row.igstAmt.toFixed(2)}</span>` 
+        : '0%<br><span class="muted">&#8377;0.00</span>';
+
+      return `
+        <tr>
+          <td class="center">${row.hsn}</td>
+          <td class="right">&#8377;${row.taxableVal.toFixed(2)}</td>
+          <td class="center">${cgstCell}</td>
+          <td class="center">${sgstCell}</td>
+          <td class="center">${igstCell}</td>
+          <td class="right bold">&#8377;${row.totalGst.toFixed(2)}</td>
+        </tr>
+      `;
+    }).join('');
 
     const html = `<!DOCTYPE html>
 <html lang="en">
@@ -1565,12 +1711,12 @@ function generateOrderReceiptHTML(order) {
     <div class="party">
       <div class="party-label">Sold By</div>
       <div class="party-name">Shree Enterprises</div>
-      <div class="party-detail">601, TNR Grandilla, Street 4, Road no. 29<br>Alkapoor Township, Neknampur<br>Hyderabad &ndash; 500089, Telangana, India<br>Ph: 9527652118<br>GSTIN: ${gstin}</div>
+      <div class="party-detail">601, TNR Grandilla, Street 4, Road no. 29<br>Alkapoor Township, Neknampur<br>Hyderabad &ndash; 500089, Telangana, India<br>Ph: 9527652118<br>GSTIN: ${sellerGstin}</div>
     </div>
     <div class="party">
       <div class="party-label">Bill To / Ship To</div>
       <div class="party-name">${custName}</div>
-      <div class="party-detail">${cleanAddress.replace(/\n/g, '<br>')}<br>Email: ${order.email || '&mdash;'}</div>
+      <div class="party-detail">${cleanAddress.replace(/\n/g, '<br>')}<br>Email: ${order.email || '&mdash;'}${buyerGstinHTML}</div>
     </div>
   </div>
 
@@ -1607,9 +1753,10 @@ function generateOrderReceiptHTML(order) {
       <div class="t-row"><span class="t-label">Subtotal (before tax)</span><span class="t-val">&#8377;${computedSubtotal.toFixed(2)}</span></div>
       ${discountVal > 0 ? `<div class="t-row"><span class="t-label">Coupon Discount</span><span class="t-val disc">&minus;&#8377;${discountVal.toFixed(2)}</span></div>` : ''}
       <div class="t-row"><span class="t-label">Shipping &amp; Handling</span><span class="t-val">${shippingVal > 0 ? '&#8377;' + shippingVal.toFixed(2) : 'FREE'}</span></div>
-      ${sgst > 0 ? `<div class="t-row"><span class="t-label">SGST @ ${window.storeSettings.sgst_pct}%</span><span class="t-val">&#8377;${sgst.toFixed(2)}</span></div>` : ''}
-      ${cgst > 0 ? `<div class="t-row"><span class="t-label">CGST @ ${window.storeSettings.cgst_pct}%</span><span class="t-val">&#8377;${cgst.toFixed(2)}</span></div>` : ''}
-      ${igst > 0 ? `<div class="t-row"><span class="t-label">IGST @ ${window.storeSettings.igst_pct}%</span><span class="t-val">&#8377;${igst.toFixed(2)}</span></div>` : ''}
+      ${orderSgst > 0 ? `<div class="t-row"><span class="t-label">SGST</span><span class="t-val">&#8377;${orderSgst.toFixed(2)}</span></div>` : ''}
+      ${orderCgst > 0 ? `<div class="t-row"><span class="t-label">CGST</span><span class="t-val">&#8377;${orderCgst.toFixed(2)}</span></div>` : ''}
+      ${orderIgst > 0 ? `<div class="t-row"><span class="t-label">IGST</span><span class="t-val">&#8377;${orderIgst.toFixed(2)}</span></div>` : ''}
+      ${(orderCgst + orderSgst + orderIgst) > 0 ? `<div class="t-row"><span class="t-label">GST</span><span class="t-val">&#8377;${(orderCgst + orderSgst + orderIgst).toFixed(2)}</span></div>` : ''}
     </div>
   </div>
 
@@ -1617,6 +1764,27 @@ function generateOrderReceiptHTML(order) {
     <span class="grand-label">GRAND TOTAL</span>
     <span class="grand-val">&#8377;${totalVal.toFixed(2)}</span>
   </div>
+
+  ${taxSummaryRows ? `
+  <div class="gst-summary-table" style="margin: 20px 16px; font-family: sans-serif;">
+    <h4 style="font-size: 11px; font-weight: 700; color: #1a5aa0; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">GST Tax Summary (HSN-wise Breakdown)</h4>
+    <table style="width: 100%; border-collapse: collapse; border: 1px solid #dce8fa;">
+      <thead>
+        <tr style="background: #f0f6ff; color: #1a5aa0;">
+          <th style="padding: 6px; font-size: 9px; font-weight: 700; text-transform: uppercase; border: 1px solid #dce8fa; text-align: center;">HSN/SAC</th>
+          <th style="padding: 6px; font-size: 9px; font-weight: 700; text-transform: uppercase; border: 1px solid #dce8fa; text-align: right;">Taxable Value</th>
+          <th style="padding: 6px; font-size: 9px; font-weight: 700; text-transform: uppercase; border: 1px solid #dce8fa; text-align: center;">CGST</th>
+          <th style="padding: 6px; font-size: 9px; font-weight: 700; text-transform: uppercase; border: 1px solid #dce8fa; text-align: center;">SGST</th>
+          <th style="padding: 6px; font-size: 9px; font-weight: 700; text-transform: uppercase; border: 1px solid #dce8fa; text-align: center;">IGST</th>
+          <th style="padding: 6px; font-size: 9px; font-weight: 700; text-transform: uppercase; border: 1px solid #dce8fa; text-align: right;">Total Tax</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${taxSummaryRows}
+      </tbody>
+    </table>
+  </div>
+  ` : ''}
 
   <div class="receipt-footer">
     <strong>Terms &amp; Conditions</strong><br>
@@ -1925,6 +2093,84 @@ function renderFooterCollections() {
 
 
 
+function getProductTaxPercentage(product) {
+  if (!storeSettings.gst_enabled) return 0;
+  if (product.tax_applicable === false || product.tax_applicable === 'false') return 0;
+  
+  let catId = product.gst_category_id;
+  if (!catId) {
+    catId = storeSettings.default_tax_category_id;
+  }
+  
+  if (catId) {
+    const rate = taxRatesState.find(r => r.id === catId);
+    if (rate && rate.is_active) {
+      return parseFloat(rate.total_tax_pct) || 0;
+    }
+  }
+  
+  return 0; // fallback
+}
+
+function getProductDisplayPrices(product) {
+  const basePrice = Number(product.price);
+  const taxPct = getProductTaxPercentage(product);
+  const taxAmount = basePrice * (taxPct / 100);
+  const inclPrice = basePrice + taxAmount;
+  
+  const origBasePrice = product.original_price !== undefined && product.original_price !== null 
+    ? Number(product.original_price) 
+    : (product.originalPrice !== undefined ? Number(product.originalPrice) : null);
+  
+  let origInclPrice = null;
+  if (origBasePrice) {
+    origInclPrice = origBasePrice * (1 + taxPct / 100);
+  }
+
+  return {
+    basePrice,
+    taxPct,
+    taxAmount,
+    inclPrice,
+    origBasePrice,
+    origInclPrice
+  };
+}
+
+function renderProductPriceHTML(product) {
+  if (!storeSettings.gst_enabled) {
+    const price = Number(product.price);
+    const origPrice = product.original_price !== undefined && product.original_price !== null ? Number(product.original_price) : (product.originalPrice !== undefined ? Number(product.originalPrice) : null);
+    const displayOriginal = origPrice && origPrice > price
+      ? `<span class="original-price">₹${origPrice.toFixed(2)}</span>`
+      : "";
+    return `₹${price.toFixed(2)} ${displayOriginal}`;
+  }
+
+  const { basePrice, taxPct, inclPrice, origBasePrice, origInclPrice } = getProductDisplayPrices(product);
+  
+  let html = "";
+  if (storeSettings.display_prices_including_tax && storeSettings.display_prices_excluding_tax) {
+    // Both checked: show including main, excluding smaller
+    const origDisplay = origInclPrice && origInclPrice > inclPrice ? `<span class="original-price">₹${origInclPrice.toFixed(2)}</span>` : "";
+    html = `
+      <div style="display: flex; flex-direction: column; gap: 2px;">
+        <div><span style="font-size: 1rem; font-weight: 700; color: var(--color-brand);">₹${inclPrice.toFixed(2)}</span> <span style="font-size: 0.7rem; opacity: 0.7; font-weight: normal;">(incl. GST)</span> ${origDisplay}</div>
+        <div style="font-size: 0.8rem; opacity: 0.6;">₹${basePrice.toFixed(2)} <span style="font-size: 0.65rem;">(excl. GST)</span></div>
+      </div>
+    `;
+  } else if (storeSettings.display_prices_excluding_tax) {
+    // Only excluding checked
+    const origDisplay = origBasePrice && origBasePrice > basePrice ? `<span class="original-price">₹${origBasePrice.toFixed(2)}</span>` : "";
+    html = `₹${basePrice.toFixed(2)} <span style="font-size: 0.75rem; opacity: 0.7; font-weight: normal;">(excl. GST)</span> ${origDisplay}`;
+  } else {
+    // Default or only including checked
+    const origDisplay = origInclPrice && origInclPrice > inclPrice ? `<span class="original-price">₹${origInclPrice.toFixed(2)}</span>` : "";
+    html = `₹${inclPrice.toFixed(2)} <span style="font-size: 0.75rem; opacity: 0.7; font-weight: normal;">(incl. GST)</span> ${origDisplay}`;
+  }
+  return html;
+}
+
 function renderProductCardHTML(product) {
   const price = Number(product.price);
   const originalPrice = product.original_price !== undefined && product.original_price !== null ? Number(product.original_price) : (product.originalPrice !== undefined ? Number(product.originalPrice) : null);
@@ -1988,8 +2234,7 @@ function renderProductCardHTML(product) {
         </div>
         <div class="product-card-footer">
           <div class="product-card-price">
-            ₹${price.toFixed(2)}
-            ${displayOriginal}
+            ${renderProductPriceHTML(product)}
           </div>
           ${addBtnHTML}
         </div>
@@ -2146,7 +2391,7 @@ function openProductModal(productId) {
   document.getElementById("modal-product-image").alt = product.title;
   document.getElementById("modal-product-category").textContent = product.category.replace("-", " ");
   document.getElementById("modal-product-title").textContent = product.title;
-  document.getElementById("modal-product-price").textContent = `₹${product.price.toFixed(2)}`;
+  document.getElementById("modal-product-price").innerHTML = renderProductPriceHTML(product);
   document.getElementById("modal-product-desc").textContent = product.description;
   document.getElementById("modal-qty-val").textContent = modalSelectedQty;
 
@@ -2166,11 +2411,7 @@ function openProductModal(productId) {
 
   // Original Price
   const originalPriceEl = document.getElementById("modal-product-original-price");
-  const origPrice = product.original_price !== undefined && product.original_price !== null ? Number(product.original_price) : (product.originalPrice !== undefined ? Number(product.originalPrice) : null);
-  if (origPrice && origPrice > product.price) {
-    originalPriceEl.textContent = `₹${origPrice.toFixed(2)}`;
-    originalPriceEl.style.display = "inline";
-  } else {
+  if (originalPriceEl) {
     originalPriceEl.style.display = "none";
   }
 
@@ -2466,13 +2707,15 @@ function renderCartDrawer() {
   }
 
   container.innerHTML = cartState.map(item => {
+    const product = productsState.find(p => p.id === item.productId);
+    const priceDisplay = product ? renderProductPriceHTML(product) : `₹${item.price.toFixed(2)}`;
     return `
       <div class="cart-item">
         <img src="${item.image}" alt="${item.title}" class="cart-item-img">
         <div class="cart-item-details">
           <div class="cart-item-name">${item.title}</div>
           <div class="cart-item-option">Option: ${item.option}</div>
-          <div class="cart-item-price">₹${item.price.toFixed(2)}</div>
+          <div class="cart-item-price">${priceDisplay}</div>
           <div class="cart-item-actions">
             <button class="qty-btn" onclick="updateCartQuantity('${item.productId}', '${item.option}', -1)">-</button>
             <span class="cart-item-qty">${item.quantity}</span>
@@ -2486,7 +2729,11 @@ function renderCartDrawer() {
     `;
   }).join("");
 
-  const subtotal = cartState.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const subtotal = cartState.reduce((sum, item) => {
+    const product = productsState.find(p => p.id === item.productId);
+    const itemPrice = product ? (storeSettings.display_prices_including_tax ? getProductDisplayPrices(product).inclPrice : item.price) : item.price;
+    return sum + (itemPrice * item.quantity);
+  }, 0);
   subtotalEl.textContent = `₹${subtotal.toFixed(2)}`;
 
   feather.replace();
@@ -2741,6 +2988,100 @@ function applyCheckoutAddressSelection() {
   renderCheckoutSummary();
 }
 
+function calculateCheckoutGST(subtotal, discount, stateName) {
+  let totalCgst = 0;
+  let totalSgst = 0;
+  let totalIgst = 0;
+  let items_tax_details = [];
+
+  const businessState = storeSettings.business_state || "Telangana";
+  const selectedState = stateName || businessState;
+  const isIntraState = (selectedState.trim().toLowerCase() === businessState.trim().toLowerCase());
+
+  cartState.forEach(item => {
+    const product = productsState.find(p => p.id === item.productId);
+    
+    let taxPct = 0;
+    let cgstPct = 0;
+    let sgstPct = 0;
+    let igstPct = 0;
+    let hsn = "";
+    let sac = "";
+    
+    if (storeSettings.gst_enabled) {
+      const isTaxApplicable = product ? (product.tax_applicable !== false && product.tax_applicable !== "false") : true;
+      hsn = product?.hsn_code || "";
+      sac = product?.sac_code || "";
+      
+      if (isTaxApplicable) {
+        let catId = product?.gst_category_id || storeSettings.default_tax_category_id;
+        if (catId) {
+          const rate = taxRatesState.find(r => r.id === catId);
+          if (rate && rate.is_active) {
+            cgstPct = parseFloat(rate.cgst_pct) || 0;
+            sgstPct = parseFloat(rate.sgst_pct) || 0;
+            igstPct = parseFloat(rate.igst_pct) || 0;
+            taxPct = parseFloat(rate.total_tax_pct) || 0;
+          }
+        }
+      }
+    }
+
+    const itemSubtotal = item.price * item.quantity;
+    const itemShare = subtotal > 0 ? (itemSubtotal / subtotal) : 0;
+    const itemDiscount = discount * itemShare;
+    const netVal = itemSubtotal - itemDiscount;
+
+    let cgstAmt = 0;
+    let sgstAmt = 0;
+    let igstAmt = 0;
+
+    if (storeSettings.gst_enabled) {
+      if (isIntraState) {
+        cgstAmt = Number((netVal * (cgstPct / 100)).toFixed(2));
+        sgstAmt = Number((netVal * (sgstPct / 100)).toFixed(2));
+      } else {
+        igstAmt = Number((netVal * (igstPct / 100)).toFixed(2));
+      }
+    }
+
+    totalCgst += cgstAmt;
+    totalSgst += sgstAmt;
+    totalIgst += igstAmt;
+
+    items_tax_details.push({
+      productId: item.productId,
+      option: item.option,
+      hsn_code: hsn,
+      sac_code: sac,
+      cgst_pct: cgstPct,
+      sgst_pct: sgstPct,
+      igst_pct: igstPct,
+      total_tax_pct: taxPct,
+      cgst_amount: cgstAmt,
+      sgst_amount: sgstAmt,
+      igst_amount: igstAmt,
+      total_tax_amount: cgstAmt + sgstAmt + igstAmt
+    });
+  });
+
+  // Round global totals
+  totalCgst = Number(totalCgst.toFixed(2));
+  totalSgst = Number(totalSgst.toFixed(2));
+  totalIgst = Number(totalIgst.toFixed(2));
+  const total_tax_amount = Number((totalCgst + totalSgst + totalIgst).toFixed(2));
+
+  return {
+    cgst_amount: totalCgst,
+    sgst_amount: totalSgst,
+    igst_amount: totalIgst,
+    total_tax_amount: total_tax_amount,
+    items_tax_details: items_tax_details
+  };
+}
+
+let currentCheckoutTaxes = { cgst_amount: 0, sgst_amount: 0, igst_amount: 0, total_tax_amount: 0, items_tax_details: [] };
+
 function renderCheckoutSummary() {
   const container = document.getElementById("checkout-summary-items");
   if (!container) return;
@@ -2812,17 +3153,54 @@ function renderCheckoutSummary() {
     shipping = subtotal > 12000 ? 0.00 : 1000.00;
   }
 
-  let tax = 0;
-  let taxLabel = "Estimated Tax (0%)";
-  if (storeSettings.tax_enabled) {
-    const totalTaxPct = storeSettings.cgst_pct;
-    tax = (subtotal - discount) * (totalTaxPct / 100);
-    taxLabel = `CGST (${totalTaxPct}%)`;
-  }
-  const taxLabelEl = document.getElementById("checkout-tax-label");
-  if (taxLabelEl) taxLabelEl.textContent = taxLabel;
+  const stateName = country === "IN" ? (document.getElementById("ship-state")?.value || "") : "";
+  const taxes = calculateCheckoutGST(subtotal, discount, stateName);
+  currentCheckoutTaxes = taxes;
 
+  const tax = taxes.total_tax_amount;
   const total = (subtotal - discount) + shipping + tax;
+
+  const taxContainer = document.getElementById("checkout-tax-container");
+  if (taxContainer) {
+    if (storeSettings.gst_enabled) {
+      const selectedState = stateName || storeSettings.business_state || "Telangana";
+      const isIntraState = (selectedState.trim().toLowerCase() === (storeSettings.business_state || "Telangana").trim().toLowerCase());
+      if (isIntraState) {
+        taxContainer.innerHTML = `
+          <div class="cart-summary-row">
+            <span>CGST</span>
+            <span>₹${taxes.cgst_amount.toFixed(2)}</span>
+          </div>
+          <div class="cart-summary-row">
+            <span>SGST</span>
+            <span>₹${taxes.sgst_amount.toFixed(2)}</span>
+          </div>
+          <div class="cart-summary-row" style="background: rgba(124, 58, 237, 0.12); padding: 6px 10px; border-radius: 6px; font-weight: 700; color: var(--color-brand); margin-top: 4px; border: 1px dashed rgba(124, 58, 237, 0.25);">
+            <span>GST (Total)</span>
+            <span>₹${taxes.total_tax_amount.toFixed(2)}</span>
+          </div>
+        `;
+      } else {
+        taxContainer.innerHTML = `
+          <div class="cart-summary-row">
+            <span>IGST</span>
+            <span>₹${taxes.igst_amount.toFixed(2)}</span>
+          </div>
+          <div class="cart-summary-row" style="background: rgba(124, 58, 237, 0.12); padding: 6px 10px; border-radius: 6px; font-weight: 700; color: var(--color-brand); margin-top: 4px; border: 1px dashed rgba(124, 58, 237, 0.25);">
+            <span>GST (Total)</span>
+            <span>₹${taxes.total_tax_amount.toFixed(2)}</span>
+          </div>
+        `;
+      }
+    } else {
+      taxContainer.innerHTML = `
+        <div class="cart-summary-row">
+          <span>Estimated Tax (0%)</span>
+          <span>₹0.00</span>
+        </div>
+      `;
+    }
+  }
 
   document.getElementById("checkout-subtotal").textContent = `₹${subtotal.toFixed(2)}`;
 
@@ -2840,7 +3218,6 @@ function renderCheckoutSummary() {
   }
 
   document.getElementById("checkout-shipping").textContent = shipping === 0 ? "FREE" : `₹${shipping.toFixed(2)}`;
-  document.getElementById("checkout-tax").textContent = `₹${tax.toFixed(2)}`;
   document.getElementById("checkout-total-due").textContent = `₹${total.toFixed(2)}`;
 
   // Update UPI QR Code display amount
@@ -2973,15 +3350,13 @@ async function handleCheckoutSubmit(e) {
       shipping = subtotal > 12000 ? 0.00 : 1000.00;
     }
 
-    let tax = 0;
-    if (storeSettings.tax_enabled) {
-      const totalTaxPct = storeSettings.cgst_pct;
-      tax = (subtotal - discount) * (totalTaxPct / 100);
-    }
+    const stateName = country === "IN" ? document.getElementById("ship-state").value : "";
+    const taxes = calculateCheckoutGST(subtotal, discount, stateName);
+    const tax = taxes.total_tax_amount;
     const total = (subtotal - discount) + shipping + tax;
+    const buyerGstin = document.getElementById("ship-gstin")?.value || "";
 
     const newOrderId = `TG-${Math.floor(10000 + Math.random() * 90000)}-${Math.floor(1000 + Math.random() * 9000)}`;
-    const stateName = country === "IN" ? document.getElementById("ship-state").value : "";
     const stateStr = stateName ? `, ${stateName}` : "";
     const fullAddress = `${address}, ${city}${stateStr}, ${zip}, ${country}`;
 
@@ -2992,11 +3367,33 @@ async function handleCheckoutSubmit(e) {
       id: newOrderId,
       user_id: userId,
       email: email,
-      items: [...cartState],
+      items: cartState.map(item => {
+        const product = productsState.find(p => p.id === item.productId);
+        const taxDetails = taxes.items_tax_details.find(td => td.productId === item.productId && td.option === item.option) || {};
+        return {
+          ...item,
+          hsn_code: product?.hsn_code || "",
+          sac_code: product?.sac_code || "",
+          tax_applicable: product ? (product.tax_applicable !== false && product.tax_applicable !== "false") : true,
+          cgst_pct: taxDetails.cgst_pct || 0,
+          sgst_pct: taxDetails.sgst_pct || 0,
+          igst_pct: taxDetails.igst_pct || 0,
+          total_tax_pct: taxDetails.total_tax_pct || 0,
+          cgst_amount: taxDetails.cgst_amount || 0,
+          sgst_amount: taxDetails.sgst_amount || 0,
+          igst_amount: taxDetails.igst_amount || 0,
+          total_tax_amount: taxDetails.total_tax_amount || 0
+        };
+      }),
       subtotal: subtotal,
       discount: discount,
       shipping: shipping,
       tax: tax,
+      cgst_amount: taxes.cgst_amount,
+      sgst_amount: taxes.sgst_amount,
+      igst_amount: taxes.igst_amount,
+      total_tax_amount: taxes.total_tax_amount,
+      buyer_gstin: buyerGstin,
       total: total,
       status: "processing",
       address: fullAddress,

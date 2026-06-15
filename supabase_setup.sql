@@ -356,3 +356,69 @@ create policy "Allow full newsletter access (Admin Control)" on public.newslette
 -- Run this to enable cross-device wishlist persistence for logged-in users
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS wishlist jsonb DEFAULT NULL;
 
+
+-- ================= INDIAN GST & TAX MANAGEMENT MODULE =================
+
+-- 10. GST Tax Rates Table
+create table if not exists public.gst_tax_rates (
+  id uuid default gen_random_uuid() primary key,
+  name text not null,
+  code text not null unique,
+  tax_type text not null, -- 'GST 0%', 'GST 5%', 'GST 12%', 'GST 18%'
+  cgst_pct numeric(5, 2) not null default 0.00,
+  sgst_pct numeric(5, 2) not null default 0.00,
+  igst_pct numeric(5, 2) not null default 0.00,
+  total_tax_pct numeric(5, 2) not null default 0.00,
+  is_active boolean not null default true,
+  description text,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- Enable RLS for gst_tax_rates
+alter table public.gst_tax_rates enable row level security;
+
+drop policy if exists "Allow public read access to gst_tax_rates" on public.gst_tax_rates;
+create policy "Allow public read access to gst_tax_rates" on public.gst_tax_rates
+  for select using (true);
+
+drop policy if exists "Allow full gst_tax_rates access (Admin Control)" on public.gst_tax_rates;
+create policy "Allow full gst_tax_rates access (Admin Control)" on public.gst_tax_rates
+  for all using (true) with check (true);
+
+-- Seed default GST rates
+insert into public.gst_tax_rates (name, code, tax_type, cgst_pct, sgst_pct, igst_pct, total_tax_pct, is_active, description)
+values
+  ('No Tax (0%)', 'GST0', 'GST 0%', 0.00, 0.00, 0.00, 0.00, true, 'Zero tax category'),
+  ('GST 5%', 'GST5', 'GST 5%', 2.50, 2.50, 5.00, 5.00, true, 'GST 5% tax category'),
+  ('GST 12%', 'GST12', 'GST 12%', 6.00, 6.00, 12.00, 12.00, true, 'GST 12% tax category'),
+  ('GST 18%', 'GST18', 'GST 18%', 9.00, 9.00, 18.00, 18.00, true, 'GST 18% tax category')
+on conflict (code) do update set
+  name = excluded.name,
+  tax_type = excluded.tax_type,
+  cgst_pct = excluded.cgst_pct,
+  sgst_pct = excluded.sgst_pct,
+  igst_pct = excluded.igst_pct,
+  total_tax_pct = excluded.total_tax_pct;
+
+-- 11. Add GST fields to public.products
+alter table public.products add column if not exists tax_applicable boolean default true;
+alter table public.products add column if not exists gst_category_id uuid references public.gst_tax_rates(id) on delete set null;
+alter table public.products add column if not exists hsn_code text;
+alter table public.products add column if not exists sac_code text;
+
+-- 12. Add dynamic GST settings columns to public.store_settings
+alter table public.store_settings add column if not exists seller_gstin text;
+alter table public.store_settings add column if not exists business_state text default 'Telangana';
+alter table public.store_settings add column if not exists default_tax_category_id uuid references public.gst_tax_rates(id) on delete set null;
+alter table public.store_settings add column if not exists gst_enabled boolean default true;
+alter table public.store_settings add column if not exists display_prices_including_tax boolean default true;
+alter table public.store_settings add column if not exists display_prices_excluding_tax boolean default false;
+
+-- 13. Add dynamic tax tracking to public.orders
+alter table public.orders add column if not exists cgst_amount numeric(12, 2) default 0.00;
+alter table public.orders add column if not exists sgst_amount numeric(12, 2) default 0.00;
+alter table public.orders add column if not exists igst_amount numeric(12, 2) default 0.00;
+alter table public.orders add column if not exists total_tax_amount numeric(12, 2) default 0.00;
+alter table public.orders add column if not exists buyer_gstin text;
+
+
