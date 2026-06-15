@@ -2138,37 +2138,24 @@ function getProductDisplayPrices(product) {
 }
 
 function renderProductPriceHTML(product) {
-  if (!storeSettings.gst_enabled) {
-    const price = Number(product.price);
-    const origPrice = product.original_price !== undefined && product.original_price !== null ? Number(product.original_price) : (product.originalPrice !== undefined ? Number(product.originalPrice) : null);
-    const displayOriginal = origPrice && origPrice > price
-      ? `<span class="original-price">₹${origPrice.toFixed(2)}</span>`
-      : "";
-    return `₹${price.toFixed(2)} ${displayOriginal}`;
+  // Always show base price (without GST) on shop/category pages.
+  // GST is shown only at checkout.
+  const basePrice = Number(product.price);
+  const origPrice = product.original_price !== undefined && product.original_price !== null
+    ? Number(product.original_price)
+    : (product.originalPrice !== undefined ? Number(product.originalPrice) : null);
+
+  const displayOriginal = origPrice && origPrice > basePrice
+    ? `<span class="original-price">₹${origPrice.toFixed(2)}</span>`
+    : "";
+
+  // Show a subtle "+ taxes" note only if GST is enabled and product is taxable
+  let taxNote = "";
+  if (storeSettings.gst_enabled && product.tax_applicable !== false) {
+    taxNote = `<span style="font-size: 0.68rem; color: var(--text-muted); font-weight: 400; margin-left: 2px;">+ taxes</span>`;
   }
 
-  const { basePrice, taxPct, inclPrice, origBasePrice, origInclPrice } = getProductDisplayPrices(product);
-  
-  let html = "";
-  if (storeSettings.display_prices_including_tax && storeSettings.display_prices_excluding_tax) {
-    // Both checked: show including main, excluding smaller
-    const origDisplay = origInclPrice && origInclPrice > inclPrice ? `<span class="original-price">₹${origInclPrice.toFixed(2)}</span>` : "";
-    html = `
-      <div style="display: flex; flex-direction: column; gap: 2px;">
-        <div><span style="font-size: 1rem; font-weight: 700; color: var(--color-brand);">₹${inclPrice.toFixed(2)}</span> <span style="font-size: 0.7rem; opacity: 0.7; font-weight: normal;">(incl. GST)</span> ${origDisplay}</div>
-        <div style="font-size: 0.8rem; opacity: 0.6;">₹${basePrice.toFixed(2)} <span style="font-size: 0.65rem;">(excl. GST)</span></div>
-      </div>
-    `;
-  } else if (storeSettings.display_prices_excluding_tax) {
-    // Only excluding checked
-    const origDisplay = origBasePrice && origBasePrice > basePrice ? `<span class="original-price">₹${origBasePrice.toFixed(2)}</span>` : "";
-    html = `₹${basePrice.toFixed(2)} <span style="font-size: 0.75rem; opacity: 0.7; font-weight: normal;">(excl. GST)</span> ${origDisplay}`;
-  } else {
-    // Default or only including checked
-    const origDisplay = origInclPrice && origInclPrice > inclPrice ? `<span class="original-price">₹${origInclPrice.toFixed(2)}</span>` : "";
-    html = `₹${inclPrice.toFixed(2)} <span style="font-size: 0.75rem; opacity: 0.7; font-weight: normal;">(incl. GST)</span> ${origDisplay}`;
-  }
-  return html;
+  return `₹${basePrice.toFixed(2)}${taxNote} ${displayOriginal}`;
 }
 
 function renderProductCardHTML(product) {
