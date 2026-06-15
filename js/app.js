@@ -2707,15 +2707,13 @@ function renderCartDrawer() {
   }
 
   container.innerHTML = cartState.map(item => {
-    const product = productsState.find(p => p.id === item.productId);
-    const priceDisplay = product ? renderProductPriceHTML(product) : `₹${item.price.toFixed(2)}`;
     return `
       <div class="cart-item">
         <img src="${item.image}" alt="${item.title}" class="cart-item-img">
         <div class="cart-item-details">
           <div class="cart-item-name">${item.title}</div>
           <div class="cart-item-option">Option: ${item.option}</div>
-          <div class="cart-item-price">${priceDisplay}</div>
+          <div class="cart-item-price">₹${item.price.toFixed(2)}</div>
           <div class="cart-item-actions">
             <button class="qty-btn" onclick="updateCartQuantity('${item.productId}', '${item.option}', -1)">-</button>
             <span class="cart-item-qty">${item.quantity}</span>
@@ -2729,11 +2727,7 @@ function renderCartDrawer() {
     `;
   }).join("");
 
-  const subtotal = cartState.reduce((sum, item) => {
-    const product = productsState.find(p => p.id === item.productId);
-    const itemPrice = product ? (storeSettings.display_prices_including_tax ? getProductDisplayPrices(product).inclPrice : item.price) : item.price;
-    return sum + (itemPrice * item.quantity);
-  }, 0);
+  const subtotal = cartState.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   subtotalEl.textContent = `₹${subtotal.toFixed(2)}`;
 
   feather.replace();
