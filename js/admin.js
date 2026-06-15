@@ -406,6 +406,36 @@ function adminEditProductTrigger(productId) {
   document.getElementById("admin-form-options").value = opts.join(", ");
   document.getElementById("admin-form-specs-json").value = product.specs ? JSON.stringify(product.specs, null, 2) : "{}";
 
+  // Reset image URL fallback and new category toggle
+  const imageUrlInput = document.getElementById("admin-form-image-url");
+  if (imageUrlInput) imageUrlInput.value = "";
+  const newCatWrap = document.getElementById("admin-new-category-wrap");
+  const newCatToggle = document.getElementById("admin-new-category-toggle");
+  const catSelect = document.getElementById("admin-form-category");
+  if (newCatWrap) newCatWrap.style.display = "none";
+  if (newCatToggle) {
+    newCatToggle.textContent = "+ New";
+    newCatToggle.style.background = "rgba(139,92,246,0.15)";
+    newCatToggle.style.color = "var(--color-brand)";
+  }
+  if (catSelect) {
+    catSelect.disabled = false;
+    catSelect.style.opacity = "1";
+    // Restore custom categories from localStorage before setting value
+    try {
+      const savedCats = JSON.parse(localStorage.getItem("toyzguru_custom_categories") || "[]");
+      savedCats.forEach(cat => {
+        if (!Array.from(catSelect.options).some(o => o.value === cat.value)) {
+          const opt = document.createElement("option");
+          opt.value = cat.value;
+          opt.textContent = cat.label;
+          catSelect.appendChild(opt);
+        }
+      });
+    } catch(ex) { /* ignore */ }
+    catSelect.value = product.category;
+  }
+
   // Open modal overlay
   document.getElementById("admin-product-modal-overlay").classList.add("active");
   document.body.style.overflow = "hidden";
@@ -426,8 +456,44 @@ function adminCreateProductTrigger() {
   // Set default product GST tax configurations
   adminPopulateProductTaxCategoryDropdown("");
   document.getElementById("admin-form-tax-applicable").value = "yes";
-  document.getElementById("admin-form-hsn-code").value = "";
-  document.getElementById("admin-form-sac-code").value = "";
+
+  const hsnCodeEl = document.getElementById("admin-form-hsn-code");
+  const sacCodeEl = document.getElementById("admin-form-sac-code");
+  if (hsnCodeEl) hsnCodeEl.value = "";
+  if (sacCodeEl) sacCodeEl.value = "";
+
+  // Reset image URL fallback field
+  const imageUrlInput = document.getElementById("admin-form-image-url");
+  if (imageUrlInput) imageUrlInput.value = "";
+
+  // Reset new category toggle back to select mode
+  const newCatWrap = document.getElementById("admin-new-category-wrap");
+  const newCatToggle = document.getElementById("admin-new-category-toggle");
+  const newCatInput = document.getElementById("admin-new-category-input");
+  const catSelect = document.getElementById("admin-form-category");
+  if (newCatWrap) newCatWrap.style.display = "none";
+  if (newCatToggle) {
+    newCatToggle.textContent = "+ New";
+    newCatToggle.style.background = "rgba(139,92,246,0.15)";
+    newCatToggle.style.color = "var(--color-brand)";
+  }
+  if (newCatInput) newCatInput.value = "";
+  if (catSelect) {
+    catSelect.disabled = false;
+    catSelect.style.opacity = "1";
+    // Restore custom categories from localStorage
+    try {
+      const savedCats = JSON.parse(localStorage.getItem("toyzguru_custom_categories") || "[]");
+      savedCats.forEach(cat => {
+        if (!Array.from(catSelect.options).some(o => o.value === cat.value)) {
+          const opt = document.createElement("option");
+          opt.value = cat.value;
+          opt.textContent = cat.label;
+          catSelect.appendChild(opt);
+        }
+      });
+    } catch(ex) { /* ignore */ }
+  }
 
   // Reset file upload and preview
   const fileInput = document.getElementById("admin-form-image-file");
@@ -444,19 +510,68 @@ async function handleAdminProductFormSubmit(e) {
   e.preventDefault();
 
   const title = document.getElementById("admin-form-title").value.trim();
-  const category = document.getElementById("admin-form-category").value;
+
+  // Support "Add New Category" toggle - if new category input is visible and has value, use it
+  const newCatWrap = document.getElementById("admin-new-category-wrap");
+  const newCatInput = document.getElementById("admin-new-category-input");
+  const isAddingNewCat = newCatWrap && newCatWrap.style.display === "block";
+  let category = document.getElementById("admin-form-category").value;
+  if (isAddingNewCat && newCatInput) {
+    const newCatVal = newCatInput.value.trim();
+    if (!newCatVal) {
+      if (window.toyzToast) {
+        window.toyzToast("Category Required", "Please enter a new category name or select an existing one.", "warning");
+      }
+      return;
+    }
+    // Convert to slug: lowercase, spaces to hyphens
+    category = newCatVal.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9\-]/g, "");
+    if (!category) {
+      if (window.toyzToast) {
+        window.toyzToast("Invalid Category", "Category name must contain alphanumeric characters.", "warning");
+      }
+      return;
+    }
+    // Add to the category dropdown for future use
+    const catSelect = document.getElementById("admin-form-category");
+    if (catSelect) {
+      const exists = Array.from(catSelect.options).some(o => o.value === category);
+      if (!exists) {
+        const newOpt = document.createElement("option");
+        newOpt.value = category;
+        newOpt.textContent = newCatVal;
+        catSelect.appendChild(newOpt);
+      }
+    }
+    // Save categories to localStorage for persistence
+    try {
+      const savedCats = JSON.parse(localStorage.getItem("toyzguru_custom_categories") || "[]");
+      if (!savedCats.find(c => c.value === category)) {
+        savedCats.push({ value: category, label: newCatVal });
+        localStorage.setItem("toyzguru_custom_categories", JSON.stringify(savedCats));
+      }
+    } catch(ex) { /* ignore */ }
+  }
+
   const badge = document.getElementById("admin-form-badge").value;
   const price = parseFloat(document.getElementById("admin-form-price").value);
   const origPriceVal = document.getElementById("admin-form-original-price").value;
   const originalPrice = origPriceVal ? parseFloat(origPriceVal) : null;
   const stock = parseInt(document.getElementById("admin-form-stock").value);
-  const image = document.getElementById("admin-form-image").value;
   const desc = document.getElementById("admin-form-desc").value.trim();
+
+  // Image: first check hidden field (from upload), then fallback to URL input
+  let image = document.getElementById("admin-form-image").value;
+  const imageUrlInput = document.getElementById("admin-form-image-url");
+  if (!image && imageUrlInput && imageUrlInput.value.trim()) {
+    image = imageUrlInput.value.trim();
+    document.getElementById("admin-form-image").value = image;
+  }
 
   // Validate image exists
   if (!image) {
     if (window.toyzToast) {
-      window.toyzToast("Image Required", "Please upload or choose a product image first.", "warning");
+      window.toyzToast("Image Required", "Please upload an image or paste an Image URL below the upload field.", "warning");
     }
     return;
   }
@@ -1545,16 +1660,24 @@ function setupAdminEventListeners() {
   }
 
   // Admin form overlay closure
-  document.getElementById("close-admin-modal-btn").addEventListener("click", adminCloseProductModal);
-  document.getElementById("admin-product-modal-overlay").addEventListener("click", (e) => {
-    if (e.target.id === "admin-product-modal-overlay") adminCloseProductModal();
-  });
+  const closeModalBtn = document.getElementById("close-admin-modal-btn");
+  if (closeModalBtn) closeModalBtn.addEventListener("click", adminCloseProductModal);
+  const productModalOverlay = document.getElementById("admin-product-modal-overlay");
+  if (productModalOverlay) {
+    productModalOverlay.addEventListener("click", (e) => {
+      if (e.target.id === "admin-product-modal-overlay") adminCloseProductModal();
+    });
+  }
 
   // Admin order details overlay closure
-  document.getElementById("close-admin-order-modal-btn").addEventListener("click", adminCloseOrderModal);
-  document.getElementById("admin-order-modal-overlay").addEventListener("click", (e) => {
-    if (e.target.id === "admin-order-modal-overlay") adminCloseOrderModal();
-  });
+  const closeOrderModalBtn = document.getElementById("close-admin-order-modal-btn");
+  if (closeOrderModalBtn) closeOrderModalBtn.addEventListener("click", adminCloseOrderModal);
+  const orderModalOverlay = document.getElementById("admin-order-modal-overlay");
+  if (orderModalOverlay) {
+    orderModalOverlay.addEventListener("click", (e) => {
+      if (e.target.id === "admin-order-modal-overlay") adminCloseOrderModal();
+    });
+  }
 
   // Add member button trigger click
   const addMemberBtn = document.getElementById("admin-add-member-btn");
@@ -1581,7 +1704,33 @@ function setupAdminEventListeners() {
   }
 
   // Admin form submit
-  document.getElementById("admin-product-form").addEventListener("submit", handleAdminProductFormSubmit);
+  const productForm = document.getElementById("admin-product-form");
+  if (productForm) productForm.addEventListener("submit", handleAdminProductFormSubmit);
+
+  // New category toggle listener
+  const newCatToggle = document.getElementById("admin-new-category-toggle");
+  const newCatWrap = document.getElementById("admin-new-category-wrap");
+  const catSelect = document.getElementById("admin-form-category");
+  if (newCatToggle && newCatWrap && catSelect) {
+    newCatToggle.addEventListener("click", () => {
+      const isAdding = newCatWrap.style.display === "none" || !newCatWrap.style.display;
+      if (isAdding) {
+        newCatWrap.style.display = "block";
+        newCatToggle.textContent = "✕ Cancel";
+        newCatToggle.style.background = "rgba(239,68,68,0.15)";
+        newCatToggle.style.color = "#ef4444";
+        catSelect.disabled = true;
+        catSelect.style.opacity = "0.5";
+      } else {
+        newCatWrap.style.display = "none";
+        newCatToggle.textContent = "+ New";
+        newCatToggle.style.background = "rgba(139,92,246,0.15)";
+        newCatToggle.style.color = "var(--color-brand)";
+        catSelect.disabled = false;
+        catSelect.style.opacity = "1";
+      }
+    });
+  }
 
   // File Upload input listener using Supabase Storage
   const fileInput = document.getElementById("admin-form-image-file");

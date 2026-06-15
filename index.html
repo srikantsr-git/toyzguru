@@ -1864,15 +1864,15 @@
                     style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); width: 14px; pointer-events: none;"></i>
                 </div>
 
-                <button class="admin-primary-btn" id="admin-add-product-btn">
+                <button type="button" class="admin-primary-btn" id="admin-add-product-btn">
                   <i data-feather="plus"></i> Add New Product
                 </button>
-                <button class="admin-primary-btn" id="admin-download-excel-btn"
+                <button type="button" class="admin-primary-btn" id="admin-download-excel-btn"
                   style="background: var(--color-watches); margin-left: 0.5rem;"
                   title="Download Excel template containing catalog products">
                   <i data-feather="download"></i> Excel Template
                 </button>
-                <button class="admin-primary-btn" id="admin-import-excel-btn"
+                <button type="button" class="admin-primary-btn" id="admin-import-excel-btn"
                   style="background: var(--color-brand-gradient); margin-left: 0.5rem;"
                   title="Import/Merge products from Excel file">
                   <i data-feather="upload"></i> Import Excel
@@ -2435,11 +2435,25 @@
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
               <div class="form-group">
                 <label class="form-label">Category *</label>
-                <select required class="form-select" id="admin-form-category">
-                  <option value="anime">Anime Figures</option>
-                  <option value="toy-cars">Premium Toy Cars</option>
-                  <option value="watches">Imported Watches</option>
-                </select>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                  <select required class="form-select" id="admin-form-category" style="flex: 1;">
+                    <option value="anime">Anime Figures</option>
+                    <option value="toy-cars">Premium Toy Cars</option>
+                    <option value="watches">Imported Watches</option>
+                  </select>
+                  <button type="button" id="admin-new-category-toggle"
+                    style="padding: 0.5rem 0.75rem; border-radius: 6px; border: 1px solid var(--glass-border); background: rgba(139,92,246,0.15); color: var(--color-brand); font-size: 0.8rem; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s;"
+                    title="Add a new product category">
+                    + New
+                  </button>
+                </div>
+                <!-- New category input - hidden by default -->
+                <div id="admin-new-category-wrap" style="display: none; margin-top: 0.5rem;">
+                  <input type="text" class="form-input" id="admin-new-category-input"
+                    placeholder="New category name (e.g. Collectible Statues)"
+                    style="border-color: var(--color-brand); box-shadow: 0 0 0 2px rgba(139,92,246,0.2);">
+                  <p style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.3rem;">This will be saved as a new category slug.</p>
+                </div>
               </div>
               <div class="form-group">
                 <label class="form-label">Badge Label (Optional)</label>
@@ -2481,6 +2495,14 @@
                     <span id="admin-form-image-name"
                       style="font-size: 0.75rem; color: var(--text-secondary); word-break: break-all;"></span>
                   </div>
+                  <div style="display: flex; align-items: center; gap: 0.4rem; margin-top: 0.2rem;">
+                    <div style="flex: 1; height: 1px; background: var(--glass-border);"></div>
+                    <span style="font-size: 0.7rem; color: var(--text-muted); white-space: nowrap;">or paste URL</span>
+                    <div style="flex: 1; height: 1px; background: var(--glass-border);"></div>
+                  </div>
+                  <input type="url" id="admin-form-image-url" class="form-input"
+                    placeholder="https://example.com/product-image.jpg"
+                    style="font-size: 0.82rem;">
                 </div>
               </div>
             </div>
@@ -2521,8 +2543,8 @@
                   </select>
                 </div>
                 <div class="form-group">
-                  <label class="form-label">GST Tax Category *</label>
-                  <select required class="form-select" id="admin-form-tax-category">
+                  <label class="form-label">GST Tax Category</label>
+                  <select class="form-select" id="admin-form-tax-category">
                     <!-- Dynamically populated from active gst_tax_rates -->
                   </select>
                 </div>
