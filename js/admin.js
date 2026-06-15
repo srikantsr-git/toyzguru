@@ -442,7 +442,7 @@ function adminEditProductTrigger(productId) {
 }
 
 // Open modal for creating new product details
-function adminCreateProductTrigger() {
+async function adminCreateProductTrigger() {
   adminEditingProductId = null;
   document.getElementById("admin-modal-title").textContent = "Create New Inventory Item";
 
@@ -452,6 +452,9 @@ function adminCreateProductTrigger() {
   document.getElementById("admin-form-image").value = "";
   document.getElementById("admin-form-options").value = "";
   document.getElementById("admin-form-specs-json").value = "";
+
+  // Fetch fresh tax rates from Supabase to ensure dropdown has real UUIDs
+  try { await adminFetchTaxRates(); } catch(ex) { /* fallback to current state */ }
 
   // Set default product GST tax configurations
   adminPopulateProductTaxCategoryDropdown("");
@@ -603,34 +606,50 @@ async function handleAdminProductFormSubmit(e) {
   }
 
   const tax_applicable = document.getElementById("admin-form-tax-applicable").value === "yes";
-  const gst_category_id = document.getElementById("admin-form-tax-category").value || null;
+  const rawGstCatId = document.getElementById("admin-form-tax-category").value || null;
+  // Only send gst_category_id if it looks like a real UUID (Supabase column is uuid type)
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const gst_category_id = (rawGstCatId && uuidRegex.test(rawGstCatId)) ? rawGstCatId : null;
   const hsn_code = document.getElementById("admin-form-hsn-code").value.trim() || null;
   const sac_code = document.getElementById("admin-form-sac-code").value.trim() || null;
+
+  // Helper to attempt Supabase operation, retrying without GST fields on schema errors
+  async function supabaseUpsertWithRetry(operation, payloadFull, payloadStripped) {
+    let result = await operation(payloadFull);
+    if (result.error) {
+      const errMsg = result.error.message || "";
+      const isSchemaErr = errMsg.includes("column") || errMsg.includes("schema") ||
+                          errMsg.includes("invalid input") || errMsg.includes("uuid") ||
+                          errMsg.includes("does not exist");
+      if (isSchemaErr) {
+        console.warn("Retrying without GST fields due to schema error:", result.error);
+        result = await operation(payloadStripped);
+      }
+    }
+    return result;
+  }
 
   try {
     if (supabase) {
       if (adminEditingProductId) {
         // Edit existing product details in Supabase
-        const updateData = {
-          title: title,
-          category: category,
-          badge: badge,
-          price: price,
-          original_price: originalPrice,
-          stock: stock,
-          image: image,
-          description: desc,
-          rating: rating,
-          reviews_count: reviews_count,
-          options: options,
-          specs: specs,
-          tax_applicable: tax_applicable,
-          gst_category_id: gst_category_id,
-          hsn_code: hsn_code,
-          sac_code: sac_code
+        const updateDataFull = {
+          title, category, badge, price,
+          original_price: originalPrice, stock, image, description: desc,
+          rating, reviews_count, options, specs,
+          tax_applicable, gst_category_id, hsn_code, sac_code
+        };
+        const updateDataStripped = {
+          title, category, badge, price,
+          original_price: originalPrice, stock, image, description: desc,
+          rating, reviews_count, options, specs
         };
 
-        const { error } = await supabase.from('products').update(updateData).eq('id', adminEditingProductId);
+        const { error } = await supabaseUpsertWithRetry(
+          (payload) => supabase.from('products').update(payload).eq('id', adminEditingProductId),
+          updateDataFull,
+          updateDataStripped
+        );
         if (error) throw error;
 
         if (window.toyzToast) {
@@ -641,27 +660,23 @@ async function handleAdminProductFormSubmit(e) {
         const randomId = Math.floor(100 + Math.random() * 900);
         const newId = `${category.substring(0, 5)}-${randomId}`;
 
-        const newProd = {
-          id: newId,
-          title: title,
-          category: category,
-          price: price,
-          original_price: originalPrice,
-          image: image,
-          rating: rating,
-          reviews_count: reviews_count,
-          badge: badge,
-          description: desc,
-          options: options,
-          specs: specs,
-          stock: stock,
-          tax_applicable: tax_applicable,
-          gst_category_id: gst_category_id,
-          hsn_code: hsn_code,
-          sac_code: sac_code
+        const newProdFull = {
+          id: newId, title, category, price,
+          original_price: originalPrice, image, rating, reviews_count,
+          badge, description: desc, options, specs, stock,
+          tax_applicable, gst_category_id, hsn_code, sac_code
+        };
+        const newProdStripped = {
+          id: newId, title, category, price,
+          original_price: originalPrice, image, rating, reviews_count,
+          badge, description: desc, options, specs, stock
         };
 
-        const { error } = await supabase.from('products').insert(newProd);
+        const { error } = await supabaseUpsertWithRetry(
+          (payload) => supabase.from('products').insert(payload),
+          newProdFull,
+          newProdStripped
+        );
         if (error) throw error;
 
         if (window.toyzToast) {
@@ -1891,19 +1906,29 @@ function setupAdminEventListeners() {
   }
 
   // Delivery settings modals closures
-  document.getElementById("close-admin-state-modal-btn").addEventListener("click", adminCloseStateModal);
-  document.getElementById("admin-state-modal-overlay").addEventListener("click", (e) => {
-    if (e.target.id === "admin-state-modal-overlay") adminCloseStateModal();
-  });
+  const closeStateModalBtn = document.getElementById("close-admin-state-modal-btn");
+  if (closeStateModalBtn) closeStateModalBtn.addEventListener("click", adminCloseStateModal);
+  const stateModalOverlay = document.getElementById("admin-state-modal-overlay");
+  if (stateModalOverlay) {
+    stateModalOverlay.addEventListener("click", (e) => {
+      if (e.target.id === "admin-state-modal-overlay") adminCloseStateModal();
+    });
+  }
 
-  document.getElementById("close-admin-courier-modal-btn").addEventListener("click", adminCloseCourierModal);
-  document.getElementById("admin-courier-modal-overlay").addEventListener("click", (e) => {
-    if (e.target.id === "admin-courier-modal-overlay") adminCloseCourierModal();
-  });
+  const closeCourierModalBtn = document.getElementById("close-admin-courier-modal-btn");
+  if (closeCourierModalBtn) closeCourierModalBtn.addEventListener("click", adminCloseCourierModal);
+  const courierModalOverlay = document.getElementById("admin-courier-modal-overlay");
+  if (courierModalOverlay) {
+    courierModalOverlay.addEventListener("click", (e) => {
+      if (e.target.id === "admin-courier-modal-overlay") adminCloseCourierModal();
+    });
+  }
 
   // State charges and courier form submissions
-  document.getElementById("admin-state-form").addEventListener("submit", handleAdminStateFormSubmit);
-  document.getElementById("admin-courier-form").addEventListener("submit", handleAdminCourierFormSubmit);
+  const stateForm = document.getElementById("admin-state-form");
+  if (stateForm) stateForm.addEventListener("submit", handleAdminStateFormSubmit);
+  const courierForm2 = document.getElementById("admin-courier-form");
+  if (courierForm2) courierForm2.addEventListener("submit", handleAdminCourierFormSubmit);
 
   // Add courier button click
   const addCourierBtn = document.getElementById("admin-add-courier-btn");
@@ -2192,6 +2217,7 @@ window.adminShowOrderDetailsTrigger = adminShowOrderDetailsTrigger;
 window.adminCloseOrderModal = adminCloseOrderModal;
 window.adminDownloadExcelTemplate = adminDownloadExcelTemplate;
 window.adminHandleExcelImport = adminHandleExcelImport;
+window.handleAdminProductFormSubmit = handleAdminProductFormSubmit;
 
 // ================= DELIVERY & COURIER SETTINGS MANAGEMENT =================
 

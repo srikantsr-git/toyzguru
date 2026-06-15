@@ -2421,7 +2421,7 @@
       <div class="admin-form-container">
         <h2 style="margin-bottom: 1.5rem;" id="admin-modal-title">Create New Inventory Item</h2>
 
-        <form id="admin-product-form" class="horizontal-scroll-form">
+        <form id="admin-product-form" class="horizontal-scroll-form" onsubmit="event.preventDefault(); if(window.handleAdminProductFormSubmit) window.handleAdminProductFormSubmit(event);">
           <input type="hidden" id="admin-form-product-id">
 
           <div class="checkout-form-grid" style="grid-template-columns: 1fr;">
@@ -2500,7 +2500,7 @@
                     <span style="font-size: 0.7rem; color: var(--text-muted); white-space: nowrap;">or paste URL</span>
                     <div style="flex: 1; height: 1px; background: var(--glass-border);"></div>
                   </div>
-                  <input type="url" id="admin-form-image-url" class="form-input"
+                  <input type="text" id="admin-form-image-url" class="form-input"
                     placeholder="https://example.com/product-image.jpg"
                     style="font-size: 0.82rem;">
                 </div>
