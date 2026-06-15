@@ -2302,7 +2302,7 @@ function toggleCartDrawer(open) {
 }
 window.toggleCartDrawer = toggleCartDrawer;
 
-function addToCart(productId, qty, option) {
+async function addToCart(productId, qty, option) {
   const product = productsState.find(p => p.id === productId);
   if (!product) return;
 
@@ -2320,15 +2320,7 @@ function addToCart(productId, qty, option) {
       existingItem.quantity = product.stock;
     } else {
       existingItem.quantity += qty;
-      showToast("Updated Cart Quantity", `
-        <div style="display: flex; align-items: center; gap: 0.75rem; margin-top: 0.25rem;">
-          <img src="${product.image}" style="width: 32px; height: 32px; object-fit: cover; border-radius: 4px; border: 1px solid var(--glass-border);" alt="${product.title}">
-          <div>
-            <div style="font-weight: 600; color: #fff; font-size: 0.82rem; line-height: 1.2;">${product.title} (${option})</div>
-            <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 0.15rem;">Quantity updated to ${existingItem.quantity}.</div>
-          </div>
-        </div>
-      `, "success");
+      await showCustomDialog("Product Added Successfully", `"${product.title}" (${option}) quantity updated to ${existingItem.quantity} in your vault cart.`, "success");
     }
   } else {
     if (qty > product.stock) {
@@ -2343,16 +2335,7 @@ function addToCart(productId, qty, option) {
       option: option,
       quantity: qty
     });
-    showToast("Added to Cart", `
-      <div style="display: flex; align-items: center; gap: 0.75rem; margin-top: 0.25rem;">
-        <img src="${product.image}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px; border: 1px solid var(--glass-border);" alt="${product.title}">
-        <div>
-          <div style="font-weight: 600; color: #fff; font-size: 0.85rem; line-height: 1.2;">${product.title}</div>
-          <div style="font-size: 0.75rem; color: var(--text-secondary);">${option} added to cart.</div>
-          <a href="javascript:void(0)" onclick="window.toggleCartDrawer(true)" style="color: var(--color-brand); font-size: 0.75rem; font-weight: 700; text-decoration: underline; display: inline-block; margin-top: 0.15rem;">View Cart &rarr;</a>
-        </div>
-      </div>
-    `, "success");
+    await showCustomDialog("Product Added Successfully", `"${product.title}" (${option}) has been successfully added to your vault cart.`, "success");
   }
 
   saveCart();
