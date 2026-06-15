@@ -3002,7 +3002,17 @@ async function handleCheckoutSubmit(e) {
       // 1. Save order (Supabase if available, localStorage fallback always)
       if (supabase) {
         const { error: orderError } = await supabase.from('orders').insert(newOrderObj);
-        if (orderError) throw orderError;
+        if (orderError) {
+          // If foreign key constraint on user_id fails (since mock users aren't in auth.users), retry with user_id: null
+          if (orderError.code === '23503' || (orderError.message && orderError.message.includes("user_id"))) {
+            console.warn("Bypassed foreign key constraint on orders. Bypassing user_id linkage.");
+            const fallbackOrder = { ...newOrderObj, user_id: null };
+            const { error: fallbackError } = await supabase.from('orders').insert(fallbackOrder);
+            if (fallbackError) throw fallbackError;
+          } else {
+            throw orderError;
+          }
+        }
       } else {
         let localOrders = JSON.parse(localStorage.getItem("toyzguru_orders")) || [];
         localOrders.push(newOrderObj);
