@@ -3412,18 +3412,47 @@ async function handleCheckoutSubmit(e) {
         delete dbOrderObj.transaction_id; // prevent column does not exist error on Supabase
         delete dbOrderObj.receipt_url; // prevent column does not exist error on Supabase since receipt_url doesn't exist remotely
 
-        const { error: orderError } = await supabase.from('orders').insert(dbOrderObj);
-        if (orderError) {
-          // If foreign key constraint on user_id fails (since mock users aren't in auth.users), retry with user_id: null
-          if (orderError.code === '23503' || (orderError.message && orderError.message.includes("user_id"))) {
-            console.warn("Bypassed foreign key constraint on orders. Bypassing user_id linkage.");
-            const fallbackOrder = { ...dbOrderObj, user_id: null };
-            const { error: fallbackError } = await supabase.from('orders').insert(fallbackOrder);
-            if (fallbackError) throw fallbackError;
-          } else {
-            throw orderError;
+        // Resilient order insert helper to deal with missing DB columns or user_id FK constraints
+        const insertWithRetry = async (payload, retryGstStrip = true, retryUserIdNull = true) => {
+          const { error } = await supabase.from('orders').insert(payload);
+          if (!error) return null;
+
+          console.warn("Order insertion failed:", error);
+
+          // Retry 1: If GST columns are missing in remote DB, strip them and retry
+          if (retryGstStrip && (
+            error.code === '42703' || 
+            (error.message && (
+              error.message.includes("buyer_gstin") || 
+              error.message.includes("cgst_amount") || 
+              error.message.includes("sgst_amount") || 
+              error.message.includes("igst_amount") || 
+              error.message.includes("total_tax_amount") ||
+              error.message.includes("column")
+            ))
+          )) {
+            console.log("Retrying order insertion with GST columns stripped...");
+            const stripped = { ...payload };
+            delete stripped.cgst_amount;
+            delete stripped.sgst_amount;
+            delete stripped.igst_amount;
+            delete stripped.total_tax_amount;
+            delete stripped.buyer_gstin;
+            return insertWithRetry(stripped, false, retryUserIdNull);
           }
-        }
+
+          // Retry 2: If user_id foreign key constraint fails, null it and retry
+          if (retryUserIdNull && (error.code === '23503' || (error.message && error.message.includes("user_id")))) {
+            console.log("Retrying order insertion with user_id set to null...");
+            const fallback = { ...payload, user_id: null };
+            return insertWithRetry(fallback, retryGstStrip, false);
+          }
+
+          return error; // return ultimate error if retries fail
+        };
+
+        const insertError = await insertWithRetry(dbOrderObj);
+        if (insertError) throw insertError;
       } else {
         let localOrders = JSON.parse(localStorage.getItem("toyzguru_orders")) || [];
         localOrders.push(newOrderObj);
