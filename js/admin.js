@@ -67,13 +67,10 @@ function updateAdminAuthView() {
 
 // Toast Helper
 function adminShowToast(title, desc, type) {
-  const toastFn = window.toyzToast || window.showToast;
-  if (toastFn) {
-    toastFn(title, desc, type);
-  } else if (window.showCustomDialog) {
-    window.showCustomDialog(title, desc, type);
+  if (window.showToast) {
+    window.showToast(title, desc, type);
   } else {
-    alert(`${title}: ${desc}`);
+    console.log(`Toast: ${title} - ${desc} (${type})`);
   }
 }
 
@@ -294,9 +291,7 @@ async function adminRenderInventoryTable() {
 }
 
 async function adminDeleteProductTrigger(productId) {
-  const isConfirmed = window.showCustomDialog 
-    ? await window.showCustomDialog("Delete Product", `Are you sure you want to delete product "${productId}"? This will immediately remove it from public catalog.`, "danger", true)
-    : confirm(`Are you sure you want to delete product "${productId}"? This will immediately remove it from public catalog.`);
+  const isConfirmed = await window.showCustomDialog("Delete Product", `Are you sure you want to delete product "${productId}"? This will immediately remove it from public catalog.`, "danger", true);
   
   if (isConfirmed) {
     if (supabase) {
@@ -314,9 +309,7 @@ async function adminDeleteProductTrigger(productId) {
           window.toyzToast("Product Deleted", `Removed item ID: ${productId} from store lists.`, "danger");
         }
       } catch (err) {
-        if (window.toyzToast) {
-          window.toyzToast("Deletion Failed", err.message || "Failed to delete product.", "danger");
-        }
+        await window.showCustomDialog("Deletion Failed", err.message || "Failed to delete product.", "danger");
       }
     } else {
       // Local fallback / offline mode
@@ -1010,9 +1003,7 @@ async function adminUpdateMemberPoints(profileId) {
 }
 
 async function adminDeleteMemberTrigger(profileId) {
-  const isConfirmed = window.showCustomDialog
-    ? await window.showCustomDialog("Delete Member", "Are you sure you want to delete this member and all their related data? This action cannot be undone.", "danger", true)
-    : confirm("Are you sure you want to delete this member and all their related data? This action cannot be undone.");
+  const isConfirmed = await window.showCustomDialog("Delete Member", "Are you sure you want to delete this member and all their related data? This action cannot be undone.", "danger", true);
 
   if (isConfirmed) {
     // 1. Clean up from local storage in both offline and online modes
@@ -1080,7 +1071,7 @@ async function adminDeleteMemberTrigger(profileId) {
 
       if (window.toyzToast) window.toyzToast("Member Deleted", "Member and their related data have been successfully deleted.", "info");
     } catch (err) {
-      if (window.toyzToast) window.toyzToast("Delete Failed", err.message || "Failed to delete member.", "danger");
+      await window.showCustomDialog("Delete Failed", err.message || "Failed to delete member.", "danger");
     }
 
     adminRenderMembersRegistry();
@@ -1457,9 +1448,7 @@ async function adminDeleteFeedbackTrigger(messageId) {
     return;
   }
 
-  const isConfirmed = window.showCustomDialog
-    ? await window.showCustomDialog("Dismiss Ticket", "Dismiss this support ticket?", "warning", true)
-    : confirm("Dismiss this support ticket?");
+  const isConfirmed = await window.showCustomDialog("Dismiss Ticket", "Dismiss this support ticket?", "warning", true);
 
   if (isConfirmed) {
     try {
@@ -1469,7 +1458,7 @@ async function adminDeleteFeedbackTrigger(messageId) {
       if (window.toyzToast) window.toyzToast("Feedback Dismissed", "Message has been archived/removed.", "info");
       adminRenderFeedbackInbox();
     } catch (err) {
-      if (window.toyzToast) window.toyzToast("Action Failed", err.message || "Failed to dismiss message.", "danger");
+      await window.showCustomDialog("Action Failed", err.message || "Failed to dismiss message.", "danger");
     }
   }
 }
@@ -1642,7 +1631,7 @@ function setupAdminEventListeners() {
         adminShowToast("Access Granted", "Admin session decrypt successful.", "success");
         updateAdminAuthView();
       } else {
-        adminShowToast("Access Denied", "Incorrect Security Passcode.", "danger");
+        await window.showCustomDialog("Access Denied", "Incorrect Security Passcode. Access to the admin dashboard has been blocked.", "danger");
       }
     });
   }
@@ -2225,7 +2214,7 @@ async function handleAdminCourierFormSubmit(e) {
     adminCloseCourierModal();
     adminRenderCouriersTable();
   } catch (err) {
-    adminShowToast("Save Failed", err.message || "Failed to save courier details.", "danger");
+    await window.showCustomDialog("Save Failed", err.message || "Failed to save courier details.", "danger");
   }
 }
 
@@ -2233,9 +2222,7 @@ async function adminDeleteCourierTrigger(courierId) {
   const courier = window.couriersState.find(c => c.id === courierId);
   if (!courier) return;
 
-  const isConfirmed = window.showCustomDialog
-    ? await window.showCustomDialog("Delete Courier", `Are you sure you want to delete courier "${courier.name}"?`, "danger", true)
-    : confirm(`Are you sure you want to delete courier "${courier.name}"?`);
+  const isConfirmed = await window.showCustomDialog("Delete Courier", `Are you sure you want to delete courier "${courier.name}"?`, "danger", true);
 
   if (isConfirmed) {
     try {
@@ -2248,7 +2235,7 @@ async function adminDeleteCourierTrigger(courierId) {
       adminShowToast("Courier Deleted", `Removed agency ${courier.name}`, "danger");
       adminRenderCouriersTable();
     } catch (err) {
-      adminShowToast("Delete Failed", err.message || "Failed to remove courier", "danger");
+      await window.showCustomDialog("Delete Failed", err.message || "Failed to remove courier.", "danger");
     }
   }
 }
@@ -2383,11 +2370,7 @@ async function adminToggleCouponStatus(code) {
     } catch (err) {
       console.error("Supabase toggle status failed:", err);
       const errMsg = err.message || "Failed to update coupon status in database.";
-      if (window.showCustomDialog) {
-        await window.showCustomDialog("Status Update Failed", errMsg, "danger");
-      } else {
-        adminShowToast("Status Update Failed", errMsg, "danger");
-      }
+      await window.showCustomDialog("Status Update Failed", errMsg, "danger");
       return;
     }
   }
@@ -2399,9 +2382,7 @@ async function adminToggleCouponStatus(code) {
 }
 
 async function adminDeleteCouponTrigger(code) {
-  const isConfirmed = window.showCustomDialog
-    ? await window.showCustomDialog("Delete Coupon", `Are you sure you want to delete coupon "${code}"?`, "danger", true)
-    : confirm(`Are you sure you want to delete coupon "${code}"?`);
+  const isConfirmed = await window.showCustomDialog("Delete Coupon", `Are you sure you want to delete coupon "${code}"?`, "danger", true);
 
   if (isConfirmed) {
     if (supabase) {
@@ -2411,11 +2392,7 @@ async function adminDeleteCouponTrigger(code) {
       } catch (err) {
         console.error("Supabase coupon delete failed:", err);
         const errMsg = err.message || "Failed to delete coupon from database.";
-        if (window.showCustomDialog) {
-          await window.showCustomDialog("Delete Failed", errMsg, "danger");
-        } else {
-          adminShowToast("Delete Failed", errMsg, "danger");
-        }
+        await window.showCustomDialog("Delete Failed", errMsg, "danger");
         return;
       }
     }
@@ -2762,9 +2739,7 @@ function adminFilterNewsletterTable(query) {
 }
 
 async function adminDeleteNewsletterSubscriber(id, email) {
-  const isConfirmed = window.showCustomDialog
-    ? await window.showCustomDialog("Remove Subscriber", `Remove "${email}" from the newsletter list?\n\nThis cannot be undone.`, "danger", true)
-    : confirm(`Remove "${email}" from the newsletter list?\n\nThis cannot be undone.`);
+  const isConfirmed = await window.showCustomDialog("Remove Subscriber", `Remove "${email}" from the newsletter list?\n\nThis cannot be undone.`, "danger", true);
 
   if (!isConfirmed) return;
 
@@ -2794,7 +2769,7 @@ async function adminDeleteNewsletterSubscriber(id, email) {
     adminShowToast('Subscriber Removed', `"${email}" has been removed from the newsletter list.`, 'success');
   } catch (err) {
     console.error('Delete newsletter subscriber error:', err);
-    adminShowToast('Delete Failed', err.message || 'Could not remove subscriber.', 'danger');
+    await window.showCustomDialog('Delete Failed', err.message || 'Could not remove subscriber.', 'danger');
   }
 }
 

@@ -1724,9 +1724,12 @@ function setupRouting() {
           await initDatabase();
           window.location.hash = "#profile";
           return;
+          await showCustomDialog("Verification Failed", "This email confirmation link is invalid, has expired, or has already been verified. Please sign up again or request another verification link.", "danger");
+          window.location.hash = "#auth";
+          return;
         }
       }
-      showToast("Verification Failed", "Invalid confirmation link.", "danger");
+      await showCustomDialog("Verification Failed", "This email confirmation link is invalid, has expired, or has already been verified. Please sign up again or request another verification link.", "danger");
       window.location.hash = "#auth";
       return;
     }
@@ -1749,7 +1752,7 @@ function setupRouting() {
           history.replaceState(null, "", window.location.pathname + '#reset-password');
         } else {
           // Invalid or expired token
-          showToast("Link Expired", "This password reset link is invalid or has expired.", "danger");
+          await showCustomDialog("Link Expired", "This password reset link is invalid or has expired. Please request a new password reset link from the Sign In terminal.", "danger");
           window.location.hash = "#auth";
           return;
         }
@@ -2297,6 +2300,7 @@ function toggleCartDrawer(open) {
     drawer.classList.remove("active");
   }
 }
+window.toggleCartDrawer = toggleCartDrawer;
 
 function addToCart(productId, qty, option) {
   const product = productsState.find(p => p.id === productId);
@@ -2316,7 +2320,15 @@ function addToCart(productId, qty, option) {
       existingItem.quantity = product.stock;
     } else {
       existingItem.quantity += qty;
-      showToast("Updated Cart Quantity", `${product.title} (${option}) quantity updated in cart.`, "success");
+      showToast("Updated Cart Quantity", `
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-top: 0.25rem;">
+          <img src="${product.image}" style="width: 32px; height: 32px; object-fit: cover; border-radius: 4px; border: 1px solid var(--glass-border);" alt="${product.title}">
+          <div>
+            <div style="font-weight: 600; color: #fff; font-size: 0.82rem; line-height: 1.2;">${product.title} (${option})</div>
+            <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 0.15rem;">Quantity updated to ${existingItem.quantity}.</div>
+          </div>
+        </div>
+      `, "success");
     }
   } else {
     if (qty > product.stock) {
@@ -2331,7 +2343,16 @@ function addToCart(productId, qty, option) {
       option: option,
       quantity: qty
     });
-    showToast("Added to Cart", `${product.title} (${option}) added to cart.`, "success");
+    showToast("Added to Cart", `
+      <div style="display: flex; align-items: center; gap: 0.75rem; margin-top: 0.25rem;">
+        <img src="${product.image}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px; border: 1px solid var(--glass-border);" alt="${product.title}">
+        <div>
+          <div style="font-weight: 600; color: #fff; font-size: 0.85rem; line-height: 1.2;">${product.title}</div>
+          <div style="font-size: 0.75rem; color: var(--text-secondary);">${option} added to cart.</div>
+          <a href="javascript:void(0)" onclick="window.toggleCartDrawer(true)" style="color: var(--color-brand); font-size: 0.75rem; font-weight: 700; text-decoration: underline; display: inline-block; margin-top: 0.15rem;">View Cart &rarr;</a>
+        </div>
+      </div>
+    `, "success");
   }
 
   saveCart();
@@ -2358,7 +2379,7 @@ function updateCartQuantity(productId, option, change) {
     removeFromCart(productId, option);
   } else {
     if (product && item.quantity + change > product.stock) {
-      showToast("Inventory Limit", "Cannot exceed available vault stock levels.", "warning");
+      showToast("Inventory Limit", `Cannot exceed available vault stock of ${product.stock} units.`, "warning");
     } else {
       item.quantity += change;
       saveCart();
@@ -2368,10 +2389,23 @@ function updateCartQuantity(productId, option, change) {
 }
 
 function removeFromCart(productId, option) {
+  const item = cartState.find(i => i.productId === productId && i.option === option);
+  const title = item ? item.title : "Product";
+  const image = item ? item.image : "";
+
   cartState = cartState.filter(item => !(item.productId === productId && item.option === option));
   saveCart();
   renderCartDrawer();
-  showToast("Removed Item", "Product deleted from cart drawer.", "info");
+
+  showToast("Removed Item", `
+    <div style="display: flex; align-items: center; gap: 0.75rem; margin-top: 0.25rem;">
+      ${image ? `<img src="${image}" style="width: 32px; height: 32px; object-fit: cover; border-radius: 4px; border: 1px solid var(--glass-border);" alt="${title}">` : ''}
+      <div>
+        <div style="font-weight: 600; color: #fff; font-size: 0.82rem; line-height: 1.2;">${title}</div>
+        <div style="font-size: 0.72rem; color: var(--text-secondary);">${option} removed from cart drawer.</div>
+      </div>
+    </div>
+  `, "info");
 }
 
 function updateCartBadges() {
@@ -3152,14 +3186,14 @@ async function handleCheckoutSubmit(e) {
           try {
             await executeSaveOrder();
           } catch (e) {
-            showToast("Checkout Failed", e.message || "Failed to process transaction after payment.", "danger");
+            await showCustomDialog("Checkout Failed", (e.message || e) + "\n\nIf you were charged, please contact our support desk at support@toyzguru.in with your transaction details.", "danger");
             paymentForm.style.display = "block";
             loader.classList.remove("active");
           }
         },
         modal: {
           ondismiss: function () {
-            showToast("Payment Cancelled", "You closed the payment window.", "warning");
+            showToast("Payment Cancelled", "You closed the payment window. Feel free to resume checkout when ready.", "warning");
           }
         }
       };
@@ -3171,7 +3205,7 @@ async function handleCheckoutSubmit(e) {
 
 
   } catch (err) {
-    showToast("Checkout Failed", err.message || "Failed to process transaction.", "danger");
+    await showCustomDialog("Checkout Failed", (err.message || err) + "\n\nIf you were charged, please contact our support desk at support@toyzguru.in with your transaction details.", "danger");
     console.error(err);
     paymentForm.style.display = "block";
     loader.classList.remove("active");
@@ -4190,7 +4224,7 @@ function setupEventListeners() {
 
       if (matchedProfile && expectedPassword === password) {
         if (matchedProfile.email_confirmed === false) {
-          showToast("Email Unverified", "Please check your inbox and confirm your registration first.", "warning");
+          await showCustomDialog("Email Unverified", "Please check your email inbox and click the confirmation link to verify your registration before signing in.", "warning");
           return;
         }
         localStorage.setItem("toyzguru_mock_session", "true");
@@ -4211,7 +4245,7 @@ function setupEventListeners() {
         await initDatabase();
         window.location.hash = "#profile";
       } else {
-        showToast("Sign In Failed", "Invalid email or password. Please try again.", "danger");
+        await showCustomDialog("Sign In Failed", "The credentials you entered do not match our records. Please double-check your email and password.", "danger");
       }
     });
   }
@@ -4227,12 +4261,12 @@ function setupEventListeners() {
       const password = document.getElementById("auth-signup-password").value;
 
       if (!name || !email || !password) {
-        showToast("Validation Error", "All fields are required.", "warning");
+        await showCustomDialog("Validation Error", "Please complete all fields (Name, Email, and Password) to secure your registration.", "warning");
         return;
       }
 
       if (password.length < 6) {
-        showToast("Weak Password", "Password must be at least 6 characters long.", "warning");
+        await showCustomDialog("Weak Password", "Security protocols require your password to be at least 6 characters in length to protect your account details.", "warning");
         return;
       }
 
@@ -4595,19 +4629,44 @@ function setupEventListeners() {
       const subject = document.getElementById("contact-subject").value.trim();
       const message = document.getElementById("contact-message").value.trim();
 
-      try {
-        const { error } = await supabase.from('contact_messages').insert({
-          name,
-          email,
-          subject,
-          message
-        });
-        if (error) throw error;
+      if (!name || !email || !subject || !message) {
+        await showCustomDialog("Validation Error", "All fields are required to transmit a message to our support desk.", "warning");
+        return;
+      }
 
-        showToast("Message Transmitted", `Thank you, ${name}. Our vault support desk has received your ticket regarding: "${subject}". We will reply to ${email} within 12 hours.`, "success");
+      if (supabase) {
+        try {
+          const { error } = await supabase.from('contact_messages').insert({
+            name,
+            email,
+            subject,
+            message
+          });
+          if (error) throw error;
+
+          showToast("Message Transmitted", `Thank you, ${name}. Our support desk has received your ticket regarding "${subject}". We will reply to ${email} within 12 hours.`, "success");
+          contactForm.reset();
+        } catch (err) {
+          await showCustomDialog("Message Transmission Failed", `Could not deliver message: ${err.message || err}`, "danger");
+        }
+      } else {
+        // Local fallback / offline demo simulation
+        try {
+          let localInquiries = JSON.parse(localStorage.getItem("toyzguru_inquiries")) || [];
+          localInquiries.push({
+            name,
+            email,
+            subject,
+            message,
+            date: new Date().toISOString()
+          });
+          localStorage.setItem("toyzguru_inquiries", JSON.stringify(localInquiries));
+        } catch (e) {
+          console.warn("Could not write message to local storage fallback:", e);
+        }
+        
+        showToast("Message Transmitted (Demo)", `Thank you, ${name}. Your ticket regarding "${subject}" has been queued in offline simulation. We will reply to ${email} within 12 hours.`, "success");
         contactForm.reset();
-      } catch (err) {
-        showToast("Message Transmission Failed", err.message || "Could not submit message.", "danger");
       }
     });
   }
@@ -4962,10 +5021,27 @@ function toggleWishlist(productId) {
 
   if (index === -1) {
     wishlistState.push(productId);
-    showToast("Vault Saved", `"${title}" added to your wishlist.`, "success");
+    showToast("Vault Saved", `
+      <div style="display: flex; align-items: center; gap: 0.75rem; margin-top: 0.25rem;">
+        ${product && product.image ? `<img src="${product.image}" style="width: 32px; height: 32px; object-fit: cover; border-radius: 4px; border: 1px solid var(--glass-border);" alt="${title}">` : ''}
+        <div>
+          <div style="font-weight: 600; color: #fff; font-size: 0.82rem; line-height: 1.2;">${title}</div>
+          <div style="font-size: 0.72rem; color: var(--text-secondary);">Added to your wishlist vault.</div>
+          <a href="#wishlist" style="color: var(--color-brand); font-size: 0.72rem; font-weight: 700; text-decoration: underline; display: inline-block; margin-top: 0.15rem;">View Wishlist &rarr;</a>
+        </div>
+      </div>
+    `, "success");
   } else {
     wishlistState.splice(index, 1);
-    showToast("Vault Removed", `"${title}" removed from your wishlist.`, "info");
+    showToast("Vault Removed", `
+      <div style="display: flex; align-items: center; gap: 0.75rem; margin-top: 0.25rem;">
+        ${product && product.image ? `<img src="${product.image}" style="width: 32px; height: 32px; object-fit: cover; border-radius: 4px; border: 1px solid var(--glass-border);" alt="${title}">` : ''}
+        <div>
+          <div style="font-weight: 600; color: #fff; font-size: 0.82rem; line-height: 1.2;">${title}</div>
+          <div style="font-size: 0.72rem; color: var(--text-secondary);">Removed from your wishlist vault.</div>
+        </div>
+      </div>
+    `, "info");
   }
 
   saveWishlist();
