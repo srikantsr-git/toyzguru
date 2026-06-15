@@ -499,18 +499,26 @@ async function initDatabase() {
   localStorage.setItem("toyzguru_couriers", JSON.stringify(couriersState));
 
   // Load store settings (tax configuration)
+  // Migration: if cached settings still have old 18% default, clear cache to pick up new 5% default
+  try {
+    const cachedSettings = JSON.parse(localStorage.getItem("toyzguru_store_settings") || "{}");
+    if (cachedSettings.default_tax_category_id === "1-18" && !cachedSettings._gst5_migrated) {
+      localStorage.removeItem("toyzguru_store_settings");
+    }
+  } catch (e) { /* ignore */ }
+
   const defaultStoreSettings = {
     id: 1,
     seller_gstin: "36AAAAA1111A1Z1", // Telangana seller GSTIN seed
     business_state: "Telangana",
-    default_tax_category_id: "1-18",
+    default_tax_category_id: "1-5",
     gst_enabled: true,
     display_prices_including_tax: true,
     display_prices_excluding_tax: false,
     tax_enabled: true,
-    cgst_pct: 9.00,
-    sgst_pct: 9.00,
-    igst_pct: 18.00
+    cgst_pct: 2.50,
+    sgst_pct: 2.50,
+    igst_pct: 5.00
   };
 
   if (supabase) {
@@ -1529,7 +1537,7 @@ function generateOrderReceiptHTML(order) {
       const lineTot = unitP * qty;
 
       const hsn = item.hsn_code || item.sac_code || '9503';
-      const itemTaxPct = item.total_tax_pct !== undefined ? item.total_tax_pct : 18; // default to 18
+      const itemTaxPct = item.total_tax_pct !== undefined ? item.total_tax_pct : 5; // default to 5%
       const itemTaxAmt = item.total_tax_amount !== undefined ? item.total_tax_amount : (lineTot * (itemTaxPct / 100));
 
       computedSubtotal += lineTot;

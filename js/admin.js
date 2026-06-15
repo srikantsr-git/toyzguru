@@ -339,12 +339,17 @@ function adminPopulateProductTaxCategoryDropdown(selectedValue) {
   selectEl.innerHTML = activeRates.map(r => `<option value="${r.id}">${r.name} (${r.total_tax_pct}%)</option>`).join("");
   
   if (selectedValue) {
+    // Editing existing product — use its stored value
     selectEl.value = selectedValue;
-  } else if (activeRates.length > 0) {
-    // If no explicit category select, and window.storeSettings default category is set, use it
-    if (window.storeSettings && window.storeSettings.default_tax_category_id) {
+  } else {
+    // New product — default to GST 5%
+    // Try to find by total_tax_pct=5 (works for both local fallback IDs and real Supabase UUIDs)
+    const rate5 = activeRates.find(r => parseFloat(r.total_tax_pct) === 5);
+    if (rate5) {
+      selectEl.value = rate5.id;
+    } else if (window.storeSettings && window.storeSettings.default_tax_category_id) {
       selectEl.value = window.storeSettings.default_tax_category_id;
-    } else {
+    } else if (activeRates.length > 0) {
       selectEl.selectedIndex = 0;
     }
   }
