@@ -652,9 +652,8 @@ async function handleAdminProductFormSubmit(e) {
         );
         if (error) throw error;
 
-        if (window.toyzToast) {
-          window.toyzToast("Specs Saved", `Updated details for item: ${adminEditingProductId}`, "success");
-        }
+        // Show success dialog for product update
+        adminShowProductSuccessDialog(false, title, adminEditingProductId);
       } else {
         // Generate new unique ID
         const randomId = Math.floor(100 + Math.random() * 900);
@@ -679,9 +678,8 @@ async function handleAdminProductFormSubmit(e) {
         );
         if (error) throw error;
 
-        if (window.toyzToast) {
-          window.toyzToast("Product Created", `Added custom item "${title}" to category lists.`, "success");
-        }
+        // Show success dialog for new product
+        adminShowProductSuccessDialog(true, title, newId);
       }
     } else {
       // Local fallback / offline mode
@@ -710,9 +708,7 @@ async function handleAdminProductFormSubmit(e) {
           match.sac_code = sac_code;
         }
         localStorage.setItem("toyzguru_products", JSON.stringify(products));
-        if (window.toyzToast) {
-          window.toyzToast("Specs Saved (Demo)", `Updated details locally for item: ${adminEditingProductId}`, "success");
-        }
+        adminShowProductSuccessDialog(false, title, adminEditingProductId);
       } else {
         // Create locally
         const randomId = Math.floor(100 + Math.random() * 900);
@@ -743,9 +739,7 @@ async function handleAdminProductFormSubmit(e) {
         products.push(newProd);
         window.productsState = products;
         localStorage.setItem("toyzguru_products", JSON.stringify(products));
-        if (window.toyzToast) {
-          window.toyzToast("Product Created (Demo)", `Added custom item "${title}" locally.`, "success");
-        }
+        adminShowProductSuccessDialog(true, title, newId);
       }
     }
 
@@ -768,6 +762,149 @@ async function handleAdminProductFormSubmit(e) {
 function adminCloseProductModal() {
   document.getElementById("admin-product-modal-overlay").classList.remove("active");
   document.body.style.overflow = "";
+}
+
+function adminShowProductSuccessDialog(isNew, productTitle, productId) {
+  // Remove any existing success dialog
+  const existing = document.getElementById("admin-product-success-dialog");
+  if (existing) existing.remove();
+
+  const heading = isNew ? "Product Successfully Added!" : "Product Updated!";
+  const subtext = isNew
+    ? `<strong>${productTitle}</strong> has been added to your catalog and is now live.`
+    : `<strong>${productTitle}</strong> has been updated successfully.`;
+  const idLabel = isNew ? "Product ID" : "Updated ID";
+
+  const overlay = document.createElement("div");
+  overlay.id = "admin-product-success-dialog";
+  overlay.style.cssText = `
+    position: fixed; inset: 0; z-index: 99999;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(8, 11, 17, 0.82);
+    backdrop-filter: blur(8px);
+    animation: fadeIn 0.25s ease;
+  `;
+
+  overlay.innerHTML = `
+    <div style="
+      background: linear-gradient(135deg, #0f1724 0%, #1a2540 100%);
+      border: 1px solid rgba(139,92,246,0.4);
+      border-radius: 20px;
+      padding: 2.8rem 3rem;
+      max-width: 420px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 0 60px rgba(139,92,246,0.25), 0 30px 60px rgba(0,0,0,0.6);
+      animation: scaleIn 0.3s cubic-bezier(0.34,1.56,0.64,1);
+      position: relative;
+    ">
+      <!-- Glow ring -->
+      <div style="
+        width: 80px; height: 80px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, rgba(139,92,246,0.2), rgba(59,230,193,0.15));
+        border: 2px solid rgba(139,92,246,0.5);
+        display: flex; align-items: center; justify-content: center;
+        margin: 0 auto 1.5rem;
+        box-shadow: 0 0 30px rgba(139,92,246,0.4);
+        animation: pulseRing 1.5s ease infinite;
+      ">
+        <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+      </div>
+
+      <h2 style="
+        color: #fff; font-size: 1.45rem; font-weight: 700;
+        margin: 0 0 0.6rem; letter-spacing: -0.02em;
+      ">${heading}</h2>
+
+      <p style="color: rgba(255,255,255,0.65); font-size: 0.92rem; margin: 0 0 1.4rem; line-height: 1.6;">
+        ${subtext}
+      </p>
+
+      <div style="
+        background: rgba(139,92,246,0.1);
+        border: 1px solid rgba(139,92,246,0.2);
+        border-radius: 10px;
+        padding: 0.7rem 1rem;
+        margin-bottom: 1.8rem;
+        display: flex; align-items: center; justify-content: space-between;
+      ">
+        <span style="color: rgba(255,255,255,0.45); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em;">${idLabel}</span>
+        <span style="color: #a78bfa; font-family: monospace; font-size: 0.85rem; font-weight: 600;">${productId}</span>
+      </div>
+
+      <!-- Progress bar auto-dismiss -->
+      <div style="background: rgba(255,255,255,0.08); border-radius: 4px; height: 4px; margin-bottom: 1.4rem; overflow: hidden;">
+        <div id="admin-success-progress" style="
+          height: 100%; width: 100%;
+          background: linear-gradient(90deg, #8b5cf6, #3be6c1);
+          border-radius: 4px;
+          transition: width 3s linear;
+        "></div>
+      </div>
+
+      <button id="admin-success-ok-btn" style="
+        background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+        color: #fff; border: none; border-radius: 10px;
+        padding: 0.75rem 2.5rem; font-size: 0.95rem; font-weight: 600;
+        cursor: pointer; width: 100%;
+        box-shadow: 0 4px 20px rgba(139,92,246,0.4);
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+      " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 28px rgba(139,92,246,0.55)';"
+         onmouseout="this.style.transform=''; this.style.boxShadow='0 4px 20px rgba(139,92,246,0.4)';">
+        Got it! 🎉
+      </button>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  // Inject keyframes if not already present
+  if (!document.getElementById("admin-success-keyframes")) {
+    const style = document.createElement("style");
+    style.id = "admin-success-keyframes";
+    style.textContent = `
+      @keyframes scaleIn {
+        from { transform: scale(0.8); opacity: 0; }
+        to   { transform: scale(1);   opacity: 1; }
+      }
+      @keyframes pulseRing {
+        0%, 100% { box-shadow: 0 0 30px rgba(139,92,246,0.4); }
+        50%       { box-shadow: 0 0 50px rgba(139,92,246,0.7); }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  // Start shrinking progress bar (3s auto-dismiss)
+  const dismissDialog = () => {
+    overlay.style.animation = "fadeIn 0.2s ease reverse forwards";
+    setTimeout(() => overlay.remove(), 200);
+  };
+
+  // Trigger progress bar shrink on next frame
+  requestAnimationFrame(() => {
+    const bar = document.getElementById("admin-success-progress");
+    if (bar) bar.style.width = "0%";
+  });
+
+  const autoTimer = setTimeout(dismissDialog, 3000);
+
+  // OK button dismisses immediately
+  document.getElementById("admin-success-ok-btn").addEventListener("click", () => {
+    clearTimeout(autoTimer);
+    dismissDialog();
+  });
+
+  // Click outside to dismiss
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) {
+      clearTimeout(autoTimer);
+      dismissDialog();
+    }
+  });
 }
 
 // ================= ORDER FULFILLMENT QUEUE MANAGEMENT =================
