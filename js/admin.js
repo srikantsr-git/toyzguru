@@ -2230,7 +2230,11 @@ async function adminDownloadExcelTemplate() {
       description: p.description || "",
       options: optsStr,
       specs: specsStr,
-      stock: p.stock !== undefined ? parseInt(p.stock) : 10
+      stock: p.stock !== undefined ? parseInt(p.stock) : 10,
+      tax_applicable: p.tax_applicable === false ? false : true,
+      gst_category_id: p.gst_category_id || "",
+      hsn_code: p.hsn_code || "",
+      sac_code: p.sac_code || ""
     };
   });
 
@@ -2324,6 +2328,23 @@ async function adminHandleExcelImport(event) {
           id = `${category.substring(0, 5)}-${randomId}`;
         }
 
+        // Parse tax_applicable (default to true)
+        let tax_applicable = true;
+        if (row.tax_applicable !== undefined && row.tax_applicable !== null) {
+          const valStr = String(row.tax_applicable).trim().toLowerCase();
+          if (valStr === "false" || valStr === "no" || valStr === "0") {
+            tax_applicable = false;
+          }
+        }
+
+        // Validate gst_category_id format (must be UUID if set)
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        const rawGstCatId = row.gst_category_id ? String(row.gst_category_id).trim() : "";
+        const gst_category_id = uuidRegex.test(rawGstCatId) ? rawGstCatId : null;
+
+        const hsn_code = row.hsn_code ? String(row.hsn_code).trim() : null;
+        const sac_code = row.sac_code ? String(row.sac_code).trim() : null;
+
         return {
           id: id,
           title: title,
@@ -2337,7 +2358,11 @@ async function adminHandleExcelImport(event) {
           description: description,
           options: options,
           specs: specs,
-          stock: row.stock !== undefined ? parseInt(row.stock) : 10
+          stock: row.stock !== undefined ? parseInt(row.stock) : 10,
+          tax_applicable: tax_applicable,
+          gst_category_id: gst_category_id,
+          hsn_code: hsn_code,
+          sac_code: sac_code
         };
       });
 
