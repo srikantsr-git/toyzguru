@@ -4101,6 +4101,28 @@ window.editAlternativeAddress = function (idx) {
 function setupEventListeners() {
   console.log("setupEventListeners running");
 
+  // Logo click → always go to Home (handles case where hash is already #home)
+  const headerLogoBtn = document.getElementById("header-logo-btn");
+  if (headerLogoBtn) {
+    headerLogoBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      // Show all panels hidden, reveal home view
+      document.querySelectorAll(".view-panel").forEach(p => p.style.display = "none");
+      const homeView = document.getElementById("home-view");
+      if (homeView) homeView.style.display = "block";
+      window.scrollTo(0, 0);
+      // Update active nav link
+      document.querySelectorAll(".nav-link").forEach(l => {
+        l.classList.toggle("active", l.getAttribute("data-view") === "home");
+      });
+      renderFeaturedProducts();
+      // Sync the hash without triggering a double-render
+      if (window.location.hash !== "#home") {
+        history.pushState(null, "", "#home");
+      }
+    });
+  }
+
   // Mobile Hamburger menu toggle
   const mobileMenuBtn = document.getElementById("mobile-menu-btn");
   const navMenu = document.getElementById("main-nav-menu");
