@@ -2242,7 +2242,7 @@ function renderProductCardHTML(product) {
 let catalogFilters = {
   search: "",
   category: "all",
-  priceMax: 50000,
+  priceMax: 49999,
   sort: "featured"
 };
 
@@ -2254,12 +2254,6 @@ function initCatalogView(params) {
   // Update UI values to match filter values
   const sidebarSearch = document.getElementById("sidebar-search");
   if (sidebarSearch) sidebarSearch.value = catalogFilters.search;
-
-  const priceSlider = document.getElementById("filter-price-slider");
-  if (priceSlider) {
-    priceSlider.value = catalogFilters.priceMax;
-    document.getElementById("price-slider-value").textContent = `₹${catalogFilters.priceMax}`;
-  }
 
   updateCategoryCountBadges();
   syncCategoryButtonsUI();
@@ -2319,22 +2313,56 @@ function applyFiltersAndRender() {
   const gridContainer = document.getElementById("catalog-grid-container");
   if (!gridContainer) return;
 
+  // Dynamically update the price slider min/max attributes and label based on products in the selected category
+  const catProducts = productsState.filter(prod => catalogFilters.category === "all" || prod.category === catalogFilters.category);
+  const prices = catProducts.map(p => parseFloat(p.price));
+  const minPrice = 0;
+  const maxPrice = prices.length > 0 ? Math.min(Math.ceil(Math.max(...prices)), 49999) : 49999;
+
+  const priceSlider = document.getElementById("filter-price-slider");
+  if (priceSlider) {
+    priceSlider.min = minPrice;
+    priceSlider.max = maxPrice;
+    
+    // Clamp priceMax if it exceeds bounds or is at default placeholder value
+    if (catalogFilters.priceMax > maxPrice || catalogFilters.priceMax === 50000 || catalogFilters.priceMax === 49999) {
+      catalogFilters.priceMax = maxPrice;
+    }
+    if (catalogFilters.priceMax < minPrice) {
+      catalogFilters.priceMax = minPrice;
+    }
+    
+    priceSlider.value = catalogFilters.priceMax;
+
+    // Update min price label in the sidebar (first span in .price-labels)
+    const minLabel = document.querySelector(".price-labels span:first-child");
+    if (minLabel) {
+      minLabel.textContent = `₹${minPrice.toLocaleString('en-IN')}`;
+    }
+
+    // Update current price filter display
+    const valueLabel = document.getElementById("price-slider-value");
+    if (valueLabel) {
+      valueLabel.textContent = `₹${catalogFilters.priceMax.toLocaleString('en-IN')}`;
+    }
+  }
+
   // Filter
   let filtered = productsState.filter(prod => {
     const matchesSearch = prod.title.toLowerCase().includes(catalogFilters.search.toLowerCase()) ||
       prod.description.toLowerCase().includes(catalogFilters.search.toLowerCase());
     const matchesCategory = catalogFilters.category === "all" || prod.category === catalogFilters.category;
-    const matchesPrice = prod.price <= catalogFilters.priceMax;
+    const matchesPrice = parseFloat(prod.price) <= catalogFilters.priceMax;
     return matchesSearch && matchesCategory && matchesPrice;
   });
 
   // Sort
   if (catalogFilters.sort === "price-low") {
-    filtered.sort((a, b) => a.price - b.price);
+    filtered.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
   } else if (catalogFilters.sort === "price-high") {
-    filtered.sort((a, b) => b.price - a.price);
+    filtered.sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
   } else if (catalogFilters.sort === "rating") {
-    filtered.sort((a, b) => b.rating - a.rating);
+    filtered.sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating));
   }
 
   // Render
@@ -4965,7 +4993,7 @@ function setupEventListeners() {
   if (priceSlider) {
     priceSlider.addEventListener("input", (e) => {
       catalogFilters.priceMax = parseFloat(e.target.value);
-      document.getElementById("price-slider-value").textContent = `₹${catalogFilters.priceMax}`;
+      document.getElementById("price-slider-value").textContent = `₹${catalogFilters.priceMax.toLocaleString('en-IN')}`;
       applyFiltersAndRender();
     });
   }
@@ -4986,15 +5014,11 @@ function setupEventListeners() {
       catalogFilters = {
         search: "",
         category: "all",
-        priceMax: 50000,
+        priceMax: 49999,
         sort: "featured"
       };
 
       if (sidebarSearch) sidebarSearch.value = "";
-      if (priceSlider) {
-        priceSlider.value = 50000;
-        document.getElementById("price-slider-value").textContent = `₹50,000`;
-      }
       if (sortSelect) sortSelect.value = "featured";
 
       syncCategoryButtonsUI();
