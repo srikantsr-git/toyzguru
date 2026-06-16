@@ -1724,7 +1724,7 @@ function generateOrderReceiptHTML(order) {
     <div class="party">
       <div class="party-label">Bill To / Ship To</div>
       <div class="party-name">${custName}</div>
-      <div class="party-detail">${cleanAddress.replace(/\n/g, '<br>')}<br>Email: ${order.email || '&mdash;'}${buyerGstinHTML}</div>
+      <div class="party-detail">${cleanAddress.replace(/\n/g, '<br>')}<br>Email: ${order.email || '&mdash;'}${order.phone ? `<br>Ph: ${order.phone}` : ''}${buyerGstinHTML}</div>
     </div>
   </div>
 
@@ -3383,6 +3383,8 @@ async function handleCheckoutSubmit(e) {
     const newOrderObj = {
       id: newOrderId,
       user_id: userId,
+      name: `${firstName} ${lastName}`.trim(),
+      phone: phone,
       email: email,
       items: cartState.map(item => {
         const product = productsState.find(p => p.id === item.productId);
@@ -3455,6 +3457,8 @@ async function handleCheckoutSubmit(e) {
             delete stripped.igst_amount;
             delete stripped.total_tax_amount;
             delete stripped.buyer_gstin;
+            delete stripped.name;
+            delete stripped.phone;
             return insertWithRetry(stripped, false, retryUserIdNull);
           }
 
