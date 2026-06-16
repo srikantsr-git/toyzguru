@@ -411,6 +411,85 @@ function adminPopulateCategoryDropdown(selectedValue) {
   if (selectedValue) {
     catSelect.value = selectedValue;
   }
+
+  // Update visibility of the delete category button
+  adminUpdateDeleteCategoryButtonVisibility();
+}
+
+function adminUpdateDeleteCategoryButtonVisibility() {
+  const catSelect = document.getElementById("admin-form-category");
+  const deleteBtn = document.getElementById("admin-delete-category-btn");
+  if (!catSelect || !deleteBtn) return;
+
+  const selectedCat = catSelect.value;
+  const defaults = ["anime", "toy-cars", "watches"];
+  const isNewCatVisible = document.getElementById("admin-new-category-wrap")?.style.display === "block";
+
+  if (!defaults.includes(selectedCat) && !isNewCatVisible) {
+    deleteBtn.style.display = "inline-block";
+  } else {
+    deleteBtn.style.display = "none";
+  }
+}
+
+async function adminDeleteCategoryTrigger() {
+  const catSelect = document.getElementById("admin-form-category");
+  if (!catSelect) return;
+
+  const selectedCat = catSelect.value;
+  const defaults = ["anime", "toy-cars", "watches"];
+  if (defaults.includes(selectedCat)) {
+    if (window.toyzToast) {
+      window.toyzToast("Action Denied", "Default store categories cannot be deleted.", "warning");
+    }
+    return;
+  }
+
+  // Check if any products are using it
+  const products = window.productsState || [];
+  const activeProducts = products.filter(p => p.category === selectedCat);
+  if (activeProducts.length > 0) {
+    if (window.showCustomDialog) {
+      await window.showCustomDialog(
+        "Cannot Delete Category",
+        `This category is currently assigned to ${activeProducts.length} active products in your inventory. Please change the category of these products before deleting this category.`,
+        "warning"
+      );
+    } else {
+      alert(`Cannot Delete Category: This category is currently assigned to ${activeProducts.length} active products.`);
+    }
+    return;
+  }
+
+  const catText = catSelect.options[catSelect.selectedIndex].text;
+  let isConfirmed = false;
+  if (window.showCustomDialog) {
+    isConfirmed = await window.showCustomDialog(
+      "Delete Category",
+      `Are you sure you want to delete the category "${catText}"?`,
+      "danger",
+      true
+    );
+  } else {
+    isConfirmed = confirm(`Are you sure you want to delete the category "${catText}"?`);
+  }
+
+  if (isConfirmed) {
+    try {
+      let savedCats = JSON.parse(localStorage.getItem("toyzguru_custom_categories") || "[]");
+      savedCats = savedCats.filter(c => c.value !== selectedCat);
+      localStorage.setItem("toyzguru_custom_categories", JSON.stringify(savedCats));
+
+      if (window.toyzToast) {
+        window.toyzToast("Category Deleted", `Successfully removed category: ${catText}`, "success");
+      }
+
+      // Re-populate dropdown and reset selection to anime
+      adminPopulateCategoryDropdown("anime");
+    } catch (err) {
+      console.error(err);
+    }
+  }
 }
 
 // Open modal for editing product details
@@ -1907,6 +1986,7 @@ function setupAdminEventListeners() {
   const newCatToggle = document.getElementById("admin-new-category-toggle");
   const newCatWrap = document.getElementById("admin-new-category-wrap");
   const catSelect = document.getElementById("admin-form-category");
+  const deleteCatBtn = document.getElementById("admin-delete-category-btn");
   if (newCatToggle && newCatWrap && catSelect) {
     newCatToggle.addEventListener("click", () => {
       const isAdding = newCatWrap.style.display === "none" || !newCatWrap.style.display;
@@ -1917,6 +1997,7 @@ function setupAdminEventListeners() {
         newCatToggle.style.color = "#ef4444";
         catSelect.disabled = true;
         catSelect.style.opacity = "0.5";
+        if (deleteCatBtn) deleteCatBtn.style.display = "none";
       } else {
         newCatWrap.style.display = "none";
         newCatToggle.textContent = "+ New";
@@ -1924,8 +2005,19 @@ function setupAdminEventListeners() {
         newCatToggle.style.color = "var(--color-brand)";
         catSelect.disabled = false;
         catSelect.style.opacity = "1";
+        adminUpdateDeleteCategoryButtonVisibility();
       }
     });
+  }
+
+  // Change listener on category dropdown to toggle delete button visibility
+  if (catSelect) {
+    catSelect.addEventListener("change", adminUpdateDeleteCategoryButtonVisibility);
+  }
+
+  // Click listener for delete category button
+  if (deleteCatBtn) {
+    deleteCatBtn.addEventListener("click", adminDeleteCategoryTrigger);
   }
 
   // File Upload input listener using Supabase Storage
@@ -2425,6 +2517,8 @@ window.adminDownloadExcelTemplate = adminDownloadExcelTemplate;
 window.adminHandleExcelImport = adminHandleExcelImport;
 window.handleAdminProductFormSubmit = handleAdminProductFormSubmit;
 window.adminPopulateCategoryDropdown = adminPopulateCategoryDropdown;
+window.adminUpdateDeleteCategoryButtonVisibility = adminUpdateDeleteCategoryButtonVisibility;
+window.adminDeleteCategoryTrigger = adminDeleteCategoryTrigger;
 
 // ================= DELIVERY & COURIER SETTINGS MANAGEMENT =================
 
