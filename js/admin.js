@@ -30,6 +30,83 @@ let adminEditingProductId = null; // null if creating a new product
 let adminAuthenticated = localStorage.getItem("toyzguru_admin_auth") === "true";
 let adminMembersState = [];
 
+// ── Pagination state (10 rows per page for all admin tables) ──
+const ADMIN_PAGE_SIZE = 10;
+const adminPaginationState = {
+  products: 1, orders: 1, members: 1, feedback: 1,
+  shipments: 1, printing: 1, logs: 1, coupons: 1, newsletter: 1
+};
+
+/** Injects a pagination bar directly after the <table> that owns tableBody. */
+function renderAdminPagination(tableBody, totalItems, section) {
+  const currentPage = adminPaginationState[section] || 1;
+  const totalPages = Math.ceil(totalItems / ADMIN_PAGE_SIZE);
+  const pgnId = `admin-pgn-${section}`;
+
+  // Find or create the pagination container after the table
+  let pgn = document.getElementById(pgnId);
+  if (!pgn) {
+    pgn = document.createElement('div');
+    pgn.id = pgnId;
+    const table = tableBody.closest('table');
+    if (table && table.parentElement) {
+      table.parentElement.insertBefore(pgn, table.nextSibling);
+    }
+  }
+
+  if (totalPages <= 1) {
+    const from = totalItems > 0 ? 1 : 0;
+    pgn.innerHTML = totalItems > 0
+      ? `<div class="admin-pagination"><span class="admin-pgn-info">Showing all <strong>${totalItems}</strong> entries</span></div>`
+      : '';
+    return;
+  }
+
+  const from = (currentPage - 1) * ADMIN_PAGE_SIZE + 1;
+  const to = Math.min(currentPage * ADMIN_PAGE_SIZE, totalItems);
+
+  // Build page buttons (max 7 visible with ellipsis)
+  const maxBtns = 7;
+  let startP = Math.max(1, currentPage - Math.floor(maxBtns / 2));
+  let endP = Math.min(totalPages, startP + maxBtns - 1);
+  startP = Math.max(1, endP - maxBtns + 1);
+
+  let pageHtml = '';
+  if (startP > 1) pageHtml += `<button class="admin-pgn-btn" onclick="adminGoToPage('${section}',1)">1</button><span class="admin-pgn-ellipsis">…</span>`;
+  for (let p = startP; p <= endP; p++) {
+    pageHtml += `<button class="admin-pgn-btn${p === currentPage ? ' active' : ''}" onclick="adminGoToPage('${section}',${p})">${p}</button>`;
+  }
+  if (endP < totalPages) pageHtml += `<span class="admin-pgn-ellipsis">…</span><button class="admin-pgn-btn" onclick="adminGoToPage('${section}',${totalPages})">${totalPages}</button>`;
+
+  pgn.innerHTML = `
+    <div class="admin-pagination">
+      <span class="admin-pgn-info">Showing <strong>${from}–${to}</strong> of <strong>${totalItems}</strong> entries</span>
+      <div class="admin-pgn-controls">
+        <button class="admin-pgn-btn nav-btn" onclick="adminGoToPage('${section}',${currentPage - 1})" ${currentPage <= 1 ? 'disabled' : ''}>‹ Prev</button>
+        ${pageHtml}
+        <button class="admin-pgn-btn nav-btn" onclick="adminGoToPage('${section}',${currentPage + 1})" ${currentPage >= totalPages ? 'disabled' : ''}>Next ›</button>
+      </div>
+    </div>`;
+}
+
+/** Single page-change dispatcher for all admin sections. */
+window.adminGoToPage = function(section, page) {
+  const clamp = (n, lo, hi) => Math.max(lo, Math.min(n, hi));
+  // We don't know totalPages yet — each renderer self-clamps on next draw
+  adminPaginationState[section] = clamp(page, 1, 9999);
+  switch (section) {
+    case 'products':    adminRenderInventoryTable(); break;
+    case 'orders':      adminRenderOrdersQueue(); break;
+    case 'members':     adminRenderMembersRegistry(); break;
+    case 'feedback':    adminRenderFeedbackInbox(); break;
+    case 'shipments':   adminRenderShipmentsTable(); break;
+    case 'printing':    adminRenderPrintingTable(); break;
+    case 'logs':        adminRenderLogsTable(); break;
+    case 'coupons':     adminRenderCouponsTable(); break;
+    case 'newsletter':  _adminRenderNewsletterRows(window._newsletterAllRows || []); break;
+  }
+};
+
 // Initialize Admin View
 function adminInit() {
   setupAdminNavigation();
@@ -247,10 +324,17 @@ async function adminRenderInventoryTable() {
         </td>
       </tr>
     `;
+    renderAdminPagination(tableBody, 0, 'products');
     return;
   }
 
-  tableBody.innerHTML = filtered.map(prod => {
+  // Clamp page to valid range
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ADMIN_PAGE_SIZE));
+  adminPaginationState.products = Math.max(1, Math.min(adminPaginationState.products, totalPages));
+  const pg = adminPaginationState.products;
+  const pageData = filtered.slice((pg - 1) * ADMIN_PAGE_SIZE, pg * ADMIN_PAGE_SIZE);
+
+  tableBody.innerHTML = pageData.map(prod => {
     const priceOriginal = prod.original_price ? `<span style="text-decoration:line-through; font-size:0.75rem; color:var(--text-muted);">₹${Number(prod.original_price).toFixed(2)}</span> ` : "";
 
     return `
@@ -287,6 +371,7 @@ async function adminRenderInventoryTable() {
     `;
   }).join("");
 
+  renderAdminPagination(tableBody, filtered.length, 'products');
   feather.replace();
 }
 
@@ -1033,19 +1118,27 @@ async function adminRenderOrdersQueue() {
   const tableBody = document.getElementById("admin-orders-table-body");
   if (!tableBody) return;
 
-  let orders = [];
+  // ── Fetch from Supabase then merge with any localStorage-only orders ──
+  let remoteOrders = [];
+  let hadSupabaseSuccess = false;
   if (supabase) {
     try {
       const { data: ords, error } = await supabase.from('orders').select('*').order('date', { ascending: false });
       if (error) throw error;
-      orders = ords || [];
+      remoteOrders = ords || [];
+      hadSupabaseSuccess = true;
     } catch (err) {
       console.warn("Failed to fetch orders from Supabase:", err);
-      orders = JSON.parse(localStorage.getItem("toyzguru_orders")) || [];
     }
-  } else {
-    orders = JSON.parse(localStorage.getItem("toyzguru_orders")) || [];
   }
+
+  // Always pull localStorage orders and merge (de-dup by ID) so test/offline orders always appear
+  const localOrders = JSON.parse(localStorage.getItem("toyzguru_orders")) || [];
+  const remoteIds = new Set(remoteOrders.map(o => o.id));
+  const localOnlyOrders = localOrders.filter(o => !remoteIds.has(o.id));
+  const orders = [...remoteOrders, ...localOnlyOrders].sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+
+  window.ordersState = orders;
 
   if (!orders || orders.length === 0) {
     tableBody.innerHTML = `
@@ -1055,43 +1148,77 @@ async function adminRenderOrdersQueue() {
         </td>
       </tr>
     `;
+    renderAdminPagination(tableBody, 0, 'orders');
     return;
   }
 
-  tableBody.innerHTML = orders.map(ord => {
-    console.log('Admin order:', ord);
+  // Clamp & slice for current page
+  const totalPages = Math.max(1, Math.ceil(orders.length / ADMIN_PAGE_SIZE));
+  adminPaginationState.orders = Math.max(1, Math.min(adminPaginationState.orders, totalPages));
+  const pg = adminPaginationState.orders;
+  const pageData = orders.slice((pg - 1) * ADMIN_PAGE_SIZE, pg * ADMIN_PAGE_SIZE);
 
-    const orderDate = new Date(ord.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" });
-    const itemsList = Array.isArray(ord.items) ? ord.items : [];
-    const itemsSummary = itemsList.map(i => `${i.title} (${i.option}) <strong>x${i.quantity}</strong>`).join("<br>");
+  tableBody.innerHTML = pageData.map(ord => {
+    // ── Safe date formatting ──
+    const rawDate = ord.date ? new Date(ord.date) : null;
+    const orderDate = rawDate && !isNaN(rawDate)
+      ? rawDate.toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })
+      : "—";
+
+    // ── Safe items parsing: handle JSONB array, JSON string, or empty ──
+    let itemsList = [];
+    if (Array.isArray(ord.items)) {
+      itemsList = ord.items;
+    } else if (typeof ord.items === 'string') {
+      try { itemsList = JSON.parse(ord.items); } catch(e) { itemsList = []; }
+    } else if (ord.items && typeof ord.items === 'object') {
+      itemsList = [ord.items];
+    }
+    const itemsSummary = itemsList.length > 0
+      ? itemsList.map(i => {
+          const title = i.title || i.productName || i.name || 'Item';
+          const option = (i.option || i.variant || '');
+          const qty = i.quantity || 1;
+          return `${title}${option ? ` <span style="color:var(--text-muted);">(${option})</span>` : ''} <strong>x${qty}</strong>`;
+        }).join("<br>")
+      : '<span style="color:var(--text-muted);font-style:italic;">—</span>';
+
+    // ── Safe total & email ──
+    const totalAmt = isNaN(Number(ord.total)) ? 0 : Number(ord.total);
+    const emailDisplay = ord.email || '<span style="color:var(--text-muted);">—</span>';
+    const statusVal = ord.status || 'pending';
 
     // Build select dropdown selector for status
     const statusOptions = ["pending", "processing", "shipped", "delivered", "cancelled"];
     const dropdownOptions = statusOptions.map(opt => {
-      const selected = ord.status === opt ? "selected" : "";
+      const selected = statusVal === opt ? "selected" : "";
       return `<option value="${opt}" ${selected}>${opt.toUpperCase()}</option>`;
     }).join("");
 
     return `
       <tr id="admin-order-row-${ord.id}">
         <td style="font-family: 'Space Grotesk', sans-serif; font-weight: 600; color: var(--color-brand); cursor: pointer; text-decoration: underline;" onclick="adminShowOrderDetailsTrigger('${ord.id}')">${ord.id}</td>
-        <td style="font-size:0.8rem; font-family: monospace;">${ord.email}</td>
-        <td style="font-size: 0.8rem; color: var(--text-secondary);">${orderDate}</td>
-        <td style="font-size: 0.8rem; line-height: 1.4; max-width: 250px;">${itemsSummary}</td>
-        <td style="font-weight: 700; color: var(--text-primary);">₹${Number(ord.total).toFixed(2)}</td>
         <td>
-          <span class="order-status-badge status-${ord.status}">${ord.status}</span>
+          <a href="javascript:void(0)" class="product-card-add-btn receipt-btn-${ord.id}" onclick="if(typeof window.downloadOrderReceipt==='function'){window.downloadOrderReceipt('${ord.id}')}else{alert('Receipt generator not ready, please reload.')}" style="padding:0.3rem 0.6rem;font-size:0.72rem;text-decoration:none;white-space:nowrap;display:inline-flex;align-items:center;gap:0.25rem;">⬇ Receipt</a>
+        </td>
+        <td style="font-size:0.8rem; font-family: monospace;">${emailDisplay}</td>
+        <td style="font-size: 0.8rem; color: var(--text-secondary);">${orderDate}</td>
+        <td style="font-size: 0.8rem; line-height: 1.6; max-width: 250px;">${itemsSummary}</td>
+        <td style="font-weight: 700; color: var(--text-primary);">₹${totalAmt.toFixed(2)}</td>
+        <td>
+          <span class="order-status-badge status-${statusVal}">${statusVal}</span>
         </td>
         <td style="display:flex; gap:0.4rem; flex-wrap:wrap; align-items:center;">
           <select class="form-select" style="padding: 0.35rem; font-size: 0.8rem; background: var(--bg-tertiary);" onchange="adminUpdateOrderStatus('${ord.id}', this.value)">
             ${dropdownOptions}
           </select>
-          <a href="javascript:void(0)" class="product-card-add-btn receipt-btn-${ord.id}" onclick="window.downloadOrderReceipt('${ord.id}')" style="padding:0.3rem 0.6rem;font-size:0.72rem;text-decoration:none;white-space:nowrap;">⬇ Receipt</a>
+          <button class="product-card-add-btn" style="padding:0.3rem 0.6rem;font-size:0.72rem;background:var(--color-brand-gradient);margin-left:0.25rem;cursor:pointer;border:none;color:#fff;border-radius:4px;" onclick="adminOpenFulfillmentModal('${ord.id}')">Fulfill</button>
         </td>
       </tr>
     `;
   }).join("");
 
+  renderAdminPagination(tableBody, orders.length, 'orders');
   feather.replace();
 }
 
@@ -1389,10 +1516,17 @@ async function adminRenderMembersRegistry() {
           <td colspan="6" style="text-align: center; color: var(--text-secondary); padding: 2rem;">No registered members found.</td>
         </tr>
       `;
+      renderAdminPagination(tableBody, 0, 'members');
       return;
     }
 
-    tableBody.innerHTML = members.map(m => {
+    // Clamp & page-slice
+    const totalPages = Math.max(1, Math.ceil(members.length / ADMIN_PAGE_SIZE));
+    adminPaginationState.members = Math.max(1, Math.min(adminPaginationState.members, totalPages));
+    const pg = adminPaginationState.members;
+    const pageData = members.slice((pg - 1) * ADMIN_PAGE_SIZE, pg * ADMIN_PAGE_SIZE);
+
+    tableBody.innerHTML = pageData.map(m => {
       const location = [m.city, m.country].filter(Boolean).join(", ") || "Not Provided";
       const wishlistCount = Array.isArray(m.wishlist) ? m.wishlist.length : (m.id === (window.userState && window.userState.id) ? (window.wishlistState || []).length : 0);
       const wishlistText = wishlistCount > 0 ? `<span style="background: rgba(255, 0, 128, 0.1); color: var(--color-brand); padding: 0.25rem 0.55rem; border-radius: 4px; font-weight: 600; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 0.25rem;"><i data-feather="heart" style="width: 12px; height: 12px; fill: var(--color-brand); stroke: var(--color-brand);"></i> ${wishlistCount}</span>` : `<span style="color: var(--text-muted); font-size: 0.8rem;">Empty</span>`;
@@ -1413,6 +1547,7 @@ async function adminRenderMembersRegistry() {
       `;
     }).join("");
 
+    renderAdminPagination(tableBody, members.length, 'members');
     feather.replace();
   } catch (err) {
     console.error("Member registry loading error:", err);
@@ -1864,10 +1999,17 @@ async function adminRenderFeedbackInbox() {
           </td>
         </tr>
       `;
+      renderAdminPagination(tableBody, 0, 'feedback');
       return;
     }
 
-    tableBody.innerHTML = messages.map(msg => {
+    // Clamp & page-slice
+    const totalPages = Math.max(1, Math.ceil(messages.length / ADMIN_PAGE_SIZE));
+    adminPaginationState.feedback = Math.max(1, Math.min(adminPaginationState.feedback, totalPages));
+    const pg = adminPaginationState.feedback;
+    const pageData = messages.slice((pg - 1) * ADMIN_PAGE_SIZE, pg * ADMIN_PAGE_SIZE);
+
+    tableBody.innerHTML = pageData.map(msg => {
       const msgDate = new Date(msg.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" });
       return `
         <tr id="admin-feedback-row-${msg.id}">
@@ -1887,6 +2029,7 @@ async function adminRenderFeedbackInbox() {
       `;
     }).join("");
 
+    renderAdminPagination(tableBody, messages.length, 'feedback');
     feather.replace();
   } catch (err) {
     console.error("Feedback inbox rendering error:", err);
@@ -1924,6 +2067,7 @@ function setupAdminEventListeners() {
   if (searchInput) {
     searchInput.addEventListener("input", (e) => {
       adminInventorySearchQuery = e.target.value;
+      adminPaginationState.products = 1; // reset to page 1 on new search
       adminRenderInventoryTable();
     });
   }
@@ -2520,12 +2664,1584 @@ window.adminPopulateCategoryDropdown = adminPopulateCategoryDropdown;
 window.adminUpdateDeleteCategoryButtonVisibility = adminUpdateDeleteCategoryButtonVisibility;
 window.adminDeleteCategoryTrigger = adminDeleteCategoryTrigger;
 
-// ================= DELIVERY & COURIER SETTINGS MANAGEMENT =================
+// ================= DELIVERY & ORDER FULFILLMENT MANAGEMENT MODULE =================
 
-function adminRenderDeliveryPanel() {
-  adminRenderStatesTable();
-  adminRenderCouriersTable();
+let adminDeliveryCurrentTab = "delivery-shipments";
+let shipmentsState = [];
+let trackingEventsState = [];
+let deliveryLogsState = [];
+
+async function adminLoadFulfillmentData() {
+  // Track whether orders were loaded from Supabase so the fallback doesn't clobber them
+  let _ordersLoadedFromRemote = false;
+
+  if (supabase) {
+    // ── orders: independent try-catch ──
+    try {
+      const { data: ords, error: errOrds } = await supabase.from('orders').select('*').order('date', { ascending: false });
+      if (!errOrds) {
+        const remoteOrders = ords || [];
+        // Merge localStorage-only orders so offline/test orders never disappear
+        const localOrders = JSON.parse(localStorage.getItem("toyzguru_orders")) || [];
+        const remoteIds = new Set(remoteOrders.map(o => o.id));
+        const localOnly = localOrders.filter(o => !remoteIds.has(o.id));
+        window.ordersState = [...remoteOrders, ...localOnly].sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+        _ordersLoadedFromRemote = true;
+      }
+    } catch (errOrds) {
+      console.warn("adminLoadFulfillmentData: orders fetch failed:", errOrds);
+    }
+
+    // ── shipments: independent try-catch ──
+    try {
+      const { data: ships, error: errShips } = await supabase.from('shipments').select('*').order('created_at', { ascending: false });
+      if (!errShips) shipmentsState = ships || [];
+      else throw errShips;
+    } catch (errShips) {
+      console.warn("adminLoadFulfillmentData: shipments fetch failed (table may not exist yet):", errShips);
+      shipmentsState = JSON.parse(localStorage.getItem("toyzguru_shipments")) || [];
+    }
+
+    // ── tracking_events: independent try-catch ──
+    try {
+      const { data: events, error: errEvents } = await supabase.from('tracking_events').select('*').order('timestamp', { ascending: false });
+      if (!errEvents) trackingEventsState = events || [];
+      else throw errEvents;
+    } catch (errEvents) {
+      console.warn("adminLoadFulfillmentData: tracking_events fetch failed:", errEvents);
+      trackingEventsState = JSON.parse(localStorage.getItem("toyzguru_tracking_events")) || [];
+    }
+
+    // ── delivery_logs: independent try-catch ──
+    try {
+      const { data: logs, error: errLogs } = await supabase.from('delivery_logs').select('*').order('timestamp', { ascending: false });
+      if (!errLogs) deliveryLogsState = logs || [];
+      else throw errLogs;
+    } catch (errLogs) {
+      console.warn("adminLoadFulfillmentData: delivery_logs fetch failed:", errLogs);
+      deliveryLogsState = JSON.parse(localStorage.getItem("toyzguru_delivery_logs")) || [];
+    }
+  } else {
+    adminLoadFulfillmentDataFallback();
+    _ordersLoadedFromRemote = false;
+  }
+
+  // If Supabase didn't provide orders, load from localStorage
+  if (!_ordersLoadedFromRemote) {
+    adminLoadFulfillmentDataFallback();
+  }
 }
+
+function adminLoadFulfillmentDataFallback() {
+  // Merge: start fresh from localStorage, but preserve any already-merged Supabase state
+  const localOrders = JSON.parse(localStorage.getItem("toyzguru_orders")) || [];
+  const existingState = window.ordersState || [];
+  const existingIds = new Set(existingState.map(o => o.id));
+  const newLocalOnly = localOrders.filter(o => !existingIds.has(o.id));
+  window.ordersState = [...existingState, ...newLocalOnly].sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+  if (shipmentsState.length === 0) shipmentsState = JSON.parse(localStorage.getItem("toyzguru_shipments")) || [];
+  if (trackingEventsState.length === 0) trackingEventsState = JSON.parse(localStorage.getItem("toyzguru_tracking_events")) || [];
+  if (deliveryLogsState.length === 0) deliveryLogsState = JSON.parse(localStorage.getItem("toyzguru_delivery_logs")) || [];
+}
+
+async function adminSaveShipment(shipment) {
+  if (supabase) {
+    try {
+      const { error } = await supabase.from('shipments').upsert(shipment);
+      if (error) throw error;
+    } catch (err) {
+      console.error("Failed to save shipment to Supabase:", err);
+    }
+  }
+  let localShips = JSON.parse(localStorage.getItem("toyzguru_shipments")) || [];
+  const idx = localShips.findIndex(s => s.id === shipment.id);
+  if (idx >= 0) localShips[idx] = shipment;
+  else localShips.push(shipment);
+  localStorage.setItem("toyzguru_shipments", JSON.stringify(localShips));
+}
+
+async function adminSaveTrackingEvent(event) {
+  if (supabase) {
+    try {
+      const { error } = await supabase.from('tracking_events').insert(event);
+      if (error) throw error;
+    } catch (err) {
+      console.error("Failed to save tracking event to Supabase:", err);
+    }
+  }
+  let localEvents = JSON.parse(localStorage.getItem("toyzguru_tracking_events")) || [];
+  localEvents.push(event);
+  localStorage.setItem("toyzguru_tracking_events", JSON.stringify(localEvents));
+}
+
+async function adminSaveLog(logEntry) {
+  if (supabase) {
+    try {
+      const { error } = await supabase.from('delivery_logs').insert(logEntry);
+      if (error) throw error;
+    } catch (err) {
+      console.error("Failed to save delivery log to Supabase:", err);
+    }
+  }
+  let localLogs = JSON.parse(localStorage.getItem("toyzguru_delivery_logs")) || [];
+  localLogs.push(logEntry);
+  localStorage.setItem("toyzguru_delivery_logs", JSON.stringify(localLogs));
+}
+
+// Tab navigation handler
+async function adminSwitchDeliveryTab(tabId, btn) {
+  // Update UI active buttons
+  const tabs = btn.parentNode.querySelectorAll(".admin-sub-tab");
+  tabs.forEach(t => t.classList.remove("active"));
+  btn.classList.add("active");
+
+  const subpanels = document.querySelectorAll(".subpanel-content");
+  subpanels.forEach(p => p.classList.remove("active"));
+  
+  const targetPanel = document.getElementById(tabId);
+  if (targetPanel) {
+    targetPanel.classList.add("active");
+  }
+  adminDeliveryCurrentTab = tabId;
+
+  await adminLoadFulfillmentData();
+
+  if (tabId === "delivery-shipments") {
+    adminRenderShipmentsTable();
+  } else if (tabId === "delivery-printing") {
+    adminRenderPrintingTable();
+  } else if (tabId === "delivery-settings") {
+    adminRenderStatesTable();
+    adminRenderCouriersTable();
+  } else if (tabId === "delivery-analytics") {
+    adminRenderAnalyticsTab();
+  } else if (tabId === "delivery-audit") {
+    adminRenderLogsTable();
+  }
+}
+
+async function adminRenderDeliveryPanel() {
+  await adminLoadFulfillmentData();
+  
+  // Set default tabs active
+  const defaultTabBtn = document.querySelector(`.admin-sub-tabs button[onclick*="${adminDeliveryCurrentTab}"]`);
+  if (defaultTabBtn) {
+    // trigger state switch
+    adminSwitchDeliveryTab(adminDeliveryCurrentTab, defaultTabBtn);
+  } else {
+    adminRenderShipmentsTable();
+  }
+}
+
+// Helpers
+function getOrderForShipment(orderId) {
+  return (window.ordersState || []).find(o => o.id === orderId) || null;
+}
+
+// ── Customer info extraction ──
+// Resolves name and phone from either direct order fields (localStorage) or
+// embedded [NAME:...][PHONE:...] address tags (Supabase orders, where those
+// columns are stripped before insert).
+function extractCustomerInfo(order) {
+  if (!order) return { name: '—', phone: '—', email: '—' };
+  // 1. Direct fields: available for localStorage / future DB orders with columns
+  if (order.name && order.name.trim() && order.name.trim() !== order.email) {
+    return {
+      name: order.name.trim(),
+      phone: (order.phone || '').trim() || '—',
+      email: order.email || '—'
+    };
+  }
+  // 2. Embedded tags in address (e.g. "[NAME:John Doe][PHONE:+91 9876543210] 123 Main St...")
+  if (order.address) {
+    const nameMatch = order.address.match(/\[NAME:([^\]]*)\]/);
+    const phoneMatch = order.address.match(/\[PHONE:([^\]]*)\]/);
+    if (nameMatch || phoneMatch) {
+      return {
+        name: (nameMatch?.[1] || '').trim() || order.email || 'Customer',
+        phone: (phoneMatch?.[1] || '').trim() || '—',
+        email: order.email || '—'
+      };
+    }
+  }
+  // 3. Fallback: use email as display name
+  return { name: order.email || 'Customer', phone: '—', email: order.email || '—' };
+}
+
+// Returns delivery address with Txn ID suffix and [NAME:][PHONE:] tags stripped
+function getCleanDeliveryAddress(order) {
+  const raw = ((order && order.address) || '').split(' | Txn ID: ')[0];
+  return raw
+    .replace(/\[NAME:[^\]]*\]/g, '')
+    .replace(/\[PHONE:[^\]]*\]/g, '')
+    .trim() || '—';
+}
+
+// Renderer 1: Shipments Queue table
+function adminRenderShipmentsTable() {
+  const tableBody = document.getElementById("admin-shipments-tbody");
+  if (!tableBody) return;
+
+  const searchQuery = document.getElementById("admin-shipments-search")?.value.trim().toLowerCase() || "";
+  const statusFilter = document.getElementById("admin-shipments-status-filter")?.value || "all";
+
+  // Match shipmentsState with orders
+  const allOrders = window.ordersState || [];
+  
+  // Generate rows for shipments plus any approved order that doesn't have a shipment record yet
+  let list = [...shipmentsState];
+  
+  // Find orders with status processing (paid/approved) or pending that are not cancellation
+  allOrders.forEach(ord => {
+    if (ord.status !== "cancelled" && ord.status !== "delivered") {
+      const exists = list.some(s => s.order_id === ord.id);
+      if (!exists) {
+        // Create virtual shipment row for displaying
+        list.push({
+          id: "PENDING_GEN",
+          order_id: ord.id,
+          tracking_number: "—",
+          courier_name: "Unassigned",
+          status: ord.status === "processing" ? "ready_to_pack" : "pending",
+          estimated_delivery_date: null,
+          created_at: ord.date
+        });
+      }
+    }
+  });
+
+  // Filter
+  let filtered = list.filter(item => {
+    const order = getOrderForShipment(item.order_id);
+    const { name: buyerName, phone: buyerPhone, email: buyerEmail } = extractCustomerInfo(order);
+    const matchesSearch = item.order_id.toLowerCase().includes(searchQuery) ||
+                          item.id.toLowerCase().includes(searchQuery) ||
+                          buyerName.toLowerCase().includes(searchQuery) ||
+                          buyerPhone.toLowerCase().includes(searchQuery) ||
+                          buyerEmail.toLowerCase().includes(searchQuery) ||
+                          item.tracking_number.toLowerCase().includes(searchQuery);
+    
+    const matchesStatus = statusFilter === "all" || item.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  if (filtered.length === 0) {
+    tableBody.innerHTML = `
+      <tr>
+        <td colspan="8" style="text-align: center; color: var(--text-secondary); padding: 2rem;">
+          No active shipments matching search criteria.
+        </td>
+      </tr>
+    `;
+    renderAdminPagination(tableBody, 0, 'shipments');
+    return;
+  }
+
+  // Clamp & page-slice
+  const totalShipPages = Math.max(1, Math.ceil(filtered.length / ADMIN_PAGE_SIZE));
+  adminPaginationState.shipments = Math.max(1, Math.min(adminPaginationState.shipments, totalShipPages));
+  const shipPg = adminPaginationState.shipments;
+  const shipPageData = filtered.slice((shipPg - 1) * ADMIN_PAGE_SIZE, shipPg * ADMIN_PAGE_SIZE);
+
+  tableBody.innerHTML = shipPageData.map(ship => {
+    const order = getOrderForShipment(ship.order_id);
+    const { name: buyerName, phone: buyerPhone, email: buyerEmail } = extractCustomerInfo(order);
+    const estDate = ship.estimated_delivery_date ? new Date(ship.estimated_delivery_date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—";
+    
+    // Status colors mapping
+    let badgeClass = "status-pending";
+    if (["ready_to_pack", "packed", "quality_checked"].includes(ship.status)) badgeClass = "status-processing";
+    else if (["dispatched", "in_transit", "out_for_delivery"].includes(ship.status)) badgeClass = "status-shipped";
+    else if (ship.status === "delivered") badgeClass = "status-delivered";
+    else if (ship.status === "returned" || ship.status === "failed") badgeClass = "status-cancelled";
+
+    const isVirtual = ship.id === "PENDING_GEN";
+    const shipDisplayId = isVirtual ? `<span style="color:var(--text-muted);font-style:italic;">Draft label</span>` : ship.id;
+
+    // Build select dropdown selector for quick inline status update
+    const statusOptions = ["pending", "ready_to_pack", "packed", "quality_checked", "dispatched", "in_transit", "out_for_delivery", "delivered", "failed", "returned"];
+    const dropdownHtml = isVirtual 
+      ? `<button class="product-card-add-btn" style="padding:0.3rem 0.5rem;font-size:0.75rem;background:var(--color-brand-gradient);" onclick="adminOpenFulfillmentModal('${ship.order_id}')">Approve & Fulfill</button>`
+      : `
+        <div style="display:flex;gap:0.35rem;align-items:center;">
+          <select class="form-select" style="padding: 0.3rem; font-size: 0.75rem; background: var(--bg-tertiary); max-width: 130px;" onchange="adminUpdateShipmentStatus('${ship.id}', this.value)">
+            ${statusOptions.map(opt => `<option value="${opt}" ${ship.status === opt ? "selected" : ""}>${opt.toUpperCase().replace(/_/g, ' ')}</option>`).join("")}
+          </select>
+          <button class="crud-btn crud-edit" onclick="adminOpenFulfillmentModal('${ship.order_id}')" title="Edit Packing details" style="padding: 0.2rem 0.3rem;"><i data-feather="edit" style="width:12px;height:12px;"></i></button>
+        </div>
+      `;
+
+    const dispatchBtn = (!isVirtual && ["ready_to_pack", "packed", "quality_checked"].includes(ship.status))
+      ? `<button class="product-card-add-btn" style="padding:0.3rem 0.5rem;font-size:0.75rem;background:#0ea5e9;margin-left:0.25rem;" onclick="adminOpenDispatchModal('${ship.id}')">✈ Dispatch</button>`
+      : "";
+
+    // Load recent events
+    const recentEvents = trackingEventsState.filter(e => e.shipment_id === ship.id);
+    const eventsCount = recentEvents.length;
+    const historyBtn = !isVirtual 
+      ? `<a href="javascript:void(0)" onclick="adminShowShipmentTimeline('${ship.id}')" style="color:var(--color-brand); font-size:0.78rem; text-decoration:underline;">Timeline (${eventsCount})</a>`
+      : "—";
+
+    return `
+      <tr>
+        <td style="font-family: monospace; font-size:0.8rem; font-weight:700;">${shipDisplayId}</td>
+        <td style="font-family: monospace; font-size:0.8rem; color:var(--color-brand); cursor:pointer;" onclick="adminShowOrderDetailsTrigger('${ship.order_id}')">${ship.order_id}</td>
+        <td>
+          <div style="font-weight:600; font-size:0.85rem;">${buyerName}</div>
+          <div style="font-size:0.72rem; color:var(--text-secondary); font-family:monospace; word-break:break-all;">${buyerEmail}</div>
+        </td>
+        <td>${ship.courier_name || "—"}</td>
+        <td>
+          <span class="order-status-badge ${badgeClass}">${ship.status.replace(/_/g, ' ')}</span>
+        </td>
+        <td>${estDate}</td>
+        <td>${historyBtn}</td>
+        <td style="display:flex; align-items:center;">
+          ${dropdownHtml}
+          ${dispatchBtn}
+        </td>
+      </tr>
+    `;
+  }).join("");
+
+  renderAdminPagination(tableBody, filtered.length, 'shipments');
+  feather.replace();
+}
+
+// Timeline Display Box Modal Injection
+window.adminShowShipmentTimeline = function(shipmentId) {
+  const events = trackingEventsState.filter(e => e.shipment_id === shipmentId).sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+  const shipment = shipmentsState.find(s => s.id === shipmentId);
+  
+  const existing = document.getElementById('shipment-timeline-modal');
+  if (existing) existing.remove();
+
+  const listHTML = events.map(e => `
+    <div class="shipment-timeline-node completed">
+      <div class="shipment-timeline-dot"></div>
+      <div class="shipment-timeline-content">
+        <div style="display:flex; justify-content:space-between; margin-bottom:0.2rem;">
+          <strong style="color:var(--text-primary); text-transform:uppercase;">${e.status.replace(/_/g, ' ')}</strong>
+          <span style="color:var(--text-muted); font-size:0.72rem;">${new Date(e.timestamp).toLocaleString()}</span>
+        </div>
+        <div style="color:var(--text-secondary); font-size:0.78rem;">${e.description}</div>
+        ${e.location ? `<div style="font-size:0.72rem; color:var(--color-brand); margin-top:0.15rem;"><i data-feather="map-pin" style="width:10px;height:10px;"></i> ${e.location}</div>` : ""}
+      </div>
+    </div>
+  `).join("");
+
+  const modal = document.createElement('div');
+  modal.id = 'shipment-timeline-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1rem;';
+  modal.innerHTML = `
+    <div style="background:var(--bg-secondary);border:1px solid var(--glass-border);border-radius:12px;padding:2rem;width:100%;max-width:480px;position:relative;">
+      <button onclick="document.getElementById('shipment-timeline-modal').remove()" style="position:absolute;top:1rem;right:1rem;background:none;border:none;color:var(--text-secondary);cursor:pointer;"><i data-feather="x"></i></button>
+      <h3 style="margin:0 0 1.25rem;font-family:'Space Grotesk',sans-serif;color:var(--color-brand);display:flex;align-items:center;gap:0.4rem;"><i data-feather="map-pin"></i> Transit Timeline: ${shipmentId}</h3>
+      <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:1rem;">Courier Partner: <strong>${shipment?.courier_name || 'Unassigned'}</strong> | Tracking ID: <strong>${shipment?.tracking_number || '—'}</strong></p>
+      <div style="max-height:350px; overflow-y:auto; padding-right:0.5rem; margin-top:1rem;">
+        ${events.length === 0 ? `<div style="color:var(--text-muted); font-size:0.85rem; text-align:center;">No tracking events recorded.</div>` : listHTML}
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  feather.replace();
+};
+
+// Renderer 2: Printing Center Table
+function adminRenderPrintingTable() {
+  const tableBody = document.getElementById("admin-printing-tbody");
+  if (!tableBody) return;
+
+  const searchQuery = document.getElementById("admin-print-search")?.value.trim().toLowerCase() || "";
+
+  let filtered = shipmentsState.filter(ship => {
+    const order = getOrderForShipment(ship.order_id);
+    const buyerName = order?.name || order?.email || "";
+    return ship.id.toLowerCase().includes(searchQuery) ||
+           ship.order_id.toLowerCase().includes(searchQuery) ||
+           buyerName.toLowerCase().includes(searchQuery) ||
+           ship.tracking_number.toLowerCase().includes(searchQuery);
+  });
+
+  if (filtered.length === 0) {
+    tableBody.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align: center; color: var(--text-secondary); padding: 2rem;">
+          No shipments ready for printing.
+        </td>
+      </tr>
+    `;
+    renderAdminPagination(tableBody, 0, 'printing');
+    return;
+  }
+
+  // Clamp & page-slice
+  const totalPrintPages = Math.max(1, Math.ceil(filtered.length / ADMIN_PAGE_SIZE));
+  adminPaginationState.printing = Math.max(1, Math.min(adminPaginationState.printing, totalPrintPages));
+  const printPg = adminPaginationState.printing;
+  const printPageData = filtered.slice((printPg - 1) * ADMIN_PAGE_SIZE, printPg * ADMIN_PAGE_SIZE);
+
+  tableBody.innerHTML = printPageData.map(ship => {
+    const order = getOrderForShipment(ship.order_id);
+    const buyerName = order?.name || order?.email || "Customer";
+    
+    // Count print histories from logs
+    const printsCount = deliveryLogsState.filter(l => l.action_type === 'print' && l.shipment_id === ship.id).length;
+
+    return `
+      <tr>
+        <td style="font-family: monospace; font-size:0.8rem; font-weight:700;">${ship.id}</td>
+        <td style="font-family: monospace; font-size:0.8rem; color:var(--color-brand);">${ship.order_id}</td>
+        <td>
+          <div style="font-weight:600; font-size:0.82rem;">${buyerName}</div>
+          <div style="font-size:0.72rem; color:var(--text-muted);">${order?.email || '—'}</div>
+        </td>
+        <td>${ship.courier_name || "—"}</td>
+        <td style="font-family:monospace; font-size:0.8rem;">${ship.tracking_number}</td>
+        <td style="font-weight:700; color:var(--color-brand); font-size:0.85rem;">${printsCount} times</td>
+        <td>
+          <div style="display:flex; gap:0.35rem; flex-wrap:wrap;">
+            <button class="product-card-add-btn" style="padding:0.25rem 0.5rem; font-size:0.75rem; background:var(--color-brand-gradient);" onclick="adminPrintDocument('${ship.id}', 'zebra')">Zebra 4x6 Label</button>
+            <button class="product-card-add-btn" style="padding:0.25rem 0.5rem; font-size:0.75rem; background:rgba(255,255,255,0.06); border:1px solid var(--glass-border); color:var(--text-primary);" onclick="adminPrintDocument('${ship.id}', 'qr')">QR Sticker</button>
+            <button class="product-card-add-btn" style="padding:0.25rem 0.5rem; font-size:0.75rem; background:var(--color-watches);" onclick="adminPrintDocument('${ship.id}', 'invoice')">A4 Invoice</button>
+            <button class="product-card-add-btn" style="padding:0.25rem 0.5rem; font-size:0.75rem; background:#10b981;" onclick="adminPrintDocument('${ship.id}', 'slip')">Packing Slip</button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join("");
+  renderAdminPagination(tableBody, filtered.length, 'printing');
+}
+
+// Renderer 3: Analytics dashboard
+function adminRenderAnalyticsTab() {
+  const totalCount = shipmentsState.length;
+  const transitCount = shipmentsState.filter(s => ['dispatched', 'in_transit', 'out_for_delivery'].includes(s.status)).length;
+  const deliveredCount = shipmentsState.filter(s => s.status === "delivered").length;
+  const returnedCount = shipmentsState.filter(s => s.status === "returned").length;
+  const successRate = totalCount > 0 ? Math.round((deliveredCount / totalCount) * 100) : 0;
+  
+  // Compute avg transit time (prefilled defaults for nice stats)
+  let sumDays = 0;
+  let countDelivered = 0;
+  shipmentsState.forEach(s => {
+    if (s.status === "delivered" && s.dispatch_date) {
+      const start = new Date(s.created_at || s.approved_at);
+      const end = new Date(s.dispatch_date);
+      const diff = Math.max(0.2, (end - start) / (1000 * 60 * 60 * 24));
+      sumDays += diff;
+      countDelivered++;
+    }
+  });
+  const avgTime = countDelivered > 0 ? (sumDays / countDelivered) : 3.4;
+
+  document.getElementById("analytics-total-shipments").textContent = totalCount;
+  document.getElementById("analytics-transit-shipments").textContent = transitCount;
+  document.getElementById("analytics-success-rate").textContent = successRate + "%";
+  document.getElementById("analytics-returned-shipments").textContent = returnedCount;
+  document.getElementById("analytics-avg-time").textContent = avgTime.toFixed(1) + "d";
+
+  // Status breakdown bars
+  const statuses = ["pending", "ready_to_pack", "packed", "quality_checked", "dispatched", "in_transit", "out_for_delivery", "delivered", "failed", "returned"];
+  const maxStatusCount = Math.max(...statuses.map(st => shipmentsState.filter(s => s.status === st).length), 1);
+  
+  let statusHtml = statuses.map(st => {
+    const count = shipmentsState.filter(s => s.status === st).length;
+    const pct = (count / maxStatusCount) * 100;
+    return `
+      <div style="margin-bottom:0.5rem;">
+        <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-secondary); margin-bottom:0.15rem;">
+          <span style="text-transform:capitalize;">${st.replace(/_/g, ' ')}</span>
+          <strong>${count} shipments</strong>
+        </div>
+        <div style="height:6px; background:rgba(255,255,255,0.02); border:1px solid var(--glass-border); border-radius:4px; overflow:hidden;">
+          <div style="height:100%; width:${pct}%; background:var(--color-brand-gradient); border-radius:4px;"></div>
+        </div>
+      </div>
+    `;
+  }).join("");
+  document.getElementById("analytics-status-breakdown-bars").innerHTML = statusHtml;
+
+  // Courier performance
+  const couriers = ["Delhivery", "Blue Dart", "DTDC", "India Post", "Ecom Express"];
+  const maxCourierCount = Math.max(...couriers.map(cr => shipmentsState.filter(s => s.courier_name === cr).length), 1);
+  
+  let courierHtml = couriers.map(cr => {
+    const count = shipmentsState.filter(s => s.courier_name === cr).length;
+    const delivered = shipmentsState.filter(s => s.courier_name === cr && s.status === "delivered").length;
+    const rate = count > 0 ? Math.round((delivered / count) * 100) : 100;
+    const pct = (count / maxCourierCount) * 100;
+
+    return `
+      <div style="margin-bottom:0.6rem;">
+        <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-secondary); margin-bottom:0.15rem;">
+          <strong>${cr}</strong>
+          <span style="font-size:0.7rem; color:var(--text-muted);">${count} volume | <strong style="color:var(--color-brand);">${rate}% Success</strong></span>
+        </div>
+        <div style="height:6px; background:rgba(255,255,255,0.02); border:1px solid var(--glass-border); border-radius:4px; overflow:hidden;">
+          <div style="height:100%; width:${pct}%; background:#0ea5e9; border-radius:4px;"></div>
+        </div>
+      </div>
+    `;
+  }).join("");
+  document.getElementById("analytics-courier-performance-bars").innerHTML = courierHtml;
+}
+
+// Renderer 4: Audit logs
+function adminRenderLogsTable() {
+  const tableBody = document.getElementById("admin-delivery-logs-tbody");
+  if (!tableBody) return;
+
+  const searchQuery = document.getElementById("admin-audit-search")?.value.trim().toLowerCase() || "";
+
+  let filtered = deliveryLogsState.filter(log => {
+    return log.action_type.toLowerCase().includes(searchQuery) ||
+           (log.order_id && log.order_id.toLowerCase().includes(searchQuery)) ||
+           (log.shipment_id && log.shipment_id.toLowerCase().includes(searchQuery)) ||
+           log.admin_user.toLowerCase().includes(searchQuery) ||
+           log.details.toLowerCase().includes(searchQuery);
+  });
+
+  if (filtered.length === 0) {
+    tableBody.innerHTML = `
+      <tr>
+        <td colspan="6" style="text-align: center; color: var(--text-secondary); padding: 1.5rem;">
+          No audit logs recorded in session database registry.
+        </td>
+      </tr>
+    `;
+    renderAdminPagination(tableBody, 0, 'logs');
+    return;
+  }
+
+  // Clamp & page-slice
+  const totalLogPages = Math.max(1, Math.ceil(filtered.length / ADMIN_PAGE_SIZE));
+  adminPaginationState.logs = Math.max(1, Math.min(adminPaginationState.logs, totalLogPages));
+  const logPg = adminPaginationState.logs;
+  const logPageData = filtered.slice((logPg - 1) * ADMIN_PAGE_SIZE, logPg * ADMIN_PAGE_SIZE);
+
+  tableBody.innerHTML = logPageData.map(log => {
+    return `
+      <tr>
+        <td style="font-size:0.75rem; color:var(--text-secondary);">${new Date(log.timestamp).toLocaleString()}</td>
+        <td style="text-transform:uppercase; font-size:0.75rem; font-weight:700; color:var(--color-brand);">${log.action_type}</td>
+        <td style="font-family:monospace; font-size:0.78rem;">${log.order_id || '—'}</td>
+        <td style="font-family:monospace; font-size:0.78rem;">${log.shipment_id || '—'}</td>
+        <td style="font-size:0.78rem; font-family:monospace; color:var(--text-secondary);">${log.admin_user}</td>
+        <td style="font-size:0.8rem; max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${log.details}">${log.details}</td>
+      </tr>
+    `;
+  }).join("");
+  renderAdminPagination(tableBody, filtered.length, 'logs');
+}
+
+// Fulfillment Modal Logic
+async function adminOpenFulfillmentModal(orderId) {
+  await adminLoadFulfillmentData();
+  const order = getOrderForShipment(orderId);
+  if (!order) {
+    adminShowToast("Order Error", "Could not locate order details in registry.", "danger");
+    return;
+  }
+
+  const shipment = shipmentsState.find(s => s.order_id === orderId);
+
+  document.getElementById("fulfillment-form-order-id").value = orderId;
+  document.getElementById("fulfillment-form-shipment-id").value = shipment ? shipment.id : "";
+  document.getElementById("fulfillment-modal-title").textContent = `Fulfill Order: ${orderId}`;
+  const { name: fulfillBuyerName, phone: fulfillBuyerPhone } = extractCustomerInfo(order);
+  document.getElementById("fulfillment-buyer-name").textContent = fulfillBuyerName;
+  
+  const cleanAddr = getCleanDeliveryAddress(order);
+  document.getElementById("fulfillment-buyer-address").textContent = cleanAddr;
+  document.getElementById("fulfillment-buyer-address").title = cleanAddr;
+
+  const items = Array.isArray(order.items) ? order.items : [];
+  const itemsText = items.map(i => `${i.title || i.productName} (x${i.quantity})`).join(", ");
+  document.getElementById("fulfillment-items-summary").textContent = itemsText;
+  document.getElementById("fulfillment-items-summary").title = itemsText;
+
+  // Prefill action
+  const actionSelect = document.getElementById("fulfillment-action");
+  actionSelect.disabled = false;
+
+  const paymentWarning = document.getElementById("fulfillment-payment-warning");
+  
+  // Payment status warning: if order.status is pending (meaning check didn't clear), show UPI override warning
+  if (order.status === "pending") {
+    actionSelect.value = "hold";
+    paymentWarning.style.display = "block";
+  } else if (order.status === "processing") {
+    actionSelect.value = "approve";
+    actionSelect.disabled = true; // payment already checked and verified!
+    paymentWarning.style.display = "none";
+  } else if (order.status === "cancelled") {
+    actionSelect.value = "reject";
+    actionSelect.disabled = true;
+    paymentWarning.style.display = "none";
+  } else {
+    actionSelect.value = "approve";
+    paymentWarning.style.display = "none";
+  }
+
+  toggleFulfillmentActionUI(actionSelect.value);
+
+  // Prefill packing details
+  if (shipment) {
+    document.getElementById("pack-check-ready").checked = ["ready_to_pack", "packed", "quality_checked", "dispatched", "in_transit", "out_for_delivery", "delivered"].includes(shipment.status);
+    document.getElementById("pack-check-packed").checked = ["packed", "quality_checked", "dispatched", "in_transit", "out_for_delivery", "delivered"].includes(shipment.status);
+    document.getElementById("pack-check-qc").checked = ["quality_checked", "dispatched", "in_transit", "out_for_delivery", "delivered"].includes(shipment.status);
+    document.getElementById("fulfillment-weight").value = shipment.weight || 1.50;
+    
+    if (shipment.estimated_delivery_date) {
+      document.getElementById("fulfillment-est-delivery").value = new Date(shipment.estimated_delivery_date).toISOString().split('T')[0];
+    } else {
+      document.getElementById("fulfillment-est-delivery").value = new Date(Date.now() + 8 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    }
+    document.getElementById("fulfillment-pack-image").value = shipment.packing_image_url || "";
+  } else {
+    document.getElementById("pack-check-ready").checked = (order.status === "processing");
+    document.getElementById("pack-check-packed").checked = false;
+    document.getElementById("pack-check-qc").checked = false;
+    document.getElementById("fulfillment-weight").value = 1.50;
+    document.getElementById("fulfillment-est-delivery").value = new Date(Date.now() + 8 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    document.getElementById("fulfillment-pack-image").value = "";
+  }
+
+  // Open modal
+  document.getElementById("admin-fulfillment-modal-overlay").classList.add("active");
+  document.body.style.overflow = "hidden";
+}
+
+function adminCloseFulfillmentModal() {
+  document.getElementById("admin-fulfillment-modal-overlay").classList.remove("active");
+  document.body.style.overflow = "";
+}
+
+function toggleFulfillmentActionUI(actionValue) {
+  const packingSection = document.getElementById("fulfillment-packing-section");
+  if (actionValue === "approve") {
+    packingSection.style.display = "block";
+  } else {
+    packingSection.style.display = "none";
+  }
+}
+
+// Fulfill Form submit action
+async function handleAdminFulfillmentSubmit(e) {
+  e.preventDefault();
+
+  const orderId = document.getElementById("fulfillment-form-order-id").value;
+  const shipmentId = document.getElementById("fulfillment-form-shipment-id").value;
+  const action = document.getElementById("fulfillment-action").value;
+
+  const order = getOrderForShipment(orderId);
+  if (!order) return;
+
+  const adminEmail = localStorage.getItem("toyzguru_admin_email") || "admin@toyzguru.com";
+
+  if (action === "hold") {
+    // Put order on hold (means order status shifts to pending)
+    if (supabase) {
+      await supabase.from('orders').update({ status: "pending" }).eq('id', orderId);
+    }
+    order.status = "pending";
+    
+    // Log
+    await adminSaveLog({
+      action_type: 'hold',
+      order_id: orderId,
+      shipment_id: shipmentId || null,
+      admin_user: adminEmail,
+      details: `Order TG-XXXXX shifted to Hold/Pending status due to payment check review.`
+    });
+
+    adminShowToast("Order On Hold", `Order ${orderId} shifted to verification hold queue.`, "warning");
+    adminCloseFulfillmentModal();
+    adminRenderShipmentsTable();
+    adminRenderOrdersQueue();
+    return;
+  }
+
+  if (action === "reject") {
+    // Cancel and Reject order
+    if (order.status !== "cancelled") {
+      // Restore Stock quantities
+      await restoreStockForOrder(order);
+      
+      if (supabase) {
+        await supabase.from('orders').update({ status: "cancelled" }).eq('id', orderId);
+      }
+      order.status = "cancelled";
+
+      // If shipment exists, delete it or mark returned
+      if (shipmentId) {
+        if (supabase) {
+          await supabase.from('shipments').update({ status: "returned" }).eq('id', shipmentId);
+        }
+        const match = shipmentsState.find(s => s.id === shipmentId);
+        if (match) match.status = "returned";
+      }
+
+      await adminSaveLog({
+        action_type: 'reject',
+        order_id: orderId,
+        shipment_id: shipmentId || null,
+        admin_user: adminEmail,
+        details: `Order rejected and cancelled by Admin. Quantities restored to inventory stock.`
+      });
+
+      adminShowToast("Order Cancelled", `Order ${orderId} rejected and catalog stock restored.`, "danger");
+    }
+    adminCloseFulfillmentModal();
+    adminRenderShipmentsTable();
+    adminRenderOrdersQueue();
+    return;
+  }
+
+  if (action === "approve") {
+    // Approve order (and generate Shipment ID / tracking values if not already existed)
+    let isNewApproval = false;
+    let finalShipId = shipmentId;
+    let finalTracking = "";
+    
+    const checkReady = document.getElementById("pack-check-ready").checked;
+    const checkPacked = document.getElementById("pack-check-packed").checked;
+    const checkQc = document.getElementById("pack-check-qc").checked;
+    const weight = parseFloat(document.getElementById("fulfillment-weight").value);
+    const estDelivery = document.getElementById("fulfillment-est-delivery").value;
+    const packingImage = document.getElementById("fulfillment-pack-image").value;
+
+    let shipmentStatus = "ready_to_pack";
+    if (checkQc) shipmentStatus = "quality_checked";
+    else if (checkPacked) shipmentStatus = "packed";
+    else if (checkReady) shipmentStatus = "ready_to_pack";
+
+    let shipment = null;
+    if (shipmentId) {
+      shipment = shipmentsState.find(s => s.id === shipmentId);
+    }
+
+    if (!shipment) {
+      isNewApproval = true;
+      finalShipId = `SH-${Math.floor(10000 + Math.random() * 90000)}`;
+      finalTracking = `TG-${Math.floor(10000 + Math.random() * 90000)}`;
+      
+      shipment = {
+        id: finalShipId,
+        order_id: orderId,
+        tracking_number: finalTracking,
+        courier_id: null,
+        courier_name: "Pending Assignment",
+        weight: weight,
+        status: shipmentStatus,
+        packing_image_url: packingImage || null,
+        proof_of_delivery_url: null,
+        estimated_delivery_date: estDelivery ? new Date(estDelivery).toISOString() : null,
+        dispatch_date: null,
+        approved_at: new Date().toISOString(),
+        approved_by: adminEmail,
+        created_at: new Date().toISOString()
+      };
+    } else {
+      // Update existing
+      shipment.status = shipmentStatus;
+      shipment.weight = weight;
+      shipment.estimated_delivery_date = estDelivery ? new Date(estDelivery).toISOString() : null;
+      shipment.packing_image_url = packingImage || null;
+      finalTracking = shipment.tracking_number;
+    }
+
+    // Sync order status
+    if (order.status === "pending") {
+      // Reduce Stock quantities since it was pending (and stock wasn't subtracted before, or double check)
+      await reduceStockForOrder(order);
+      
+      if (supabase) {
+        await supabase.from('orders').update({ status: "processing" }).eq('id', orderId);
+      }
+      order.status = "processing";
+    }
+
+    // Save
+    await adminSaveShipment(shipment);
+
+    // Save tracking event
+    const statusLabelText = shipmentStatus.toUpperCase().replace(/_/g, ' ');
+    await adminSaveTrackingEvent({
+      shipment_id: finalShipId,
+      status: shipmentStatus,
+      location: "Warehouse Hub",
+      description: isNewApproval 
+        ? `Order verified and approved. Cargo weight logged at ${weight} kg.`
+        : `Warehouse packaging status updated to: ${statusLabelText}.`
+    });
+
+    // Save audit log
+    await adminSaveLog({
+      action_type: 'approval',
+      order_id: orderId,
+      shipment_id: finalShipId,
+      admin_user: adminEmail,
+      details: isNewApproval 
+        ? `Approved Order. Generated Shipment ${finalShipId} and Tracking ${finalTracking}.`
+        : `Updated Shipment ${finalShipId} packaging state checklist details.`
+    });
+
+    // Zoho SMTP email alerts
+    if (isNewApproval) {
+      await sendZohoFulfillmentAlert(order, shipment, "approved");
+    } else if (shipmentStatus === "packed" || shipmentStatus === "quality_checked") {
+      await sendZohoFulfillmentAlert(order, shipment, "packed");
+    }
+
+    adminShowToast("Fulfillment Updated", `Shipment details successfully synced in core logs.`, "success");
+    adminCloseFulfillmentModal();
+    adminRenderShipmentsTable();
+    adminRenderOrdersQueue();
+  }
+}
+
+// Stock Helpers
+async function restoreStockForOrder(order) {
+  const items = Array.isArray(order.items) ? order.items : [];
+  for (const item of items) {
+    const match = (window.productsState || []).find(p => p.id === item.productId);
+    if (match) {
+      const newStock = match.stock + item.quantity;
+      match.stock = newStock;
+      if (supabase) {
+        try {
+          await supabase.from('products').update({ stock: newStock }).eq('id', item.productId);
+        } catch(ex) { console.error("Stock update error:", ex); }
+      }
+    }
+  }
+  if (window.saveProducts) await window.saveProducts();
+}
+
+async function reduceStockForOrder(order) {
+  const items = Array.isArray(order.items) ? order.items : [];
+  for (const item of items) {
+    const match = (window.productsState || []).find(p => p.id === item.productId);
+    if (match) {
+      const newStock = Math.max(0, match.stock - item.quantity);
+      match.stock = newStock;
+      if (supabase) {
+        try {
+          await supabase.from('products').update({ stock: newStock }).eq('id', item.productId);
+        } catch(ex) { console.error("Stock update error:", ex); }
+      }
+    }
+  }
+  if (window.saveProducts) await window.saveProducts();
+}
+
+// Courier Dispatch Modals
+function adminOpenDispatchModal(shipmentId) {
+  const shipment = shipmentsState.find(s => s.id === shipmentId);
+  if (!shipment) return;
+
+  const order = getOrderForShipment(shipment.order_id);
+
+  document.getElementById("dispatch-form-shipment-id").value = shipmentId;
+  document.getElementById("dispatch-tracking-number").value = shipment.tracking_number;
+  document.getElementById("dispatch-weight").value = shipment.weight || 1.50;
+
+  // Select active courier dropdown
+  const courierSelect = document.getElementById("dispatch-courier");
+  if (shipment.courier_name && shipment.courier_name !== "Pending Assignment") {
+    courierSelect.value = shipment.courier_name;
+  } else {
+    courierSelect.selectedIndex = 0;
+  }
+
+  // Prefill manifest
+  document.getElementById("manifest-date").textContent = new Date().toLocaleDateString();
+  document.getElementById("manifest-state").textContent = order?.address ? order.address.split(",").slice(-3,-2)[0] || "Telangana" : "Telangana";
+  document.getElementById("manifest-weight").textContent = shipment.weight || 1.50;
+
+  // Open modal
+  document.getElementById("admin-dispatch-modal-overlay").classList.add("active");
+  document.body.style.overflow = "hidden";
+}
+
+function adminCloseDispatchModal() {
+  document.getElementById("admin-dispatch-modal-overlay").classList.remove("active");
+  document.body.style.overflow = "";
+}
+
+async function handleAdminDispatchSubmit(e) {
+  e.preventDefault();
+
+  const shipmentId = document.getElementById("dispatch-form-shipment-id").value;
+  const courierName = document.getElementById("dispatch-courier").value;
+  const trackingNumber = document.getElementById("dispatch-tracking-number").value.trim();
+  const weight = parseFloat(document.getElementById("dispatch-weight").value);
+
+  const shipment = shipmentsState.find(s => s.id === shipmentId);
+  if (!shipment) return;
+
+  const order = getOrderForShipment(shipment.order_id);
+  const adminEmail = localStorage.getItem("toyzguru_admin_email") || "admin@toyzguru.com";
+
+  // Update shipment
+  shipment.status = "dispatched";
+  shipment.courier_name = courierName;
+  shipment.tracking_number = trackingNumber;
+  shipment.weight = weight;
+  shipment.dispatch_date = new Date().toISOString();
+
+  // Update order status to shipped
+  if (order) {
+    if (supabase) {
+      await supabase.from('orders').update({ status: "shipped" }).eq('id', order.id);
+    }
+    order.status = "shipped";
+  }
+
+  await adminSaveShipment(shipment);
+
+  // Tracking event
+  await adminSaveTrackingEvent({
+    shipment_id: shipmentId,
+    status: "dispatched",
+    location: "Warehouse Dispatched Hub",
+    description: `Cargo container dispatched via ${courierName}. Tracking code set to ${trackingNumber}.`
+  });
+
+  // Audit log
+  await adminSaveLog({
+    action_type: 'dispatch',
+    order_id: shipment.order_id,
+    shipment_id: shipmentId,
+    admin_user: adminEmail,
+    details: `Cargo dispatched via ${courierName}. Manifest generated for weight ${weight} kg.`
+  });
+
+  // Zoho SMTP Alert
+  if (order) {
+    await sendZohoFulfillmentAlert(order, shipment, "dispatched");
+  }
+
+  adminShowToast("Cargo Dispatched", `Shipment shifted to courier logistics network.`, "success");
+  adminCloseDispatchModal();
+  adminRenderShipmentsTable();
+  adminRenderOrdersQueue();
+}
+
+// inline quick status updates from Active Shipments Grid
+async function adminUpdateShipmentStatus(shipmentId, newStatus) {
+  const shipment = shipmentsState.find(s => s.id === shipmentId);
+  if (!shipment) return;
+
+  const order = getOrderForShipment(shipment.order_id);
+  const adminEmail = localStorage.getItem("toyzguru_admin_email") || "admin@toyzguru.com";
+
+  let podUrl = null;
+
+  if (newStatus === "delivered") {
+    // Optional POD prompt - prompt for details
+    const uploadPrompt = await window.showCustomDialog("Deliver Confirmation", "Would you like to log an optional Proof of Delivery (POD) image URL for cargo receipt verification?", "info", true);
+    if (uploadPrompt) {
+      // custom textbox prompt
+      const result = prompt("Enter Proof of Delivery (POD) image URL:");
+      if (result) podUrl = result.trim();
+    }
+    
+    // update order status
+    if (order) {
+      if (supabase) {
+        await supabase.from('orders').update({ status: "delivered" }).eq('id', order.id);
+      }
+      order.status = "delivered";
+    }
+    shipment.proof_of_delivery_url = podUrl || null;
+  }
+
+  if (newStatus === "returned") {
+    // RTO - Restore stock and cancel order
+    if (order) {
+      await restoreStockForOrder(order);
+      if (supabase) {
+        await supabase.from('orders').update({ status: "cancelled" }).eq('id', order.id);
+      }
+      order.status = "cancelled";
+    }
+  }
+
+  shipment.status = newStatus;
+  await adminSaveShipment(shipment);
+
+  // Log tracking event
+  await adminSaveTrackingEvent({
+    shipment_id: shipmentId,
+    status: newStatus,
+    location: newStatus === "delivered" ? "Buyer Address" : "Local Courier Hub",
+    description: newStatus === "delivered" 
+      ? ` cargo successfully delivered and signed. Optional POD logged: ${podUrl || 'None'}`
+      : `Transit status shifted to: ${newStatus.toUpperCase().replace(/_/g, ' ')}`
+  });
+
+  // Audit log
+  await adminSaveLog({
+    action_type: 'status_update',
+    order_id: shipment.order_id,
+    shipment_id: shipmentId,
+    admin_user: adminEmail,
+    details: `Updated shipment status to: ${newStatus}.`
+  });
+
+  // Zoho smtp Alert
+  if (order) {
+    if (newStatus === "delivered") {
+      await sendZohoFulfillmentAlert(order, shipment, "delivered");
+    } else if (newStatus === "out_for_delivery") {
+      await sendZohoFulfillmentAlert(order, shipment, "out_for_delivery");
+    }
+  }
+
+  adminShowToast("Shipment Updated", `Shipment status set to ${newStatus.toUpperCase().replace(/_/g, ' ')}`, "success");
+  adminRenderShipmentsTable();
+  adminRenderOrdersQueue();
+}
+
+// Vector-scalable Barcode Generator (Code 39 standard)
+function getCode39SVG(text) {
+  const chars = {
+    '0': '101001101101', '1': '110100101011', '2': '101100101011', '3': '110110010101',
+    '4': '101001101011', '5': '110100110101', '6': '101100110101', '7': '101001011011',
+    '8': '110100101101', '9': '101100101101', 'A': '110101001011', 'B': '101101001011',
+    'C': '110110100101', 'D': '101011001011', 'E': '110101100101', 'F': '101101100101',
+    'G': '101010011011', 'H': '110101001101', 'I': '101101001101', 'J': '101011001101',
+    'K': '110101010011', 'L': '101101010011', 'M': '110110101001', 'N': '101011010011',
+    'O': '110101101001', 'P': '101101101001', 'Q': '101010110011', 'R': '110101011001',
+    'S': '101101011001', 'T': '101011011001', 'U': '110010101011', 'V': '100110101011',
+    'W': '110011010101', 'X': '100101101011', 'Y': '110010110101', 'Z': '100110110101',
+    '-': '100101011011', '.': '110010101101', ' ': '100110101101', '*': '100101101101',
+    '+': '100100100101', '/': '100100101001', '%': '101001001001', '$': '100100100101'
+  };
+  const uppercase = ("*" + text.toUpperCase() + "*").split("");
+  let binary = "";
+  uppercase.forEach(c => {
+    binary += (chars[c] || chars[' ']) + "0";
+  });
+  
+  let svg = `<svg viewBox="0 0 ${binary.length * 2} 80" width="100%" height="80" xmlns="http://www.w3.org/2000/svg">`;
+  for (let i = 0; i < binary.length; i++) {
+    if (binary[i] === '1') {
+      svg += `<rect x="${i * 2}" y="0" width="2" height="80" fill="#000000" />`;
+    }
+  }
+  svg += `</svg>`;
+  return svg;
+}
+
+// Print Router Engine
+function adminPrintDocument(shipmentId, docType) {
+  const shipment = shipmentsState.find(s => s.id === shipmentId);
+  if (!shipment) return;
+  const order = getOrderForShipment(shipment.order_id);
+  if (!order) return;
+
+  const trackingUrl = `${window.location.origin}${window.location.pathname}#tracking?id=${shipment.id}`;
+
+  // Log print
+  adminSaveLog({
+    action_type: 'print',
+    order_id: order.id,
+    shipment_id: shipment.id,
+    admin_user: localStorage.getItem("toyzguru_admin_email") || "admin@toyzguru.com",
+    details: `Printed fulfillment layout document: ${docType.toUpperCase()}`
+  });
+
+  let w = window.open("", "_blank", "width=800,height=600");
+  let html = "";
+  
+  if (docType === "zebra") {
+    html = generateZebraLabelHTML(shipment, order, trackingUrl);
+  } else if (docType === "qr") {
+    html = generateQRStickerHTML(shipment, order, trackingUrl);
+  } else if (docType === "invoice") {
+    html = generateInvoiceHTML(order);
+  } else if (docType === "slip") {
+    html = generatePackingSlipHTML(shipment, order);
+  }
+
+  w.document.write(html);
+  w.document.close();
+
+  // refresh printing table count
+  setTimeout(() => {
+    w.print();
+    adminRenderPrintingTable();
+  }, 600);
+}
+
+// Dynamic Document Template HTML String Writers
+function generateZebraLabelHTML(shipment, order, trackingUrl) {
+  const items = Array.isArray(order.items) ? order.items : [];
+  const skusText = items.map(i => `${i.productId.toUpperCase()} (${i.option || '—'}) x${i.quantity}`).join(", ");
+  const cleanAddress = getCleanDeliveryAddress(order);
+  const { name: custName, phone: custPhone } = extractCustomerInfo(order);
+  const barcodeSvg = getCode39SVG(shipment.tracking_number);
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=110x110&data=${encodeURIComponent(trackingUrl)}`;
+
+  return `
+    <html>
+      <head>
+        <title>Zebra 4x6 Label - ${shipment.id}</title>
+        <style>
+          @page { size: 4in 6in; margin: 0; }
+          body {
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            padding: 0.15in;
+            width: 3.7in;
+            height: 5.7in;
+            box-sizing: border-box;
+            border: 3px solid #000;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+          }
+          .title-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #000;
+            padding-bottom: 0.05in;
+          }
+          .logo {
+            font-size: 16pt;
+            font-weight: bold;
+            letter-spacing: 0.05em;
+          }
+          .ship-tag {
+            font-size: 8pt;
+            border: 1px solid #000;
+            padding: 2px 4px;
+            font-weight: bold;
+          }
+          .address-box {
+            font-size: 8.5pt;
+            line-height: 1.25;
+            margin-top: 0.08in;
+          }
+          .skus-box {
+            border-top: 1px dashed #000;
+            border-bottom: 1px dashed #000;
+            padding: 0.05in 0;
+            font-size: 8pt;
+            margin: 0.05in 0;
+          }
+          .barcode-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0.05in 0;
+          }
+          .qr-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 2px solid #000;
+            padding-top: 0.05in;
+          }
+          .details-info {
+            font-size: 7.5pt;
+            line-height: 1.3;
+          }
+        </style>
+      </head>
+      <body>
+        <div>
+          <div class="title-row">
+            <span class="logo">TOYZGURU</span>
+            <span class="ship-tag">PRIORITY POST</span>
+          </div>
+
+          <div style="font-size:8pt; margin-top:0.05in;">
+            <strong>TO:</strong>
+            <div class="address-box">
+              <strong>${custName}</strong><br>
+              ${cleanAddress}<br>
+              <strong>Ph: ${custPhone}</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="skus-box">
+          <strong>ITEMS:</strong> ${skusText}
+        </div>
+
+        <div class="barcode-container">
+          ${barcodeSvg}
+          <div style="font-size: 7.5pt; font-weight: bold; margin-top:2px;">${shipment.tracking_number}</div>
+        </div>
+
+        <div class="qr-row">
+          <div class="details-info">
+            <strong>ORDER ID:</strong> ${order.id}<br>
+            <strong>SHIPMENT:</strong> ${shipment.id}<br>
+            <strong>COURIER:</strong> ${shipment.courier_name}<br>
+            <strong>WT:</strong> ${shipment.weight} kg | <strong>DATE:</strong> ${new Date().toLocaleDateString()}
+          </div>
+          <img src="${qrCodeUrl}" alt="QR Code" style="width: 75px; height: 75px;" />
+        </div>
+      </body>
+    </html>
+  `;
+}
+
+function generateQRStickerHTML(shipment, order, trackingUrl) {
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(trackingUrl)}`;
+  return `
+    <html>
+      <head>
+        <title>QR Sticker - ${shipment.id}</title>
+        <style>
+          @page { size: 3in 3in; margin: 0; }
+          body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0.15in;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            border: 2px solid #000;
+            box-sizing: border-box;
+            width: 2.8in;
+            height: 2.8in;
+          }
+        </style>
+      </head>
+      <body>
+        <div style="font-size: 9pt; font-weight: bold; margin-bottom: 4px; letter-spacing:0.05em;">TOYZGURU COURIER ID</div>
+        <img src="${qrCodeUrl}" style="width: 130px; height: 130px;" />
+        <div style="font-size: 7.5pt; font-family:monospace; font-weight: bold; margin-top: 6px;">
+          ORDER: ${order.id}<br>
+          SHIPMENT: ${shipment.id}
+        </div>
+      </body>
+    </html>
+  `;
+}
+
+function generateInvoiceHTML(order) {
+  const items = Array.isArray(order.items) ? order.items : [];
+  const cleanAddress = getCleanDeliveryAddress(order);
+  const { name: custName, phone: custPhone } = extractCustomerInfo(order);
+  
+  let gstinVal = window.storeSettings?.seller_gstin || "36AAAAA1111A1Z1";
+  let stateVal = window.storeSettings?.business_state || "Telangana";
+
+  let itemsHTML = items.map((i, idx) => {
+    const total = i.price * i.quantity;
+    const cgstPct = i.cgst_pct || 0;
+    const sgstPct = i.sgst_pct || 0;
+    const igstPct = i.igst_pct || 0;
+    const cgstAmt = i.cgst_amount || 0;
+    const sgstAmt = i.sgst_amount || 0;
+    const igstAmt = i.igst_amount || 0;
+    const totalTax = i.total_tax_amount || 0;
+    const taxableVal = total - totalTax;
+
+    return `
+      <tr style="border-bottom:1px solid #ddd;">
+        <td style="padding: 8px; text-align:center;">${idx + 1}</td>
+        <td style="padding: 8px;"><strong>${i.title}</strong><br><small>Option: ${i.option} | HSN: ${i.hsn_code || '9503'}</small></td>
+        <td style="padding: 8px; text-align:center;">₹${taxableVal.toFixed(2)}</td>
+        <td style="padding: 8px; text-align:center;">${i.quantity}</td>
+        <td style="padding: 8px; text-align:right;">₹${total.toFixed(2)}</td>
+      </tr>
+    `;
+  }).join("");
+
+  return `
+    <html>
+      <head>
+        <title>Invoice - ${order.id}</title>
+        <style>
+          body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 30px; color: #333; line-height: 1.4; }
+          .header { display: flex; justify-content: space-between; border-bottom: 2px solid #8b5cf6; padding-bottom: 15px; }
+          .invoice-title { font-size: 24pt; font-weight: bold; color: #8b5cf6; font-family: sans-serif; }
+          .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+          .section-title { font-size: 11pt; color: #8b5cf6; text-transform: uppercase; font-weight: bold; border-bottom: 1px solid #ddd; padding-bottom: 4px; margin-bottom: 8px; }
+          .table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 10pt; }
+          .table th { background: #f5f5f5; padding: 10px; font-weight: bold; border: 1px solid #ddd; }
+          .table td { padding: 10px; border: 1px solid #ddd; }
+          .totals-table { width: 300px; float: right; margin-top: 20px; border-collapse: collapse; font-size: 10pt; }
+          .totals-table td { padding: 8px; border: 1px solid #ddd; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div>
+            <div class="invoice-title">TOYZGURU</div>
+            <p style="font-size: 9pt; margin: 3px 0;">Premium Collectors Vault</p>
+          </div>
+          <div style="text-align: right; font-size: 9pt;">
+            <strong>TAX INVOICE</strong><br>
+            Invoice No: INV-${order.id.replace('TG-','')}<br>
+            Date: ${new Date(order.date).toLocaleDateString()}<br>
+            Seller GSTIN: ${gstinVal}
+          </div>
+        </div>
+
+        <div class="grid-2" style="font-size: 9pt;">
+          <div>
+            <div class="section-title">Seller Address</div>
+            <strong>ToyzGuru Logistics Ltd.</strong><br>
+            Level 3, Galaxy Hub, Madhapur<br>
+            Hyderabad, ${stateVal} - 500081<br>
+            Email: sales@toyzguru.in
+          </div>
+          <div>
+            <div class="section-title">Billing & Shipping Address</div>
+            <strong>${custName}</strong><br>
+            ${cleanAddress}<br>
+            Contact: ${custPhone}<br>
+            ${order.buyer_gstin ? `<strong>Buyer GSTIN:</strong> ${order.buyer_gstin}` : ""}
+          </div>
+        </div>
+
+        <table class="table">
+          <thead>
+            <tr>
+              <th style="width: 50px;">#</th>
+              <th>Description of Goods</th>
+              <th style="width: 100px;">Taxable Value</th>
+              <th style="width: 60px;">Qty</th>
+              <th style="width: 120px; text-align:right;">Gross Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${itemsHTML}
+          </tbody>
+        </table>
+
+        <div style="width: 100%; overflow: hidden;">
+          <table class="totals-table">
+            <tr>
+              <td>Subtotal</td>
+              <td style="text-align: right;">₹${Number(order.subtotal).toFixed(2)}</td>
+            </tr>
+            ${order.discount > 0 ? `<tr><td>Discount</td><td style="text-align: right; color:#ef4444;">-₹${Number(order.discount).toFixed(2)}</td></tr>` : ""}
+            <tr>
+              <td>Tax Charges (GST)</td>
+              <td style="text-align: right;">₹${Number(order.total_tax_amount || order.tax || 0).toFixed(2)}</td>
+            </tr>
+            <tr>
+              <td>Shipping Fee</td>
+              <td style="text-align: right;">₹${Number(order.shipping).toFixed(2)}</td>
+            </tr>
+            <tr style="font-weight: bold; background: #f5f5f5;">
+              <td>Total Paid</td>
+              <td style="text-align: right; color:#8b5cf6;">₹${Number(order.total).toFixed(2)}</td>
+            </tr>
+          </table>
+        </div>
+
+        <div style="margin-top: 50px; font-size: 8.5pt; color: #777; text-align: center; border-top: 1px solid #eee; padding-top: 10px;">
+          This is an electronically generated tax invoice. No physical signature required. Thank you for collecting with ToyzGuru.
+        </div>
+      </body>
+    </html>
+  `;
+}
+
+function generatePackingSlipHTML(shipment, order) {
+  const items = Array.isArray(order.items) ? order.items : [];
+  const cleanAddress = getCleanDeliveryAddress(order);
+  const { name: custName, phone: custPhone } = extractCustomerInfo(order);
+  const barcodeSvg = getCode39SVG(shipment.id);
+
+  let itemsHTML = items.map((i, idx) => `
+    <tr>
+      <td style="padding: 10px; text-align:center;">${idx + 1}</td>
+      <td style="padding: 10px; font-family: monospace;">${i.productId}</td>
+      <td style="padding: 10px;"><strong>${i.title}</strong> - ${i.option}</td>
+      <td style="padding: 10px; text-align:center; font-weight:bold; font-size:12pt;">${i.quantity}</td>
+      <td style="padding: 10px; text-align:center;">[ &nbsp; ]</td>
+    </tr>
+  `).join("");
+
+  return `
+    <html>
+      <head>
+        <title>Packing Slip - ${shipment.id}</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 30px; color: #333; }
+          .header { display: flex; justify-content: space-between; border-bottom: 2px solid #333; padding-bottom: 15px; margin-bottom: 20px; }
+          .table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 10pt; }
+          .table th { background: #eee; padding: 10px; border: 1px solid #ccc; }
+          .table td { padding: 10px; border: 1px solid #ccc; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div>
+            <div style="font-size: 20pt; font-weight: bold;">TOYZGURU PACKING SLIP</div>
+            <p style="font-size: 9pt; margin: 3px 0;">Warehouse Cargo Routing slip</p>
+          </div>
+          <div style="width: 200px;">
+            ${barcodeSvg}
+            <div style="text-align: center; font-family: monospace; font-size: 8pt; margin-top: 2px;">${shipment.id}</div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 30px; font-size: 9.5pt; margin-bottom: 20px;">
+          <div>
+            <strong>SHIP TO:</strong><br>
+            <strong>${custName}</strong><br>
+            ${cleanAddress}<br>
+            Phone: ${custPhone}
+          </div>
+          <div>
+            <strong>SHIPMENT DETAILS:</strong><br>
+            Order ID: ${order.id}<br>
+            Tracking ID: ${shipment.tracking_number}<br>
+            Courier Agency: ${shipment.courier_name}<br>
+            Package Weight: ${shipment.weight} kg
+          </div>
+        </div>
+
+        <h3 style="border-bottom: 1px solid #333; padding-bottom: 4px; margin-top: 30px; font-size: 12pt;">Warehouse Picking Checklist</h3>
+        <table class="table">
+          <thead>
+            <tr>
+              <th style="width: 40px;">#</th>
+              <th style="width: 120px;">SKU / ID</th>
+              <th>Product Details</th>
+              <th style="width: 80px;">Qty Required</th>
+              <th style="width: 80px;">Picked Check</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${itemsHTML}
+          </tbody>
+        </table>
+
+        <div style="margin-top: 40px; border: 1px dashed #777; padding: 15px; font-size: 9pt; border-radius:6px; background:#fafafa;">
+          <strong>Warehouse Assembly Directives:</strong><br>
+          1. Match product titles and options with collector specifications carefully.<br>
+          2. Double check cartoon box wraps for high-value watches and diecast collectibles.<br>
+          3. Affix the printed Zebra shipping label to the top face of the carton.<br>
+          4. Confirm QC checkmarks in the system operations grid before dispatch handoff.
+        </div>
+      </body>
+    </html>
+  `;
+}
+
+// Zoho SMTP Email Alert dispatcher
+async function sendZohoFulfillmentAlert(order, shipment, stage) {
+  if (!window.sendEmailViaServer) return;
+
+  const orderId = order.id;
+  const shipId = shipment.id;
+  const trackingNumber = shipment.tracking_number;
+  const courier = shipment.courier_name;
+  const trackingUrl = `${window.location.origin}${window.location.pathname}#tracking?id=${shipId}`;
+  const estDateStr = shipment.estimated_delivery_date 
+    ? new Date(shipment.estimated_delivery_date).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })
+    : new Date(Date.now() + 8 * 24 * 60 * 60 * 1000).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
+
+  let subject = "";
+  let heading = "";
+  let detailsText = "";
+
+  if (stage === "approved") {
+    subject = `Order Approved & Shipment Initiated #${orderId} - ToyzGuru`;
+    heading = "Order Approved & In Process";
+    detailsText = `Great news! Your payment has been cleared, and your order has been officially approved. We have created a shipment file (Shipment ID: <strong>${shipId}</strong>) and generated tracking number <strong>${trackingNumber}</strong>. Estimated delivery: <strong>${estDateStr}</strong>.`;
+  } else if (stage === "packed") {
+    subject = `Order Boxed & QC Passed #${orderId} - ToyzGuru`;
+    heading = "Cargo Secured & QC Checked";
+    detailsText = `Your collectibles have been carefully boxed in secure vault packaging and passed our quality check inspection. Ready for dispatch handoff to courier partners.`;
+  } else if (stage === "dispatched") {
+    subject = `Order Cargo Dispatched #${orderId} - ToyzGuru`;
+    heading = "Shipment Dispatched";
+    detailsText = `Your cargo (Shipment: <strong>${shipId}</strong>) has been handed over to <strong>${courier}</strong> under Tracking ID <strong>${trackingNumber}</strong>. Estimated delivery: <strong>${estDateStr}</strong>.<br><br>
+    <a href="${trackingUrl}" style="display:inline-block; padding:10px 20px; background:#8b5cf6; color:#fff; text-decoration:none; border-radius:6px; font-weight:bold; margin-top:10px;">Track Live Status</a>`;
+  } else if (stage === "out_for_delivery") {
+    subject = `Cargo Out for Delivery #${orderId} - ToyzGuru`;
+    heading = "Out For Delivery Today";
+    detailsText = `Your ToyzGuru cargo (Shipment: <strong>${shipId}</strong>) has reached your local hub and is out for delivery today via <strong>${courier}</strong>. Please keep your contact number active.`;
+  } else if (stage === "delivered") {
+    subject = `Cargo Successfully Delivered #${orderId} - ToyzGuru`;
+    heading = "Shipment Delivered";
+    detailsText = `Congratulations! Your ToyzGuru shipment <strong>${shipId}</strong> has been successfully delivered and signed. Thank you for collecting with ToyzGuru.<br>
+    ${shipment.proof_of_delivery_url ? `<br><strong>Proof of Delivery URL:</strong> <a href="${shipment.proof_of_delivery_url}" style="color:#8b5cf6;">View POD image</a>` : ""}`;
+  }
+
+  const html = `
+    <div style="font-family: 'Inter', Arial, sans-serif; background-color: #080b11; color: #f3f4f6; padding: 2.5rem; border-radius: 16px; max-width: 620px; margin: 0 auto; border: 1px solid rgba(139,92,246,0.2); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+      <div style="text-align: center; margin-bottom: 2rem;">
+        <h2 style="font-family: 'Space Grotesk', Arial, sans-serif; color: #ffffff; font-size: 1.8rem; margin: 0; font-weight: 700; letter-spacing: -0.02em;">ToyzGuru</h2>
+        <p style="color: #8b5cf6; font-size: 0.85rem; margin: 0.25rem 0 0 0; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em;">Logistics Fulfillment Network</p>
+      </div>
+
+      <div style="background: rgba(139,92,246,0.08); border: 1px solid rgba(139,92,246,0.25); border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 1.75rem; text-align: center;">
+        <p style="margin: 0 0 0.35rem 0; color: #a78bfa; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em;">${heading} ✓</p>
+        <p style="margin: 0; color: #ffffff; font-size: 1.15rem; font-weight: 700; font-family: monospace;">#${orderId}</p>
+      </div>
+
+      <p style="color: #9ca3af; font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.5rem;">
+        Hi <strong style="color: #ffffff;">${order.name || "Collector"}</strong>,<br><br>
+        ${detailsText}
+      </p>
+
+      <div style="display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; margin-top:20px;">
+        <div style="flex: 1; min-width: 180px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; padding: 1rem;">
+          <p style="margin: 0 0 0.3rem 0; color: #6b7280; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.07em; font-weight: 600;">Delivery Service</p>
+          <p style="margin: 0; color: #e5e7eb; font-size: 0.88rem; line-height: 1.5;">${courier || 'Pending Partner'}<br>Code: ${trackingNumber || '—'}</p>
+        </div>
+        <div style="flex: 1; min-width: 180px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; padding: 1rem;">
+          <p style="margin: 0 0 0.3rem 0; color: #6b7280; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.07em; font-weight: 600;">Est. Delivery</p>
+          <p style="margin: 0; color: #e5e7eb; font-size: 0.88rem;">${estDateStr}</p>
+        </div>
+      </div>
+
+      <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.07); margin-bottom: 1.5rem;" />
+
+      <p style="color: #6b7280; font-size: 0.8rem; text-align: center; margin: 0; line-height: 1.6;">
+        Questions? Contact our logistics desk at <a href="mailto:support@toyzguru.in" style="color: #8b5cf6;">support@toyzguru.in</a><br>
+        &copy; 2026 ToyzGuru Premium Store
+      </p>
+    </div>
+  `;
+
+  try {
+    await window.sendEmailViaServer({
+      to: order.email,
+      subject,
+      html,
+      text: `${heading}!\n\nOrder ID: ${orderId}\n\nHi ${order.name || 'Collector'},\n\nYour order has reached the stage: ${heading}.\nCourier: ${courier}\nTracking: ${trackingNumber}\nEst Date: ${estDateStr}\n\nsupport@toyzguru.in`
+    });
+  } catch(ex) {
+    console.warn("Fulfillment alert email failed (non-blocking):", ex);
+  }
+}
+
+// Attach new bindings to window so inline onclick elements can read them
+window.adminSwitchDeliveryTab = adminSwitchDeliveryTab;
+window.adminOpenFulfillmentModal = adminOpenFulfillmentModal;
+window.adminCloseFulfillmentModal = adminCloseFulfillmentModal;
+window.handleAdminFulfillmentSubmit = handleAdminFulfillmentSubmit;
+window.toggleFulfillmentActionUI = toggleFulfillmentActionUI;
+window.adminOpenDispatchModal = adminOpenDispatchModal;
+window.adminCloseDispatchModal = adminCloseDispatchModal;
+window.handleAdminDispatchSubmit = handleAdminDispatchSubmit;
+window.adminUpdateShipmentStatus = adminUpdateShipmentStatus;
+window.adminPrintDocument = adminPrintDocument;
+window.adminRenderShipmentsTable = adminRenderShipmentsTable;
+window.adminRenderPrintingTable = adminRenderPrintingTable;
+window.adminRenderAnalyticsTab = adminRenderAnalyticsTab;
+window.adminRenderLogsTable = adminRenderLogsTable;
 
 function adminRenderStatesTable() {
   const tableBody = document.getElementById("admin-delivery-states-body");
@@ -2852,10 +4568,17 @@ function adminRenderCouponsTable() {
         </td>
       </tr>
     `;
+    renderAdminPagination(tableBody, 0, 'coupons');
     return;
   }
 
-  tableBody.innerHTML = couponsState.map(coupon => {
+  // Clamp & page-slice
+  const totalCpnPages = Math.max(1, Math.ceil(couponsState.length / ADMIN_PAGE_SIZE));
+  adminPaginationState.coupons = Math.max(1, Math.min(adminPaginationState.coupons, totalCpnPages));
+  const cpnPg = adminPaginationState.coupons;
+  const cpnPageData = couponsState.slice((cpnPg - 1) * ADMIN_PAGE_SIZE, cpnPg * ADMIN_PAGE_SIZE);
+
+  tableBody.innerHTML = cpnPageData.map(coupon => {
     const minOrderVal = coupon.min_order ? `₹${Number(coupon.min_order).toFixed(2)}` : "None";
     const maxDiscountVal = coupon.max_discount ? `₹${Number(coupon.max_discount).toFixed(2)}` : "None";
     const usageLimitVal = coupon.usage_limit ? coupon.usage_limit : "Unlimited";
@@ -2863,7 +4586,6 @@ function adminRenderCouponsTable() {
     const statusClass = coupon.is_active ? "status-delivered" : "status-cancelled";
     const statusText = coupon.is_active ? "ACTIVE" : "INACTIVE";
     const toggleTitle = coupon.is_active ? "Deactivate Coupon" : "Activate Coupon";
-
     const valueDisplay = coupon.type === 'percentage' ? `${coupon.value}%` : `₹${Number(coupon.value).toFixed(2)}`;
 
     return `
@@ -2894,6 +4616,7 @@ function adminRenderCouponsTable() {
     `;
   }).join("");
 
+  renderAdminPagination(tableBody, couponsState.length, 'coupons');
   feather.replace();
 }
 
@@ -3576,6 +5299,7 @@ async function adminRenderNewsletterPanel() {
 function _adminRenderNewsletterRows(rows) {
   const tableBody = document.getElementById('admin-newsletter-table-body');
   if (!tableBody) return;
+  window._newsletterAllRows = rows; // keep reference for pagination re-draws
 
   if (rows.length === 0) {
     tableBody.innerHTML = `
@@ -3586,17 +5310,25 @@ function _adminRenderNewsletterRows(rows) {
         </td>
       </tr>`;
     if (window.feather) feather.replace();
+    renderAdminPagination(tableBody, 0, 'newsletter');
     return;
   }
 
-  tableBody.innerHTML = rows.map((sub, idx) => {
+  // Clamp & page-slice
+  const totalNewsPages = Math.max(1, Math.ceil(rows.length / ADMIN_PAGE_SIZE));
+  adminPaginationState.newsletter = Math.max(1, Math.min(adminPaginationState.newsletter, totalNewsPages));
+  const newsPg = adminPaginationState.newsletter;
+  const newsPageData = rows.slice((newsPg - 1) * ADMIN_PAGE_SIZE, newsPg * ADMIN_PAGE_SIZE);
+
+  tableBody.innerHTML = newsPageData.map((sub, idx) => {
+    const globalIdx = (newsPg - 1) * ADMIN_PAGE_SIZE + idx + 1;
     const dateStr = new Date(sub.subscribed_at).toLocaleString('en-IN', {
       day: '2-digit', month: 'short', year: 'numeric',
       hour: '2-digit', minute: '2-digit'
     });
     return `
       <tr id="newsletter-row-${sub.id}">
-        <td style="font-size:0.8rem;color:var(--text-muted);font-family:monospace;">${idx + 1}</td>
+        <td style="font-size:0.8rem;color:var(--text-muted);font-family:monospace;">${globalIdx}</td>
         <td style="font-family:monospace;font-size:0.9rem;font-weight:600;color:var(--text-primary);">
           <i data-feather="mail" style="width:13px;height:13px;vertical-align:middle;margin-right:0.4rem;color:var(--color-brand);"></i>
           ${sub.email}
@@ -3614,8 +5346,10 @@ function _adminRenderNewsletterRows(rows) {
       </tr>`;
   }).join('');
 
+  renderAdminPagination(tableBody, rows.length, 'newsletter');
   if (window.feather) feather.replace();
 }
+
 
 function adminFilterNewsletterTable(query) {
   const q = (query || '').toLowerCase().trim();

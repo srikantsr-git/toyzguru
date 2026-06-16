@@ -8,7 +8,8 @@
     India</title>
   <meta name="description"
     content="Shop premium Anime Figures, Diecast Supercar Collectibles, and Imported Mechanical Watches at ToyzGuru. Premium pop-culture and collector showcase boutique.">
-  <meta name="keywords" content="ToyzGuru, Anime Figures, Diecast Cars, Imported Watches, Collectibles, Statues">
+  <meta name="keywords"
+    content="ToyzGuru, Anime Figures, hot wheels Diecast Cars, Imported Watches, Collectibles, Statues">
 
   <!-- CSS Styling -->
   <link rel="stylesheet" href="css/style.css">
@@ -853,11 +854,16 @@
                     <label class="form-label">Phone Number *</label>
                     <input type="tel" required class="form-input" id="ship-phone" placeholder="+91 90123-45678">
                   </div>
-                  <div class="form-group" style="border: 1px solid rgba(124, 58, 237, 0.35); padding: 0.75rem; border-radius: 8px; background: rgba(124, 58, 237, 0.05); box-shadow: 0 0 10px rgba(124, 58, 237, 0.1);">
-                    <label class="form-label" style="color: var(--color-brand); font-weight: 700; display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.4rem;">
-                      <i data-feather="briefcase" style="width: 14px; height: 14px; stroke: var(--color-brand); vertical-align: middle;"></i> GSTIN (Optional)
+                  <div class="form-group"
+                    style="border: 1px solid rgba(124, 58, 237, 0.35); padding: 0.75rem; border-radius: 8px; background: rgba(124, 58, 237, 0.05); box-shadow: 0 0 10px rgba(124, 58, 237, 0.1);">
+                    <label class="form-label"
+                      style="color: var(--color-brand); font-weight: 700; display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.4rem;">
+                      <i data-feather="briefcase"
+                        style="width: 14px; height: 14px; stroke: var(--color-brand); vertical-align: middle;"></i>
+                      GSTIN (Optional)
                     </label>
-                    <input type="text" class="form-input" id="ship-gstin" placeholder="22AAAAA0000A1Z5" style="border: 1px solid rgba(255, 255, 255, 0.15); background: rgba(255,255,255,0.02); color: #fff; width: 100%;">
+                    <input type="text" class="form-input" id="ship-gstin" placeholder="22AAAAA0000A1Z5"
+                      style="border: 1px solid rgba(255, 255, 255, 0.15); background: rgba(255,255,255,0.02); color: #fff; width: 100%;">
                   </div>
                   <div class="form-group full-width" style="margin-top: 1rem; margin-bottom: 0.5rem;">
                     <button type="button" id="checkout-save-address-btn" class="checkout-btn"
@@ -1115,6 +1121,18 @@
               <p style="color: var(--text-secondary); font-size: 0.85rem;" id="track-panel-desc">Your order is being
                 assembled. A team member is authenticating custom scale parts / apparel packaging before transport
                 container hand-off.</p>
+
+              <!-- Optional POD block -->
+              <div id="track-panel-pod-container"
+                style="display: none; margin-top: 1rem; border-top: 1px dashed var(--glass-border); padding-top: 1rem;">
+                <h5 style="margin-bottom: 0.5rem; color:var(--text-primary); font-family:'Space Grotesk',sans-serif;"><i
+                    data-feather="image" style="width: 14px; height: 14px; vertical-align: middle;"></i> Proof of
+                  Delivery (POD)</h5>
+                <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 0.75rem;">A digital
+                  signature/receipt image has been uploaded for this delivery.</p>
+                <img id="track-panel-pod-image" src="" alt="POD Receipt"
+                  style="max-width: 100%; border-radius: 6px; border: 1px solid var(--glass-border); max-height: 200px; object-fit: contain;" />
+              </div>
             </div>
           </div>
 
@@ -1151,12 +1169,13 @@
               <div class="checkout-form-grid" style="grid-template-columns: 1fr; gap: 1.25rem; display: grid;">
                 <div class="form-group">
                   <label class="form-label">Email Address *</label>
-                  <input type="email" required class="form-input" id="auth-signin-email"
-                    placeholder="email@example.com" autocomplete="off">
+                  <input type="email" required class="form-input" id="auth-signin-email" placeholder="email@example.com"
+                    autocomplete="off">
                 </div>
                 <div class="form-group">
                   <label class="form-label">Password *</label>
-                  <input type="password" required class="form-input" id="auth-signin-password" placeholder="••••••••" autocomplete="new-password">
+                  <input type="password" required class="form-input" id="auth-signin-password" placeholder="••••••••"
+                    autocomplete="new-password">
                   <div style="text-align: right; margin-top: 0.45rem;">
                     <a href="#" id="forgot-password-link"
                       style="font-size: 0.8rem; color: var(--color-brand); text-decoration: none; transition: opacity 0.2s;"
@@ -1174,12 +1193,13 @@
               <div class="checkout-form-grid" style="grid-template-columns: 1fr; gap: 1.25rem; display: grid;">
                 <div class="form-group">
                   <label class="form-label">Full Name *</label>
-                  <input type="text" required class="form-input" id="auth-signup-name" placeholder="John Doe" autocomplete="off">
+                  <input type="text" required class="form-input" id="auth-signup-name" placeholder="John Doe"
+                    autocomplete="off">
                 </div>
                 <div class="form-group">
                   <label class="form-label">Email Address *</label>
-                  <input type="email" required class="form-input" id="auth-signup-email"
-                    placeholder="email@example.com" autocomplete="off">
+                  <input type="email" required class="form-input" id="auth-signup-email" placeholder="email@example.com"
+                    autocomplete="off">
                 </div>
                 <div class="form-group">
                   <label class="form-label">Password *</label>
@@ -1333,16 +1353,19 @@
             <!-- Avatar + Name -->
             <div class="profile-user-card">
               <div class="profile-avatar-wrap" id="avatar-upload-trigger" title="Click to upload profile image">
-                <img src="assets/images/product_anime_figure.png" alt="User Profile Image" class="profile-avatar-img" id="profile-card-avatar">
+                <img src="assets/images/product_anime_figure.png" alt="User Profile Image" class="profile-avatar-img"
+                  id="profile-card-avatar">
                 <div class="profile-avatar-overlay">
                   <i data-feather="camera" style="width: 20px; height: 20px;"></i>
                 </div>
                 <input type="file" id="user-setting-avatar-input" accept="image/*" style="display: none;">
               </div>
               <h3 class="profile-name" id="profile-card-name">User Name</h3>
-              <p class="profile-email-label" id="profile-card-email" style="color:var(--text-secondary);font-size:0.78rem;margin:0.2rem 0 0.75rem;word-break:break-all;"></p>
+              <p class="profile-email-label" id="profile-card-email"
+                style="color:var(--text-secondary);font-size:0.78rem;margin:0.2rem 0 0.75rem;word-break:break-all;"></p>
               <span class="profile-points-badge">
-                <i data-feather="award" style="width: 12px; height: 12px; vertical-align: middle; margin-right: 0.15rem;"></i>
+                <i data-feather="award"
+                  style="width: 12px; height: 12px; vertical-align: middle; margin-right: 0.15rem;"></i>
                 <span id="profile-card-points">120</span> Loyalty Points
               </span>
             </div>
@@ -1371,7 +1394,8 @@
               </button>
               <div class="profile-nav-divider"></div>
               <button class="profile-nav-btn profile-signout-nav-btn" id="profile-signout-btn">
-                <span class="pnb-icon-wrap signout-icon"><i data-feather="log-out" style="width:17px;height:17px;"></i></span>
+                <span class="pnb-icon-wrap signout-icon"><i data-feather="log-out"
+                    style="width:17px;height:17px;"></i></span>
                 <span>Sign Out</span>
               </button>
             </nav>
@@ -1388,7 +1412,8 @@
                   <h2 class="dash-greeting" id="dash-greeting-text">Welcome back!</h2>
                   <p class="dash-subline">Manage your account, orders and wishlist from one place.</p>
                 </div>
-                <div class="dash-loyalty-chip" style="position: absolute; top: 1.25rem; right: 1.25rem; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); border-color: rgba(251, 191, 36, 0.45);">
+                <div class="dash-loyalty-chip"
+                  style="position: absolute; top: 1.25rem; right: 1.25rem; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); border-color: rgba(251, 191, 36, 0.45);">
                   <i data-feather="award" style="width:18px;height:18px;color:#fbbf24;"></i>
                   <span><strong id="dash-points-count">120</strong> pts</span>
                 </div>
@@ -1397,40 +1422,48 @@
               <!-- Quick-Action Cards -->
               <div class="dash-cards-grid">
 
-                <button class="dash-card" data-panel="profile-settings" onclick="window._profileGoToPanel('profile-settings')">
+                <button class="dash-card" data-panel="profile-settings"
+                  onclick="window._profileGoToPanel('profile-settings')">
                   <div class="dash-card-icon-wrap" style="--dc-clr:#8b5cf6;">
                     <i data-feather="settings" style="width:26px;height:26px;"></i>
                   </div>
                   <h4 class="dash-card-title">Account Settings</h4>
                   <p class="dash-card-desc">Update your name, address, email and personal details.</p>
-                  <span class="dash-card-arrow"><i data-feather="arrow-right" style="width:15px;height:15px;"></i></span>
+                  <span class="dash-card-arrow"><i data-feather="arrow-right"
+                      style="width:15px;height:15px;"></i></span>
                 </button>
 
-                <button class="dash-card" data-panel="profile-orders" onclick="window._profileGoToPanel('profile-orders')">
+                <button class="dash-card" data-panel="profile-orders"
+                  onclick="window._profileGoToPanel('profile-orders')">
                   <div class="dash-card-icon-wrap" style="--dc-clr:#06b6d4;">
                     <i data-feather="package" style="width:26px;height:26px;"></i>
                   </div>
                   <h4 class="dash-card-title">Order History</h4>
                   <p class="dash-card-desc">Track your previous purchases and order fulfilment status.</p>
-                  <span class="dash-card-arrow"><i data-feather="arrow-right" style="width:15px;height:15px;"></i></span>
+                  <span class="dash-card-arrow"><i data-feather="arrow-right"
+                      style="width:15px;height:15px;"></i></span>
                 </button>
 
-                <button class="dash-card" data-panel="profile-payments" onclick="window._profileGoToPanel('profile-payments')">
+                <button class="dash-card" data-panel="profile-payments"
+                  onclick="window._profileGoToPanel('profile-payments')">
                   <div class="dash-card-icon-wrap" style="--dc-clr:#10b981;">
                     <i data-feather="credit-card" style="width:26px;height:26px;"></i>
                   </div>
                   <h4 class="dash-card-title">Payment History</h4>
                   <p class="dash-card-desc">View all transactions and download receipts for your records.</p>
-                  <span class="dash-card-arrow"><i data-feather="arrow-right" style="width:15px;height:15px;"></i></span>
+                  <span class="dash-card-arrow"><i data-feather="arrow-right"
+                      style="width:15px;height:15px;"></i></span>
                 </button>
 
-                <button class="dash-card" data-panel="profile-wishlist" onclick="window._profileGoToPanel('profile-wishlist')">
+                <button class="dash-card" data-panel="profile-wishlist"
+                  onclick="window._profileGoToPanel('profile-wishlist')">
                   <div class="dash-card-icon-wrap" style="--dc-clr:#f43f5e;">
                     <i data-feather="heart" style="width:26px;height:26px;"></i>
                   </div>
                   <h4 class="dash-card-title">Wishlist Vault</h4>
                   <p class="dash-card-desc">Your saved items — add them all to cart in one click.</p>
-                  <span class="dash-card-arrow"><i data-feather="arrow-right" style="width:15px;height:15px;"></i></span>
+                  <span class="dash-card-arrow"><i data-feather="arrow-right"
+                      style="width:15px;height:15px;"></i></span>
                 </button>
 
                 <button class="dash-card dash-card-signout" id="dash-signout-card">
@@ -1439,7 +1472,8 @@
                   </div>
                   <h4 class="dash-card-title">Sign Out</h4>
                   <p class="dash-card-desc">Securely log out of your ToyzGuru member account.</p>
-                  <span class="dash-card-arrow"><i data-feather="arrow-right" style="width:15px;height:15px;"></i></span>
+                  <span class="dash-card-arrow"><i data-feather="arrow-right"
+                      style="width:15px;height:15px;"></i></span>
                 </button>
 
               </div><!-- /.dash-cards-grid -->
@@ -1448,17 +1482,24 @@
             <!-- ── WISHLIST VAULT PANEL ── -->
             <div class="glass-panel profile-panel" id="profile-wishlist">
               <div class="profile-panel-header">
-                <button class="panel-back-btn" onclick="window._profileGoToPanel('profile-dashboard')"><i data-feather="arrow-left" style="width:14px;height:14px;"></i> Dashboard</button>
+                <button class="panel-back-btn" onclick="window._profileGoToPanel('profile-dashboard')"><i
+                    data-feather="arrow-left" style="width:14px;height:14px;"></i> Dashboard</button>
                 <h3 class="profile-panel-title">Your Wishlist Vault</h3>
               </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
-                <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">Manage items currently saved in your secure loyalty vault.</p>
+              <div
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+                <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">Manage items currently saved in
+                  your secure loyalty vault.</p>
                 <div style="display: flex; gap: 0.5rem;" id="profile-wishlist-actions">
-                  <button type="button" class="product-card-add-btn" id="profile-wishlist-add-all-btn" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">Add All to Cart</button>
-                  <button type="button" class="product-card-add-btn" id="profile-wishlist-clear-btn" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; background: var(--bg-tertiary); color: var(--text-primary); border-color: var(--glass-border);">Clear All</button>
+                  <button type="button" class="product-card-add-btn" id="profile-wishlist-add-all-btn"
+                    style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">Add All to Cart</button>
+                  <button type="button" class="product-card-add-btn" id="profile-wishlist-clear-btn"
+                    style="padding: 0.4rem 0.8rem; font-size: 0.8rem; background: var(--bg-tertiary); color: var(--text-primary); border-color: var(--glass-border);">Clear
+                    All</button>
                 </div>
               </div>
-              <div class="products-grid" id="profile-wishlist-items-grid" style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem;">
+              <div class="products-grid" id="profile-wishlist-items-grid"
+                style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem;">
                 <!-- Dynamically populated via app.js -->
               </div>
             </div>
@@ -1466,7 +1507,8 @@
             <!-- ── ORDER HISTORY PANEL ── -->
             <div class="glass-panel profile-panel" id="profile-orders">
               <div class="profile-panel-header">
-                <button class="panel-back-btn" onclick="window._profileGoToPanel('profile-dashboard')"><i data-feather="arrow-left" style="width:14px;height:14px;"></i> Dashboard</button>
+                <button class="panel-back-btn" onclick="window._profileGoToPanel('profile-dashboard')"><i
+                    data-feather="arrow-left" style="width:14px;height:14px;"></i> Dashboard</button>
                 <h3 class="profile-panel-title">Your Order History</h3>
               </div>
               <div class="orders-table-wrap">
@@ -1491,10 +1533,12 @@
             <!-- ── PAYMENT HISTORY PANEL ── -->
             <div class="glass-panel profile-panel" id="profile-payments">
               <div class="profile-panel-header">
-                <button class="panel-back-btn" onclick="window._profileGoToPanel('profile-dashboard')"><i data-feather="arrow-left" style="width:14px;height:14px;"></i> Dashboard</button>
+                <button class="panel-back-btn" onclick="window._profileGoToPanel('profile-dashboard')"><i
+                    data-feather="arrow-left" style="width:14px;height:14px;"></i> Dashboard</button>
                 <h3 class="profile-panel-title">Payment History</h3>
               </div>
-              <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:1.5rem;">All transactions processed through your account. Download receipts or remove records below.</p>
+              <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:1.5rem;">All transactions processed
+                through your account. Download receipts or remove records below.</p>
               <div class="orders-table-wrap">
                 <table class="orders-table">
                   <thead>
@@ -1517,18 +1561,25 @@
             <!-- ── ACCOUNT SETTINGS PANEL ── -->
             <div class="glass-panel profile-panel" id="profile-settings">
               <div class="profile-panel-header">
-                <button class="panel-back-btn" onclick="window._profileGoToPanel('profile-dashboard')"><i data-feather="arrow-left" style="width:14px;height:14px;"></i> Dashboard</button>
+                <button class="panel-back-btn" onclick="window._profileGoToPanel('profile-dashboard')"><i
+                    data-feather="arrow-left" style="width:14px;height:14px;"></i> Dashboard</button>
                 <h3 class="profile-panel-title">Account Settings</h3>
               </div>
 
               <form id="profile-settings-form">
-                <h4 style="color: var(--color-brand); margin-bottom: 1rem; font-family: 'Space Grotesk', sans-serif;">Saved Delivery Addresses</h4>
-                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 2rem;" id="member-addresses-container">
+                <h4 style="color: var(--color-brand); margin-bottom: 1rem; font-family: 'Space Grotesk', sans-serif;">
+                  Saved Delivery Addresses</h4>
+                <div
+                  style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 2rem;"
+                  id="member-addresses-container">
                   <!-- Dynamically populated via app.js -->
                 </div>
 
-                <h4 style="color: var(--color-brand); margin-bottom: 1rem; font-family: 'Space Grotesk', sans-serif; border-top: 1px solid var(--glass-border); padding-top: 1.5rem;">Home Address</h4>
-                <div class="checkout-form-grid" style="grid-template-columns: 1fr 1fr; gap: 1.25rem; display: grid; margin-bottom: 2rem;">
+                <h4
+                  style="color: var(--color-brand); margin-bottom: 1rem; font-family: 'Space Grotesk', sans-serif; border-top: 1px solid var(--glass-border); padding-top: 1.5rem;">
+                  Home Address</h4>
+                <div class="checkout-form-grid"
+                  style="grid-template-columns: 1fr 1fr; gap: 1.25rem; display: grid; margin-bottom: 2rem;">
                   <div class="form-group">
                     <label class="form-label">Full Name *</label>
                     <input type="text" required class="form-input" id="user-setting-name" value="">
@@ -1549,7 +1600,8 @@
                   </div>
                   <div class="form-group" style="grid-column: span 2;">
                     <label class="form-label">Address *</label>
-                    <input type="text" required class="form-input" id="user-setting-address" placeholder="123 Street name, Apt / Suite">
+                    <input type="text" required class="form-input" id="user-setting-address"
+                      placeholder="123 Street name, Apt / Suite">
                   </div>
                   <div class="form-group">
                     <label class="form-label">City *</label>
@@ -1561,11 +1613,13 @@
                   </div>
                   <div class="form-group" style="grid-column: span 2;">
                     <label class="form-label">Country</label>
-                    <input type="text" id="user-setting-country" class="form-input" value="India" readonly style="background: rgba(255,255,255,0.03); color: var(--text-muted); cursor: not-allowed;">
+                    <input type="text" id="user-setting-country" class="form-input" value="India" readonly
+                      style="background: rgba(255,255,255,0.03); color: var(--text-muted); cursor: not-allowed;">
                   </div>
                 </div>
 
-                <button type="submit" class="checkout-btn" style="width: auto; padding: 0.75rem 2rem; margin-top: 1.5rem;">Save Settings</button>
+                <button type="submit" class="checkout-btn"
+                  style="width: auto; padding: 0.75rem 2rem; margin-top: 1.5rem;">Save Settings</button>
               </form>
             </div>
 
@@ -1635,12 +1689,13 @@
               <div class="checkout-form-grid" style="grid-template-columns: 1fr; gap: 1.25rem; display: grid;">
                 <div class="form-group">
                   <label class="form-label">Access Key ID (Email) *</label>
-                  <input type="email" required class="form-input" id="admin-login-email"
-                    placeholder="admin@example.com" autocomplete="off">
+                  <input type="email" required class="form-input" id="admin-login-email" placeholder="admin@example.com"
+                    autocomplete="off">
                 </div>
                 <div class="form-group">
                   <label class="form-label">Security Passcode *</label>
-                  <input type="password" required class="form-input" id="admin-login-password" placeholder="••••••••" autocomplete="new-password">
+                  <input type="password" required class="form-input" id="admin-login-password" placeholder="••••••••"
+                    autocomplete="new-password">
                 </div>
               </div>
               <button type="submit" class="checkout-btn" style="margin-top: 2rem; width: 100%; padding: 0.95rem;">
@@ -1664,8 +1719,8 @@
             </div>
 
             <nav class="admin-nav">
-              <button class="admin-nav-btn active" data-panel="admin-home-panel" id="admin-nav-home"><i data-feather="grid"
-                  style="width: 18px;"></i> Control Dashboard</button>
+              <button class="admin-nav-btn active" data-panel="admin-home-panel" id="admin-nav-home"><i
+                  data-feather="grid" style="width: 18px;"></i> Control Dashboard</button>
               <button class="admin-nav-btn" data-panel="admin-dashboard-panel"><i data-feather="activity"
                   style="width: 18px;"></i> Analytics Overview</button>
               <button class="admin-nav-btn" data-panel="admin-products-panel"><i data-feather="grid"
@@ -1676,8 +1731,8 @@
                   style="width: 18px;"></i> Member Registry</button>
               <button class="admin-nav-btn" data-panel="admin-feedback-panel"><i data-feather="mail"
                   style="width: 18px;"></i> Customer Feedback</button>
-              <button class="admin-nav-btn" data-panel="admin-delivery-panel"><i data-feather="map-pin"
-                  style="width: 18px;"></i> Delivery Settings</button>
+              <button class="admin-nav-btn" data-panel="admin-delivery-panel"><i data-feather="truck"
+                  style="width: 18px;"></i> Delivery Management</button>
               <button class="admin-nav-btn" data-panel="admin-coupons-panel"><i data-feather="tag"
                   style="width: 18px;"></i> Coupon Management</button>
               <button class="admin-nav-btn" data-panel="admin-tax-panel"><i data-feather="percent"
@@ -1706,67 +1761,88 @@
               <!-- Quick-Action Cards -->
               <div class="dash-cards-grid">
 
-                <button class="dash-card" style="--dc-clr:#a78bfa;" onclick="window._adminGoToPanel('admin-dashboard-panel')">
+                <button class="dash-card" style="--dc-clr:#a78bfa;"
+                  onclick="window._adminGoToPanel('admin-dashboard-panel')">
                   <div class="dash-card-icon-wrap" style="--dc-clr:#a78bfa;">
                     <i data-feather="activity" style="width:26px;height:26px;"></i>
                   </div>
                   <h4 class="dash-card-title">Analytics Overview</h4>
-                  <p class="dash-card-desc">Review sales statistics, transaction totals, charts and core store performance metrics.</p>
-                  <span class="dash-card-arrow"><i data-feather="arrow-right" style="width:15px;height:15px;"></i></span>
+                  <p class="dash-card-desc">Review sales statistics, transaction totals, charts and core store
+                    performance metrics.</p>
+                  <span class="dash-card-arrow"><i data-feather="arrow-right"
+                      style="width:15px;height:15px;"></i></span>
                 </button>
 
-                <button class="dash-card" style="--dc-clr:#38bdf8;" onclick="window._adminGoToPanel('admin-products-panel')">
+                <button class="dash-card" style="--dc-clr:#38bdf8;"
+                  onclick="window._adminGoToPanel('admin-products-panel')">
                   <div class="dash-card-icon-wrap" style="--dc-clr:#38bdf8;">
                     <i data-feather="grid" style="width:26px;height:26px;"></i>
                   </div>
                   <h4 class="dash-card-title">Product Inventory</h4>
-                  <p class="dash-card-desc">Create, read, update, delete or import ToyzGuru catalog products and manage stock levels.</p>
-                  <span class="dash-card-arrow"><i data-feather="arrow-right" style="width:15px;height:15px;"></i></span>
+                  <p class="dash-card-desc">Create, read, update, delete or import ToyzGuru catalog products and manage
+                    stock levels.</p>
+                  <span class="dash-card-arrow"><i data-feather="arrow-right"
+                      style="width:15px;height:15px;"></i></span>
                 </button>
 
-                <button class="dash-card" style="--dc-clr:#34d399;" onclick="window._adminGoToPanel('admin-orders-panel')">
+                <button class="dash-card" style="--dc-clr:#34d399;"
+                  onclick="window._adminGoToPanel('admin-orders-panel')">
                   <div class="dash-card-icon-wrap" style="--dc-clr:#34d399;">
                     <i data-feather="truck" style="width:26px;height:26px;"></i>
                   </div>
                   <h4 class="dash-card-title">Order Operations</h4>
-                  <p class="dash-card-desc">Track and update the fulfillment workflow and details of all member order submissions.</p>
-                  <span class="dash-card-arrow"><i data-feather="arrow-right" style="width:15px;height:15px;"></i></span>
+                  <p class="dash-card-desc">Track and update the fulfillment workflow and details of all member order
+                    submissions.</p>
+                  <span class="dash-card-arrow"><i data-feather="arrow-right"
+                      style="width:15px;height:15px;"></i></span>
                 </button>
 
-                <button class="dash-card" style="--dc-clr:#fb7185;" onclick="window._adminGoToPanel('admin-members-panel')">
+                <button class="dash-card" style="--dc-clr:#fb7185;"
+                  onclick="window._adminGoToPanel('admin-members-panel')">
                   <div class="dash-card-icon-wrap" style="--dc-clr:#fb7185;">
                     <i data-feather="users" style="width:26px;height:26px;"></i>
                   </div>
                   <h4 class="dash-card-title">Member Registry</h4>
-                  <p class="dash-card-desc">Manage all registered site members, modify loyalty reward points and edit accounts.</p>
-                  <span class="dash-card-arrow"><i data-feather="arrow-right" style="width:15px;height:15px;"></i></span>
+                  <p class="dash-card-desc">Manage all registered site members, modify loyalty reward points and edit
+                    accounts.</p>
+                  <span class="dash-card-arrow"><i data-feather="arrow-right"
+                      style="width:15px;height:15px;"></i></span>
                 </button>
 
-                <button class="dash-card" style="--dc-clr:#fb923c;" onclick="window._adminGoToPanel('admin-feedback-panel')">
+                <button class="dash-card" style="--dc-clr:#fb923c;"
+                  onclick="window._adminGoToPanel('admin-feedback-panel')">
                   <div class="dash-card-icon-wrap" style="--dc-clr:#fb923c;">
                     <i data-feather="mail" style="width:26px;height:26px;"></i>
                   </div>
                   <h4 class="dash-card-title">Customer Feedback</h4>
-                  <p class="dash-card-desc">Read and process emails, queries and messages received through the customer contact forms.</p>
-                  <span class="dash-card-arrow"><i data-feather="arrow-right" style="width:15px;height:15px;"></i></span>
+                  <p class="dash-card-desc">Read and process emails, queries and messages received through the customer
+                    contact forms.</p>
+                  <span class="dash-card-arrow"><i data-feather="arrow-right"
+                      style="width:15px;height:15px;"></i></span>
                 </button>
 
-                <button class="dash-card" style="--dc-clr:#2dd4bf;" onclick="window._adminGoToPanel('admin-delivery-panel')">
+                <button class="dash-card" style="--dc-clr:#2dd4bf;"
+                  onclick="window._adminGoToPanel('admin-delivery-panel')">
                   <div class="dash-card-icon-wrap" style="--dc-clr:#2dd4bf;">
-                    <i data-feather="map-pin" style="width:26px;height:26px;"></i>
+                    <i data-feather="truck" style="width:26px;height:26px;"></i>
                   </div>
-                  <h4 class="dash-card-title">Delivery Settings</h4>
-                  <p class="dash-card-desc">Configure logistics regions, shipping fees, courier service integration parameters.</p>
-                  <span class="dash-card-arrow"><i data-feather="arrow-right" style="width:15px;height:15px;"></i></span>
+                  <h4 class="dash-card-title">Delivery Management</h4>
+                  <p class="dash-card-desc">Fulfill customer orders, verify payments, generate shipping labels, print
+                    bills, and track courier dispatches.</p>
+                  <span class="dash-card-arrow"><i data-feather="arrow-right"
+                      style="width:15px;height:15px;"></i></span>
                 </button>
 
-                <button class="dash-card" style="--dc-clr:#f43f5e;" onclick="window._adminGoToPanel('admin-coupons-panel')">
+                <button class="dash-card" style="--dc-clr:#f43f5e;"
+                  onclick="window._adminGoToPanel('admin-coupons-panel')">
                   <div class="dash-card-icon-wrap" style="--dc-clr:#f43f5e;">
                     <i data-feather="tag" style="width:26px;height:26px;"></i>
                   </div>
                   <h4 class="dash-card-title">Coupon Management</h4>
-                  <p class="dash-card-desc">Create discount coupons, set usage constraints and track valid sales campaigns.</p>
-                  <span class="dash-card-arrow"><i data-feather="arrow-right" style="width:15px;height:15px;"></i></span>
+                  <p class="dash-card-desc">Create discount coupons, set usage constraints and track valid sales
+                    campaigns.</p>
+                  <span class="dash-card-arrow"><i data-feather="arrow-right"
+                      style="width:15px;height:15px;"></i></span>
                 </button>
 
                 <button class="dash-card" style="--dc-clr:#f59e0b;" onclick="window._adminGoToPanel('admin-tax-panel')">
@@ -1774,17 +1850,22 @@
                     <i data-feather="percent" style="width:26px;height:26px;"></i>
                   </div>
                   <h4 class="dash-card-title">Tax & Finance</h4>
-                  <p class="dash-card-desc">Adjust tax rate percentages (SGST, IGST, CGST) for order transaction calculation rules.</p>
-                  <span class="dash-card-arrow"><i data-feather="arrow-right" style="width:15px;height:15px;"></i></span>
+                  <p class="dash-card-desc">Adjust tax rate percentages (SGST, IGST, CGST) for order transaction
+                    calculation rules.</p>
+                  <span class="dash-card-arrow"><i data-feather="arrow-right"
+                      style="width:15px;height:15px;"></i></span>
                 </button>
 
-                <button class="dash-card" style="--dc-clr:#10b981;" onclick="window._adminGoToPanel('admin-newsletter-panel')">
+                <button class="dash-card" style="--dc-clr:#10b981;"
+                  onclick="window._adminGoToPanel('admin-newsletter-panel')">
                   <div class="dash-card-icon-wrap" style="--dc-clr:#10b981;">
                     <i data-feather="send" style="width:26px;height:26px;"></i>
                   </div>
                   <h4 class="dash-card-title">Newsletter Subs</h4>
-                  <p class="dash-card-desc">View, manage and export database list entries for email marketing subscriptions.</p>
-                  <span class="dash-card-arrow"><i data-feather="arrow-right" style="width:15px;height:15px;"></i></span>
+                  <p class="dash-card-desc">View, manage and export database list entries for email marketing
+                    subscriptions.</p>
+                  <span class="dash-card-arrow"><i data-feather="arrow-right"
+                      style="width:15px;height:15px;"></i></span>
                 </button>
 
                 <button class="dash-card dash-card-signout" id="admin-signout-card" style="--dc-clr:#ef4444;">
@@ -1793,7 +1874,8 @@
                   </div>
                   <h4 class="dash-card-title">Exit Terminal</h4>
                   <p class="dash-card-desc">Terminate active administrator operations session and secure the panel.</p>
-                  <span class="dash-card-arrow"><i data-feather="arrow-right" style="width:15px;height:15px;"></i></span>
+                  <span class="dash-card-arrow"><i data-feather="arrow-right"
+                      style="width:15px;height:15px;"></i></span>
                 </button>
 
               </div><!-- /.dash-cards-grid -->
@@ -1802,7 +1884,8 @@
             <!-- Dashboard / Analytics Panel -->
             <div class="admin-panel" id="admin-dashboard-panel">
               <div class="profile-panel-header">
-                <button class="panel-back-btn" onclick="window._adminGoToPanel('admin-home-panel')"><i data-feather="arrow-left" style="width:14px;height:14px;"></i> Dashboard</button>
+                <button class="panel-back-btn" onclick="window._adminGoToPanel('admin-home-panel')"><i
+                    data-feather="arrow-left" style="width:14px;height:14px;"></i> Dashboard</button>
                 <h3 class="profile-panel-title">Analytics Overview</h3>
               </div>
               <!-- Grid Stats -->
@@ -1853,7 +1936,8 @@
             <!-- Product Inventory CRUD Management Panel -->
             <div class="admin-panel" id="admin-products-panel">
               <div class="profile-panel-header">
-                <button class="panel-back-btn" onclick="window._adminGoToPanel('admin-home-panel')"><i data-feather="arrow-left" style="width:14px;height:14px;"></i> Dashboard</button>
+                <button class="panel-back-btn" onclick="window._adminGoToPanel('admin-home-panel')"><i
+                    data-feather="arrow-left" style="width:14px;height:14px;"></i> Dashboard</button>
                 <h3 class="profile-panel-title">Product Inventory</h3>
               </div>
               <div class="admin-action-bar">
@@ -1904,7 +1988,8 @@
             <!-- Order Operations Panel -->
             <div class="admin-panel" id="admin-orders-panel">
               <div class="profile-panel-header">
-                <button class="panel-back-btn" onclick="window._adminGoToPanel('admin-home-panel')"><i data-feather="arrow-left" style="width:14px;height:14px;"></i> Dashboard</button>
+                <button class="panel-back-btn" onclick="window._adminGoToPanel('admin-home-panel')"><i
+                    data-feather="arrow-left" style="width:14px;height:14px;"></i> Dashboard</button>
                 <h3 class="profile-panel-title">Order Operations</h3>
               </div>
 
@@ -1932,9 +2017,11 @@
             <!-- Member Registry Panel -->
             <div class="admin-panel" id="admin-members-panel">
               <div class="profile-panel-header">
-                <button class="panel-back-btn" onclick="window._adminGoToPanel('admin-home-panel')"><i data-feather="arrow-left" style="width:14px;height:14px;"></i> Dashboard</button>
+                <button class="panel-back-btn" onclick="window._adminGoToPanel('admin-home-panel')"><i
+                    data-feather="arrow-left" style="width:14px;height:14px;"></i> Dashboard</button>
                 <h3 class="profile-panel-title">Member Registry</h3>
-                <button id="admin-add-member-btn" class="checkout-btn" style="padding: 0.6rem 1.25rem; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 0.5rem;">
+                <button id="admin-add-member-btn" class="checkout-btn"
+                  style="padding: 0.6rem 1.25rem; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 0.5rem;">
                   <i data-feather="user-plus" style="width: 16px; height: 16px;"></i> Create New Member
                 </button>
               </div>
@@ -1962,7 +2049,8 @@
             <!-- Customer Feedback Panel -->
             <div class="admin-panel" id="admin-feedback-panel">
               <div class="profile-panel-header">
-                <button class="panel-back-btn" onclick="window._adminGoToPanel('admin-home-panel')"><i data-feather="arrow-left" style="width:14px;height:14px;"></i> Dashboard</button>
+                <button class="panel-back-btn" onclick="window._adminGoToPanel('admin-home-panel')"><i
+                    data-feather="arrow-left" style="width:14px;height:14px;"></i> Dashboard</button>
                 <h3 class="profile-panel-title">Customer Feedback Inbox</h3>
               </div>
 
@@ -1984,84 +2072,426 @@
               </div>
             </div>
 
-            <!-- Delivery & Courier Settings Panel -->
+            <!-- Delivery & Order Fulfillment Management Panel -->
             <div class="admin-panel" id="admin-delivery-panel">
-              <div class="profile-panel-header">
-                <button class="panel-back-btn" onclick="window._adminGoToPanel('admin-home-panel')"><i data-feather="arrow-left" style="width:14px;height:14px;"></i> Dashboard</button>
-                <h3 class="profile-panel-title">Delivery & Courier Settings</h3>
-                <button class="admin-primary-btn" id="admin-add-courier-btn">
-                  <i data-feather="plus" style="width: 16px; height: 16px; vertical-align: middle;"></i> Add Courier Agency
+              <style>
+                .admin-sub-tab {
+                  padding: 0.6rem 1.2rem;
+                  border: 1px solid var(--glass-border);
+                  background: rgba(255, 255, 255, 0.02);
+                  color: var(--text-secondary);
+                  border-radius: 8px;
+                  cursor: pointer;
+                  font-family: 'Space Grotesk', sans-serif;
+                  font-size: 0.82rem;
+                  font-weight: 600;
+                  display: inline-flex;
+                  align-items: center;
+                  gap: 0.4rem;
+                  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+                }
+
+                .admin-sub-tab:hover {
+                  background: rgba(255, 255, 255, 0.06);
+                  color: var(--text-primary);
+                  border-color: rgba(139, 92, 246, 0.3);
+                  transform: translateY(-1px);
+                }
+
+                .admin-sub-tab.active {
+                  background: var(--color-brand-gradient);
+                  color: #fff;
+                  border-color: transparent;
+                  box-shadow: 0 4px 12px rgba(255, 0, 128, 0.25);
+                }
+
+                .subpanel-content {
+                  display: none;
+                  animation: fadeInSub 0.3s ease-in-out;
+                }
+
+                .subpanel-content.active {
+                  display: block;
+                }
+
+                @keyframes fadeInSub {
+                  from {
+                    opacity: 0;
+                    transform: translateY(4px);
+                  }
+
+                  to {
+                    opacity: 1;
+                    transform: translateY(0);
+                  }
+                }
+
+                .delivery-metric-card {
+                  background: rgba(255, 255, 255, 0.02);
+                  border: 1px solid var(--glass-border);
+                  border-radius: 12px;
+                  padding: 1.25rem;
+                  display: flex;
+                  align-items: center;
+                  gap: 1rem;
+                  transition: all 0.3s ease;
+                }
+
+                .delivery-metric-card:hover {
+                  background: rgba(255, 255, 255, 0.04);
+                  border-color: rgba(139, 92, 246, 0.2);
+                  transform: translateY(-2px);
+                }
+
+                .delivery-metric-icon {
+                  width: 44px;
+                  height: 44px;
+                  border-radius: 8px;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  background: rgba(139, 92, 246, 0.12);
+                  color: var(--color-brand);
+                }
+
+                .delivery-metric-info {
+                  display: flex;
+                  flex-direction: column;
+                }
+
+                .delivery-metric-lbl {
+                  font-size: 0.72rem;
+                  color: var(--text-muted);
+                  text-transform: uppercase;
+                  letter-spacing: 0.05em;
+                }
+
+                .delivery-metric-val {
+                  font-size: 1.35rem;
+                  font-weight: 700;
+                  color: var(--text-primary);
+                  font-family: 'Space Grotesk', sans-serif;
+                }
+
+                .shipment-timeline-node {
+                  display: flex;
+                  gap: 1rem;
+                  position: relative;
+                  padding-bottom: 1.5rem;
+                }
+
+                .shipment-timeline-node::before {
+                  content: '';
+                  position: absolute;
+                  left: 7px;
+                  top: 16px;
+                  bottom: 0;
+                  width: 2px;
+                  background: var(--glass-border);
+                }
+
+                .shipment-timeline-node:last-child::before {
+                  display: none;
+                }
+
+                .shipment-timeline-dot {
+                  width: 16px;
+                  height: 16px;
+                  border-radius: 50%;
+                  background: var(--bg-tertiary);
+                  border: 3px solid var(--glass-border);
+                  z-index: 1;
+                }
+
+                .shipment-timeline-node.completed .shipment-timeline-dot {
+                  background: var(--color-brand);
+                  border-color: rgba(255, 0, 128, 0.2);
+                }
+
+                .shipment-timeline-content {
+                  flex: 1;
+                  font-size: 0.82rem;
+                }
+              </style>
+
+              <div class="profile-panel-header" style="margin-bottom: 1.25rem;">
+                <button class="panel-back-btn" onclick="window._adminGoToPanel('admin-home-panel')"><i
+                    data-feather="arrow-left" style="width:14px;height:14px;"></i> Dashboard</button>
+                <h3 class="profile-panel-title">Delivery & Fulfillment Management</h3>
+              </div>
+
+              <!-- Multi-Tab Navigation Bar -->
+              <div class="admin-sub-tabs"
+                style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; padding: 0.4rem; background: rgba(255,255,255,0.01); border: 1px solid var(--glass-border); border-radius: 10px; flex-wrap: wrap;">
+                <button class="admin-sub-tab active" onclick="adminSwitchDeliveryTab('delivery-shipments', this)">
+                  <i data-feather="package" style="width:14px;height:14px;"></i> Active Shipments
+                </button>
+                <button class="admin-sub-tab" onclick="adminSwitchDeliveryTab('delivery-printing', this)">
+                  <i data-feather="printer" style="width:14px;height:14px;"></i> Label Printing Center
+                </button>
+                <button class="admin-sub-tab" onclick="adminSwitchDeliveryTab('delivery-settings', this)">
+                  <i data-feather="settings" style="width:14px;height:14px;"></i> Courier Settings
+                </button>
+                <button class="admin-sub-tab" onclick="adminSwitchDeliveryTab('delivery-analytics', this)">
+                  <i data-feather="bar-chart-2" style="width:14px;height:14px;"></i> Analytics Reports
+                </button>
+                <button class="admin-sub-tab" onclick="adminSwitchDeliveryTab('delivery-audit', this)">
+                  <i data-feather="shield" style="width:14px;height:14px;"></i> Audit Trails
                 </button>
               </div>
-              <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1.5rem;">Configure Indian state-wise delivery charges and assign shipping courier partners.</p>
 
-              <!-- Grid configuration -->
-              <div style="display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 1.5rem;">
-
-                <!-- Left: State-wise charges -->
-                <div class="glass-panel" style="padding: 1.5rem; display: flex; flex-direction: column;">
-                  <div
-                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
-                    <h4 style="font-size: 1.1rem; color: var(--color-brand);"><i data-feather="map"
-                        style="width: 16px; height: 16px; vertical-align: middle; margin-right: 0.25rem;"></i> Shipping
-                      Charges per State</h4>
-                    <input type="text" id="admin-state-search" placeholder="Search state..." class="form-input"
-                      style="padding: 0.35rem 0.75rem; font-size: 0.8rem; width: 160px; border-radius: 20px; background: var(--bg-tertiary); border: 1px solid var(--glass-border);">
+              <!-- ================= SUB-PANEL 1: ACTIVE SHIPMENTS ================= -->
+              <div class="subpanel-content active" id="delivery-shipments">
+                <div class="admin-action-bar" style="margin-bottom: 1rem;">
+                  <div class="admin-search-box">
+                    <input type="text" placeholder="Search shipments..." class="admin-search-input"
+                      id="admin-shipments-search" oninput="adminRenderShipmentsTable()">
+                    <i data-feather="search"
+                      style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); width: 14px; pointer-events: none;"></i>
                   </div>
-
-                  <div class="admin-table-wrap" style="max-height: 480px; overflow-y: auto;">
-                    <table class="admin-table">
-                      <thead>
-                        <tr>
-                          <th>State Name</th>
-                          <th>Normal Fee</th>
-                          <th>Express Fee</th>
-                          <th>Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody id="admin-delivery-states-body">
-                        <!-- Dynamically populated via admin.js -->
-                      </tbody>
-                    </table>
-                  </div>
+                  <select class="form-select" id="admin-shipments-status-filter"
+                    style="width: 180px; background: var(--bg-tertiary);" onchange="adminRenderShipmentsTable()">
+                    <option value="all">All Statuses</option>
+                    <option value="pending">Pending Approval</option>
+                    <option value="ready_to_pack">Ready for Packing</option>
+                    <option value="packed">Packed</option>
+                    <option value="quality_checked">Quality Checked</option>
+                    <option value="dispatched">Dispatched</option>
+                    <option value="in_transit">In Transit</option>
+                    <option value="out_for_delivery">Out for Delivery</option>
+                    <option value="delivered">Delivered</option>
+                    <option value="failed">Failed Delivery</option>
+                    <option value="returned">Returned</option>
+                  </select>
                 </div>
 
-                <!-- Right: Courier Agencies -->
-                <div class="glass-panel" style="padding: 1.5rem; display: flex; flex-direction: column;">
-                  <h4 style="font-size: 1.1rem; color: var(--color-brand); margin-bottom: 1rem;"><i data-feather="truck"
-                      style="width: 16px; height: 16px; vertical-align: middle; margin-right: 0.25rem;"></i> Registered
-                    Courier Agencies</h4>
-
-                  <div class="admin-table-wrap" style="max-height: 480px; overflow-y: auto;">
-                    <table class="admin-table">
-                      <thead>
-                        <tr>
-                          <th>Agency Name</th>
-                          <th>Status</th>
-                          <th>Assigned States</th>
-                          <th>Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody id="admin-couriers-body">
-                        <!-- Dynamically populated via admin.js -->
-                      </tbody>
-                    </table>
-                  </div>
+                <div class="glass-panel admin-table-wrap">
+                  <table class="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Shipment ID</th>
+                        <th>Order ID</th>
+                        <th>Customer</th>
+                        <th>Courier</th>
+                        <th>Status</th>
+                        <th>Est. Date</th>
+                        <th>Logs</th>
+                        <th>Fulfillment Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="admin-shipments-tbody">
+                      <!-- Dynamically populated -->
+                    </tbody>
+                  </table>
                 </div>
-
               </div>
+
+              <!-- ================= SUB-PANEL 2: PRINTING CENTER ================= -->
+              <div class="subpanel-content" id="delivery-printing">
+                <div
+                  style="margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                  <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0;">Select document templates and
+                    execute printing tasks for approved shipments.</p>
+                  <input type="text" placeholder="Search Shipment/Order ID..." class="form-input"
+                    id="admin-print-search"
+                    style="width: 220px; padding: 0.35rem 0.75rem; font-size: 0.8rem; border-radius: 20px; background: var(--bg-tertiary);"
+                    oninput="adminRenderPrintingTable()">
+                </div>
+                <div class="glass-panel admin-table-wrap">
+                  <table class="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Shipment ID</th>
+                        <th>Order ID</th>
+                        <th>Customer</th>
+                        <th>Courier</th>
+                        <th>Tracking ID</th>
+                        <th>Prints</th>
+                        <th>One-Click Print Documents</th>
+                      </tr>
+                    </thead>
+                    <tbody id="admin-printing-tbody">
+                      <!-- Dynamically populated -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- ================= SUB-PANEL 3: COURIER & LOGISTICS SETTINGS ================= -->
+              <div class="subpanel-content" id="delivery-settings">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                  <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0;">Configure Indian state-wise
+                    delivery charges and assign shipping courier partners.</p>
+                  <button class="admin-primary-btn" id="admin-add-courier-btn"
+                    style="padding: 0.45rem 0.90rem; font-size: 0.8rem;">
+                    <i data-feather="plus" style="width: 14px; height: 14px; vertical-align: middle;"></i> Add Courier
+                    Agency
+                  </button>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 1.5rem;">
+                  <!-- Left: State-wise charges -->
+                  <div class="glass-panel" style="padding: 1.25rem; display: flex; flex-direction: column;">
+                    <div
+                      style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+                      <h4 style="font-size: 1rem; color: var(--color-brand); margin: 0;"><i data-feather="map"
+                          style="width: 14px; height: 14px; vertical-align: middle; margin-right: 0.25rem;"></i> State
+                        Shipping Fees</h4>
+                      <input type="text" id="admin-state-search" placeholder="Search state..." class="form-input"
+                        style="padding: 0.35rem 0.75rem; font-size: 0.8rem; width: 140px; border-radius: 20px; background: var(--bg-tertiary); border: 1px solid var(--glass-border);">
+                    </div>
+                    <div class="admin-table-wrap" style="max-height: 400px; overflow-y: auto;">
+                      <table class="admin-table">
+                        <thead>
+                          <tr>
+                            <th>State</th>
+                            <th>Normal</th>
+                            <th>Express</th>
+                            <th>Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody id="admin-delivery-states-body">
+                          <!-- Dynamically populated -->
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  <!-- Right: Courier Agencies -->
+                  <div class="glass-panel" style="padding: 1.25rem; display: flex; flex-direction: column;">
+                    <h4 style="font-size: 1rem; color: var(--color-brand); margin-bottom: 1rem;"><i data-feather="truck"
+                        style="width: 14px; height: 14px; vertical-align: middle; margin-right: 0.25rem;"></i> Active
+                      Couriers</h4>
+                    <div class="admin-table-wrap" style="max-height: 400px; overflow-y: auto;">
+                      <table class="admin-table">
+                        <thead>
+                          <tr>
+                            <th>Agency</th>
+                            <th>Status</th>
+                            <th>States</th>
+                            <th>Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody id="admin-couriers-body">
+                          <!-- Dynamically populated -->
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ================= SUB-PANEL 4: ANALYTICS REPORTS ================= -->
+              <div class="subpanel-content" id="delivery-analytics">
+                <!-- Metrics -->
+                <div class="admin-stats-grid"
+                  style="grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                  <div class="delivery-metric-card">
+                    <div class="delivery-metric-icon"><i data-feather="truck"></i></div>
+                    <div class="delivery-metric-info">
+                      <span class="delivery-metric-lbl">Total Shipments</span>
+                      <span class="delivery-metric-val" id="analytics-total-shipments">0</span>
+                    </div>
+                  </div>
+                  <div class="delivery-metric-card">
+                    <div class="delivery-metric-icon" style="color:#0ea5e9; background:rgba(14,165,233,0.1);"><i
+                        data-feather="activity"></i></div>
+                    <div class="delivery-metric-info">
+                      <span class="delivery-metric-lbl">In Transit</span>
+                      <span class="delivery-metric-val" id="analytics-transit-shipments">0</span>
+                    </div>
+                  </div>
+                  <div class="delivery-metric-card">
+                    <div class="delivery-metric-icon" style="color:#10b981; background:rgba(16,185,129,0.1);"><i
+                        data-feather="check-circle"></i></div>
+                    <div class="delivery-metric-info">
+                      <span class="delivery-metric-lbl">Success Rate</span>
+                      <span class="delivery-metric-val" id="analytics-success-rate">0%</span>
+                    </div>
+                  </div>
+                  <div class="delivery-metric-card">
+                    <div class="delivery-metric-icon" style="color:#f43f5e; background:rgba(244,63,94,0.1);"><i
+                        data-feather="corner-up-left"></i></div>
+                    <div class="delivery-metric-info">
+                      <span class="delivery-metric-lbl">Returned (RTO)</span>
+                      <span class="delivery-metric-val" id="analytics-returned-shipments">0</span>
+                    </div>
+                  </div>
+                  <div class="delivery-metric-card">
+                    <div class="delivery-metric-icon" style="color:#f59e0b; background:rgba(245,158,11,0.1);"><i
+                        data-feather="clock"></i></div>
+                    <div class="delivery-metric-info">
+                      <span class="delivery-metric-lbl">Avg Delivery</span>
+                      <span class="delivery-metric-val" id="analytics-avg-time">0.0d</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Charts breakdown -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1rem;">
+                  <div class="glass-panel" style="padding: 1.5rem;">
+                    <h4 style="font-size: 0.95rem; color: var(--text-primary); margin-bottom: 1.25rem;">Courier Success
+                      & Volume Rate</h4>
+                    <div id="analytics-courier-performance-bars"
+                      style="display:flex; flex-direction:column; gap:0.75rem;">
+                      <!-- Populated via JS -->
+                    </div>
+                  </div>
+                  <div class="glass-panel" style="padding: 1.5rem;">
+                    <h4 style="font-size: 0.95rem; color: var(--text-primary); margin-bottom: 1.25rem;">Shipment Status
+                      Breakdown</h4>
+                    <div id="analytics-status-breakdown-bars" style="display:flex; flex-direction:column; gap:0.75rem;">
+                      <!-- Populated via JS -->
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ================= SUB-PANEL 5: AUDIT LOGS ================= -->
+              <div class="subpanel-content" id="delivery-audit">
+                <div
+                  style="margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                  <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0;">Full auditable activity history
+                    tracking security log updates, printing commands, status changes, and operator details.</p>
+                  <input type="text" placeholder="Search logs..." class="form-input" id="admin-audit-search"
+                    style="width: 200px; padding: 0.35rem 0.75rem; font-size: 0.8rem; border-radius: 20px; background: var(--bg-tertiary);"
+                    oninput="adminRenderLogsTable()">
+                </div>
+
+                <div class="glass-panel admin-table-wrap">
+                  <table class="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Timestamp</th>
+                        <th>Action</th>
+                        <th>Order ID</th>
+                        <th>Shipment ID</th>
+                        <th>Admin Operator</th>
+                        <th>Execution Details</th>
+                      </tr>
+                    </thead>
+                    <tbody id="admin-delivery-logs-tbody">
+                      <!-- Dynamically populated -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
             </div>
+
 
             <!-- Coupon Management Panel -->
             <div class="admin-panel" id="admin-coupons-panel">
               <div class="profile-panel-header">
-                <button class="panel-back-btn" onclick="window._adminGoToPanel('admin-home-panel')"><i data-feather="arrow-left" style="width:14px;height:14px;"></i> Dashboard</button>
+                <button class="panel-back-btn" onclick="window._adminGoToPanel('admin-home-panel')"><i
+                    data-feather="arrow-left" style="width:14px;height:14px;"></i> Dashboard</button>
                 <h3 class="profile-panel-title">Coupon Management</h3>
                 <button class="admin-primary-btn" id="admin-add-coupon-btn">
                   <i data-feather="plus" style="width: 16px; height: 16px; vertical-align: middle;"></i> Add New Coupon
                 </button>
               </div>
-              <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1.5rem;">Create, edit, delete, and toggle active status of promotional coupon codes.</p>
+              <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1.5rem;">Create, edit, delete,
+                and toggle active status of promotional coupon codes.</p>
 
               <div class="glass-panel admin-table-wrap">
                 <table class="admin-table">
@@ -2088,23 +2518,29 @@
             <!-- Tax & Finance Panel -->
             <div class="admin-panel" id="admin-tax-panel">
               <div class="profile-panel-header">
-                <button class="panel-back-btn" onclick="window._adminGoToPanel('admin-home-panel')"><i data-feather="arrow-left" style="width:14px;height:14px;"></i> Dashboard</button>
+                <button class="panel-back-btn" onclick="window._adminGoToPanel('admin-home-panel')"><i
+                    data-feather="arrow-left" style="width:14px;height:14px;"></i> Dashboard</button>
                 <h3 class="profile-panel-title">GST & Tax Management</h3>
               </div>
-              <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1.5rem;">Configure Indian GST settings centrally and manage dynamic product tax rates.</p>
+              <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1.5rem;">Configure Indian GST
+                settings centrally and manage dynamic product tax rates.</p>
 
               <div class="admin-delivery-grid" style="display: grid; grid-template-columns: 1fr 1.3fr; gap: 2rem;">
-                
+
                 <!-- Left: GST Configuration Settings -->
                 <div class="glass-panel" style="padding: 1.5rem; display: flex; flex-direction: column;">
                   <h4 style="font-size: 1.1rem; color: var(--color-brand); margin-bottom: 1rem;">
-                    <i data-feather="settings" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 0.25rem;"></i> GST Configuration
+                    <i data-feather="settings"
+                      style="width: 16px; height: 16px; vertical-align: middle; margin-right: 0.25rem;"></i> GST
+                    Configuration
                   </h4>
-                  
+
                   <form id="admin-gst-settings-form" class="horizontal-scroll-form">
                     <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem;">
-                      <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.9rem; font-weight: 600; color: var(--text-primary);">
-                        <input type="checkbox" id="admin-gst-enabled" checked style="accent-color: var(--color-brand); width: 16px; height: 16px; cursor: pointer;">
+                      <label
+                        style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.9rem; font-weight: 600; color: var(--text-primary);">
+                        <input type="checkbox" id="admin-gst-enabled" checked
+                          style="accent-color: var(--color-brand); width: 16px; height: 16px; cursor: pointer;">
                         <span>Enable GST Calculation</span>
                       </label>
                     </div>
@@ -2112,7 +2548,8 @@
                     <div class="checkout-form-grid" style="grid-template-columns: 1fr; gap: 1rem; display: grid;">
                       <div class="form-group">
                         <label class="form-label">Seller GSTIN *</label>
-                        <input type="text" required class="form-input" id="admin-gst-seller-gstin" placeholder="e.g. 36AAAAA1111A1Z1">
+                        <input type="text" required class="form-input" id="admin-gst-seller-gstin"
+                          placeholder="e.g. 36AAAAA1111A1Z1">
                       </div>
 
                       <div class="form-group">
@@ -2130,19 +2567,25 @@
                       </div>
                     </div>
 
-                    <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1.25rem; margin-bottom: 1.5rem; border-top: 1px solid var(--glass-border); padding-top: 1rem;">
-                      <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.85rem; color: var(--text-secondary);">
-                        <input type="checkbox" id="admin-gst-display-inclusive" checked style="accent-color: var(--color-brand); width: 14px; height: 14px; cursor: pointer;">
+                    <div
+                      style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1.25rem; margin-bottom: 1.5rem; border-top: 1px solid var(--glass-border); padding-top: 1rem;">
+                      <label
+                        style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.85rem; color: var(--text-secondary);">
+                        <input type="checkbox" id="admin-gst-display-inclusive" checked
+                          style="accent-color: var(--color-brand); width: 14px; height: 14px; cursor: pointer;">
                         <span>Display Prices Including Tax</span>
                       </label>
-                      <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.85rem; color: var(--text-secondary);">
-                        <input type="checkbox" id="admin-gst-display-exclusive" style="accent-color: var(--color-brand); width: 14px; height: 14px; cursor: pointer;">
+                      <label
+                        style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.85rem; color: var(--text-secondary);">
+                        <input type="checkbox" id="admin-gst-display-exclusive"
+                          style="accent-color: var(--color-brand); width: 14px; height: 14px; cursor: pointer;">
                         <span>Display Prices Excluding Tax</span>
                       </label>
                     </div>
 
                     <button type="submit" class="admin-primary-btn" style="width: auto; padding: 0.6rem 1.5rem;">
-                      <i data-feather="save" style="width: 14px; height: 14px; vertical-align: middle;"></i> Save Settings
+                      <i data-feather="save" style="width: 14px; height: 14px; vertical-align: middle;"></i> Save
+                      Settings
                     </button>
                   </form>
                 </div>
@@ -2151,9 +2594,12 @@
                 <div class="glass-panel" style="padding: 1.5rem; display: flex; flex-direction: column;">
                   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                     <h4 style="font-size: 1.1rem; color: var(--color-brand); margin: 0;">
-                      <i data-feather="percent" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 0.25rem;"></i> Tax Categories
+                      <i data-feather="percent"
+                        style="width: 16px; height: 16px; vertical-align: middle; margin-right: 0.25rem;"></i> Tax
+                      Categories
                     </h4>
-                    <button class="admin-primary-btn" id="admin-add-tax-rate-btn" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;" type="button">
+                    <button class="admin-primary-btn" id="admin-add-tax-rate-btn"
+                      style="padding: 0.4rem 0.8rem; font-size: 0.8rem;" type="button">
                       <i data-feather="plus" style="width: 12px; height: 12px; vertical-align: middle;"></i> Add Rate
                     </button>
                   </div>
@@ -2183,13 +2629,16 @@
             <!-- Newsletter Subscribers Panel -->
             <div class="admin-panel" id="admin-newsletter-panel">
               <div class="profile-panel-header">
-                <button class="panel-back-btn" onclick="window._adminGoToPanel('admin-home-panel')"><i data-feather="arrow-left" style="width:14px;height:14px;"></i> Dashboard</button>
+                <button class="panel-back-btn" onclick="window._adminGoToPanel('admin-home-panel')"><i
+                    data-feather="arrow-left" style="width:14px;height:14px;"></i> Dashboard</button>
                 <h3 class="profile-panel-title">Newsletter Subscribers</h3>
               </div>
-              <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1.5rem;">Manage drop-notification email subscribers from the footer sign-up form.</p>
+              <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1.5rem;">Manage
+                drop-notification email subscribers from the footer sign-up form.</p>
 
               <!-- Header row -->
-              <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+              <div
+                style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
                 <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
                   <!-- Subscriber count badge -->
                   <div class="glass-panel"
@@ -2457,7 +2906,8 @@
                   <input type="text" class="form-input" id="admin-new-category-input"
                     placeholder="New category name (e.g. Collectible Statues)"
                     style="border-color: var(--color-brand); box-shadow: 0 0 0 2px rgba(139,92,246,0.2);">
-                  <p style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.3rem;">This will be saved as a new category slug.</p>
+                  <p style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.3rem;">This will be saved as a
+                    new category slug.</p>
                 </div>
               </div>
               <div class="form-group">
@@ -2506,8 +2956,7 @@
                     <div style="flex: 1; height: 1px; background: var(--glass-border);"></div>
                   </div>
                   <input type="text" id="admin-form-image-url" class="form-input"
-                    placeholder="https://example.com/product-image.jpg"
-                    style="font-size: 0.82rem;">
+                    placeholder="https://example.com/product-image.jpg" style="font-size: 0.82rem;">
                 </div>
               </div>
             </div>
@@ -2538,7 +2987,10 @@
 
             <!-- GST Tax Settings Section -->
             <div style="border-top: 1px solid var(--glass-border); padding-top: 1rem; margin-top: 0.5rem;">
-              <h4 style="margin-bottom: 0.75rem; font-size: 0.9rem; color: var(--color-brand);"><i data-feather="percent" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 0.25rem;"></i> GST Tax Settings</h4>
+              <h4 style="margin-bottom: 0.75rem; font-size: 0.9rem; color: var(--color-brand);"><i
+                  data-feather="percent"
+                  style="width: 14px; height: 14px; vertical-align: middle; margin-right: 0.25rem;"></i> GST Tax
+                Settings</h4>
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 0.75rem;">
                 <div class="form-group">
                   <label class="form-label">Tax Applicable *</label>
@@ -2703,6 +3155,186 @@
     </div>
   </div>
 
+  <!-- Admin: Order Fulfillment Details & Packing Modal -->
+  <div class="modal-overlay" id="admin-fulfillment-modal-overlay" style="z-index:9999;">
+    <div class="product-detail-modal"
+      style="max-width: 540px; padding: 2rem; background: var(--bg-secondary); border: 1px solid var(--glass-border); box-shadow: 0 20px 40px rgba(0,0,0,0.5); border-radius: 12px;">
+      <button class="modal-close" onclick="adminCloseFulfillmentModal()"
+        style="position: absolute; top: 1.25rem; right: 1.25rem; background: none; border: none; color: var(--text-secondary); cursor: pointer;">
+        <i data-feather="x" style="width: 20px; height: 20px;"></i>
+      </button>
+
+      <div class="admin-form-container" style="padding: 0;">
+        <h2 style="margin-bottom: 1rem; font-family: 'Space Grotesk', sans-serif; color: var(--color-brand);"
+          id="fulfillment-modal-title">Fulfill Order: TG-XXXXX</h2>
+
+        <form id="admin-fulfillment-form" onsubmit="handleAdminFulfillmentSubmit(event)" class="horizontal-scroll-form">
+          <input type="hidden" id="fulfillment-form-order-id">
+          <input type="hidden" id="fulfillment-form-shipment-id">
+
+          <div
+            style="background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); border-radius: 8px; padding: 1rem; margin-bottom: 1.25rem; font-size: 0.85rem; line-height: 1.5;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:0.4rem;">
+              <span style="color:var(--text-muted);">Buyer:</span>
+              <strong id="fulfillment-buyer-name" style="color:var(--text-primary);">Customer</strong>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:0.4rem;">
+              <span style="color:var(--text-muted);">Address:</span>
+              <span id="fulfillment-buyer-address"
+                style="color:var(--text-primary); text-align:right; max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Address
+                Details</span>
+            </div>
+            <div style="display:flex; justify-content:space-between;">
+              <span style="color:var(--text-muted);">Items Details:</span>
+              <strong id="fulfillment-items-summary" style="color:var(--text-primary);">Product (x1)</strong>
+            </div>
+          </div>
+
+          <!-- Section 1: Verification & Payment Issues Override -->
+          <h4
+            style="font-size: 0.9rem; color: var(--text-primary); margin-bottom: 0.75rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.25rem; font-family: 'Space Grotesk', sans-serif;">
+            1. Verification & Approval</h4>
+
+          <div class="form-group" style="margin-bottom: 1.25rem;">
+            <label class="form-label">Fulfillment/Approval Action</label>
+            <select class="form-select" id="fulfillment-action" onchange="toggleFulfillmentActionUI(this.value)">
+              <option value="approve">Approve Order & Create Shipment</option>
+              <option value="hold">Put Order On Hold</option>
+              <option value="reject">Reject & Cancel Order</option>
+            </select>
+            <p id="fulfillment-payment-warning"
+              style="font-size:0.75rem; color:#f59e0b; margin-top:0.35rem; display:none;">
+              <i data-feather="alert-triangle"
+                style="width:12px;height:12px;vertical-align:middle;margin-right:0.2rem;"></i>
+              Payment not cleared. UPI or Gateway transaction pending. Approval counts as Admin Override.
+            </p>
+          </div>
+
+          <!-- Section 2: Packing Workflow Checklist -->
+          <div id="fulfillment-packing-section">
+            <h4
+              style="font-size: 0.9rem; color: var(--text-primary); margin-bottom: 0.75rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.25rem; font-family: 'Space Grotesk', sans-serif;">
+              2. Warehouse Packaging Logs</h4>
+
+            <div style="display: flex; flex-direction: column; gap: 0.65rem; margin-bottom: 1.25rem;">
+              <label
+                style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-primary); cursor: pointer;">
+                <input type="checkbox" id="pack-check-ready"
+                  style="accent-color: var(--color-brand); width: 15px; height: 15px;">
+                <span>Ready for Packing (Mark ready in warehouse inventory queue)</span>
+              </label>
+              <label
+                style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-primary); cursor: pointer;">
+                <input type="checkbox" id="pack-check-packed"
+                  style="accent-color: var(--color-brand); width: 15px; height: 15px;">
+                <span>Items Packed & Boxed (Vault carton secured)</span>
+              </label>
+              <label
+                style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-primary); cursor: pointer;">
+                <input type="checkbox" id="pack-check-qc"
+                  style="accent-color: var(--color-brand); width: 15px; height: 15px;">
+                <span>Quality Inspection Passed (Collector quality verified)</span>
+              </label>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem;">
+              <div class="form-group">
+                <label class="form-label">Package Weight (kg) *</label>
+                <input type="number" step="0.01" class="form-input" id="fulfillment-weight" value="1.50" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Est. Delivery Date *</label>
+                <input type="date" class="form-input" id="fulfillment-est-delivery" required>
+              </div>
+            </div>
+
+            <!-- Optional Packing image -->
+            <div class="form-group" style="margin-bottom: 1.5rem;">
+              <label class="form-label">Carton Packing Image URL (Optional)</label>
+              <input type="url" class="form-input" id="fulfillment-pack-image"
+                placeholder="https://example.com/carton.jpg">
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.5rem;">
+            <button type="button" class="checkout-btn" onclick="adminCloseFulfillmentModal()"
+              style="background: transparent; border: 1px solid var(--glass-border); color: var(--text-primary); margin:0;">Cancel</button>
+            <button type="submit" class="checkout-btn"
+              style="background: var(--color-brand-gradient); margin:0; width:auto; padding:0 1.5rem;">Update
+              Fulfillment</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin: Shipment Dispatch Modal -->
+  <div class="modal-overlay" id="admin-dispatch-modal-overlay" style="z-index:9999;">
+    <div class="product-detail-modal"
+      style="max-width: 520px; padding: 2rem; background: var(--bg-secondary); border: 1px solid var(--glass-border); box-shadow: 0 20px 40px rgba(0,0,0,0.5); border-radius: 12px;">
+      <button class="modal-close" onclick="adminCloseDispatchModal()"
+        style="position: absolute; top: 1.25rem; right: 1.25rem; background: none; border: none; color: var(--text-secondary); cursor: pointer;">
+        <i data-feather="x" style="width: 20px; height: 20px;"></i>
+      </button>
+
+      <div class="admin-form-container" style="padding: 0;">
+        <h2 style="margin-bottom: 1rem; font-family: 'Space Grotesk', sans-serif; color: var(--color-brand);">Dispatch
+          Shipment</h2>
+        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1.25rem;">Assign a courier partner
+          agency and generate dispatch manifests.</p>
+
+        <form id="admin-dispatch-form" onsubmit="handleAdminDispatchSubmit(event)" class="horizontal-scroll-form">
+          <input type="hidden" id="dispatch-form-shipment-id">
+
+          <div class="checkout-form-grid" style="grid-template-columns: 1fr; gap: 1.25rem;">
+            <div class="form-group">
+              <label class="form-label">Assign Courier Partner *</label>
+              <select class="form-select" id="dispatch-courier" required>
+                <option value="Delhivery">Delhivery</option>
+                <option value="Blue Dart">Blue Dart</option>
+                <option value="DTDC">DTDC</option>
+                <option value="India Post">India Post</option>
+                <option value="Ecom Express">Ecom Express</option>
+                <option value="Custom Courier">Custom Courier</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Tracking Number *</label>
+              <input type="text" class="form-input" id="dispatch-tracking-number" required>
+              <p style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.3rem;">Generated tracking identifier
+                for logistics tracking.</p>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Actual Dispatch Weight (kg) *</label>
+              <input type="number" step="0.01" class="form-input" id="dispatch-weight" required>
+            </div>
+          </div>
+
+          <div
+            style="margin-top: 1.5rem; background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); border-radius: 8px; padding: 1rem; font-size: 0.82rem;">
+            <h5 style="margin: 0 0 0.5rem; color: var(--text-primary); font-family: 'Space Grotesk', sans-serif;">
+              Dispatch Manifest Preview</h5>
+            <div style="line-height:1.5; color: var(--text-secondary);">
+              <div>Manifest Date: <span id="manifest-date">--</span></div>
+              <div>Destination State: <span id="manifest-state">--</span></div>
+              <div>Cargo Weight: <span id="manifest-weight">--</span> kg</div>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.5rem;">
+            <button type="button" class="checkout-btn" onclick="adminCloseDispatchModal()"
+              style="background: transparent; border: 1px solid var(--glass-border); color: var(--text-primary); margin:0;">Cancel</button>
+            <button type="submit" class="checkout-btn"
+              style="background: var(--color-brand-gradient); margin:0; width:auto; padding:0 1.5rem;">Confirm &
+              Dispatch Cargo</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <!-- Admin: Create / Edit Coupon Modal -->
   <div class="modal-overlay" id="admin-coupon-modal-overlay">
     <div class="product-detail-modal"
@@ -2779,86 +3411,92 @@
           </button>
         </form>
       </div>
-  <!-- Admin: Tax Rate Modal -->
-  <div class="modal-overlay" id="admin-tax-rate-modal-overlay">
-    <div class="product-detail-modal"
-      style="max-width: 500px; padding: 2.5rem; border-radius: 12px; background: var(--bg-secondary); border: 1px solid var(--glass-border); box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
-      <button class="modal-close" id="close-admin-tax-rate-modal-btn"
-        style="position: absolute; top: 1.25rem; right: 1.25rem; background: none; border: none; color: var(--text-secondary); cursor: pointer;">
-        <i data-feather="x" style="width: 20px; height: 20px;"></i>
-      </button>
-      <div class="admin-form-container" style="padding: 0;">
-        <h2 style="margin-bottom: 1.5rem; color: var(--color-brand); font-family: 'Space Grotesk', sans-serif;"
-          id="admin-tax-rate-modal-title">Create New Tax Rate</h2>
-        <form id="admin-tax-rate-form" class="horizontal-scroll-form">
-          <input type="hidden" id="admin-form-tax-rate-id">
-          <div class="checkout-form-grid" style="grid-template-columns: 1fr; gap: 1.25rem;">
-
-            <div style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 1rem;">
-              <div class="form-group">
-                <label class="form-label">Tax Name *</label>
-                <input type="text" required class="form-input" id="admin-tax-rate-name" placeholder="e.g. GST 18%">
-              </div>
-              <div class="form-group" style="justify-content: center; padding-bottom: 0.5rem;">
-                <label
-                  style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.95rem; margin-top: 1.5rem;">
-                  <input type="checkbox" id="admin-tax-rate-active" checked
-                    style="accent-color: var(--color-brand); width: 18px; height: 18px;">
-                  <span>Active</span>
-                </label>
-              </div>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 1rem;">
-              <div class="form-group">
-                <label class="form-label">Tax Code *</label>
-                <input type="text" required class="form-input" id="admin-tax-rate-code" placeholder="e.g. GST18" style="text-transform: uppercase;">
-              </div>
-              <div class="form-group">
-                <label class="form-label">Tax Type *</label>
-                <select required class="form-select" id="admin-tax-rate-type">
-                  <option value="GST 0%">GST 0%</option>
-                  <option value="GST 5%">GST 5%</option>
-                  <option value="GST 12%">GST 12%</option>
-                  <option value="GST 18%">GST 18%</option>
-                </select>
-              </div>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
-              <div class="form-group">
-                <label class="form-label">CGST (%)</label>
-                <input type="number" step="0.01" min="0" class="form-input" id="admin-tax-rate-cgst" placeholder="9.00">
-              </div>
-              <div class="form-group">
-                <label class="form-label">SGST (%)</label>
-                <input type="number" step="0.01" min="0" class="form-input" id="admin-tax-rate-sgst" placeholder="9.00">
-              </div>
-              <div class="form-group">
-                <label class="form-label">IGST (%)</label>
-                <input type="number" step="0.01" min="0" class="form-input" id="admin-tax-rate-igst" placeholder="18.00">
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">Total Tax Percentage (%) [Auto calculated]</label>
-              <input type="number" readonly step="0.01" class="form-input" id="admin-tax-rate-total" placeholder="18.00" style="background: var(--bg-tertiary); opacity: 0.7;">
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">Description</label>
-              <textarea class="form-input" id="admin-tax-rate-description" rows="2" placeholder="Description of this tax rate category"></textarea>
-            </div>
-
-          </div>
-          <button type="submit" class="checkout-btn" style="padding: 0.85rem; font-size: 1rem; margin-top: 1.5rem;"
-            id="admin-tax-rate-save-btn">
-            Save Tax Rate
+      <!-- Admin: Tax Rate Modal -->
+      <div class="modal-overlay" id="admin-tax-rate-modal-overlay">
+        <div class="product-detail-modal"
+          style="max-width: 500px; padding: 2.5rem; border-radius: 12px; background: var(--bg-secondary); border: 1px solid var(--glass-border); box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
+          <button class="modal-close" id="close-admin-tax-rate-modal-btn"
+            style="position: absolute; top: 1.25rem; right: 1.25rem; background: none; border: none; color: var(--text-secondary); cursor: pointer;">
+            <i data-feather="x" style="width: 20px; height: 20px;"></i>
           </button>
-        </form>
+          <div class="admin-form-container" style="padding: 0;">
+            <h2 style="margin-bottom: 1.5rem; color: var(--color-brand); font-family: 'Space Grotesk', sans-serif;"
+              id="admin-tax-rate-modal-title">Create New Tax Rate</h2>
+            <form id="admin-tax-rate-form" class="horizontal-scroll-form">
+              <input type="hidden" id="admin-form-tax-rate-id">
+              <div class="checkout-form-grid" style="grid-template-columns: 1fr; gap: 1.25rem;">
+
+                <div style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 1rem;">
+                  <div class="form-group">
+                    <label class="form-label">Tax Name *</label>
+                    <input type="text" required class="form-input" id="admin-tax-rate-name" placeholder="e.g. GST 18%">
+                  </div>
+                  <div class="form-group" style="justify-content: center; padding-bottom: 0.5rem;">
+                    <label
+                      style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.95rem; margin-top: 1.5rem;">
+                      <input type="checkbox" id="admin-tax-rate-active" checked
+                        style="accent-color: var(--color-brand); width: 18px; height: 18px;">
+                      <span>Active</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 1rem;">
+                  <div class="form-group">
+                    <label class="form-label">Tax Code *</label>
+                    <input type="text" required class="form-input" id="admin-tax-rate-code" placeholder="e.g. GST18"
+                      style="text-transform: uppercase;">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Tax Type *</label>
+                    <select required class="form-select" id="admin-tax-rate-type">
+                      <option value="GST 0%">GST 0%</option>
+                      <option value="GST 5%">GST 5%</option>
+                      <option value="GST 12%">GST 12%</option>
+                      <option value="GST 18%">GST 18%</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+                  <div class="form-group">
+                    <label class="form-label">CGST (%)</label>
+                    <input type="number" step="0.01" min="0" class="form-input" id="admin-tax-rate-cgst"
+                      placeholder="9.00">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">SGST (%)</label>
+                    <input type="number" step="0.01" min="0" class="form-input" id="admin-tax-rate-sgst"
+                      placeholder="9.00">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">IGST (%)</label>
+                    <input type="number" step="0.01" min="0" class="form-input" id="admin-tax-rate-igst"
+                      placeholder="18.00">
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Total Tax Percentage (%) [Auto calculated]</label>
+                  <input type="number" readonly step="0.01" class="form-input" id="admin-tax-rate-total"
+                    placeholder="18.00" style="background: var(--bg-tertiary); opacity: 0.7;">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Description</label>
+                  <textarea class="form-input" id="admin-tax-rate-description" rows="2"
+                    placeholder="Description of this tax rate category"></textarea>
+                </div>
+
+              </div>
+              <button type="submit" class="checkout-btn" style="padding: 0.85rem; font-size: 1rem; margin-top: 1.5rem;"
+                id="admin-tax-rate-save-btn">
+                Save Tax Rate
+              </button>
+            </form>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
       <!-- Admin: Edit Member Modal -->
       <div class="modal-overlay" id="admin-member-modal-overlay">
         <div class="product-detail-modal"
@@ -2874,9 +3512,11 @@
               <input type="hidden" id="admin-form-member-id">
 
               <!-- Password field for new member creation only -->
-              <div class="form-group" id="admin-form-member-password-group" style="display:none; margin-bottom: 1.25rem;">
+              <div class="form-group" id="admin-form-member-password-group"
+                style="display:none; margin-bottom: 1.25rem;">
                 <label class="form-label">Password (for new account) *</label>
-                <input type="password" class="form-input" id="admin-form-member-password" placeholder="Min 6 characters" autocomplete="new-password">
+                <input type="password" class="form-input" id="admin-form-member-password" placeholder="Min 6 characters"
+                  autocomplete="new-password">
               </div>
 
               <div class="checkout-form-grid" style="grid-template-columns: 1fr; gap: 1.25rem;">
@@ -2938,7 +3578,8 @@
 
               </div>
               <!-- Member Wishlist Section inside Edit Modal -->
-              <div id="admin-member-wishlist-section" style="margin-top: 1.5rem; border-top: 1px solid var(--glass-border); padding-top: 1.5rem;">
+              <div id="admin-member-wishlist-section"
+                style="margin-top: 1.5rem; border-top: 1px solid var(--glass-border); padding-top: 1.5rem;">
                 <h4
                   style="font-size: 0.95rem; font-family: 'Space Grotesk', sans-serif; color: var(--color-brand); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.35rem;">
                   <i data-feather="heart" style="width: 16px; height: 16px; fill: var(--color-brand);"></i>
@@ -3071,8 +3712,8 @@
       <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
       <script src="js/supabase.js"></script>
       <script src="js/products.js"></script>
-      <script src="js/app.js?v=9"></script>
-      <script src="js/admin.js?v=9"></script>
+      <script src="js/app.js?v=11"></script>
+      <script src="js/admin.js?v=13"></script>
 
 </body>
 

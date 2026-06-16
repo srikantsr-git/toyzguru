@@ -422,3 +422,97 @@ alter table public.orders add column if not exists total_tax_amount numeric(12, 
 alter table public.orders add column if not exists buyer_gstin text;
 
 
+-- ================= DELIVERY MANAGEMENT SCHEMAS =================
+
+-- 14. Shipments Table
+create table if not exists public.shipments (
+  id text primary key, -- SH-XXXXX format
+  order_id text references public.orders(id) on delete cascade,
+  tracking_number text not null unique, -- TG-XXXXX format
+  courier_id uuid references public.couriers(id) on delete set null,
+  courier_name text,
+  weight numeric(6, 2) default 1.50,
+  status text not null default 'pending', -- 'pending', 'ready_to_pack', 'packed', 'quality_checked', 'dispatched', 'in_transit', 'out_for_delivery', 'delivered', 'failed', 'returned'
+  packing_image_url text,
+  proof_of_delivery_url text,
+  estimated_delivery_date timestamp with time zone,
+  dispatch_date timestamp with time zone,
+  approved_at timestamp with time zone,
+  approved_by text,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table public.shipments enable row level security;
+
+drop policy if exists "Allow public read access to shipments" on public.shipments;
+create policy "Allow public read access to shipments" on public.shipments
+  for select using (true);
+
+drop policy if exists "Allow full shipments access (Admin Control)" on public.shipments;
+create policy "Allow full shipments access (Admin Control)" on public.shipments
+  for all using (true) with check (true);
+
+
+-- 15. Shipment Labels Table
+create table if not exists public.shipment_labels (
+  id uuid default gen_random_uuid() primary key,
+  shipment_id text references public.shipments(id) on delete cascade,
+  label_pdf_url text,
+  generated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table public.shipment_labels enable row level security;
+
+drop policy if exists "Allow public read access to shipment_labels" on public.shipment_labels;
+create policy "Allow public read access to shipment_labels" on public.shipment_labels
+  for select using (true);
+
+drop policy if exists "Allow full shipment_labels access (Admin Control)" on public.shipment_labels;
+create policy "Allow full shipment_labels access (Admin Control)" on public.shipment_labels
+  for all using (true) with check (true);
+
+
+-- 16. Tracking Events Table
+create table if not exists public.tracking_events (
+  id uuid default gen_random_uuid() primary key,
+  shipment_id text references public.shipments(id) on delete cascade,
+  status text not null,
+  location text,
+  description text,
+  timestamp timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table public.tracking_events enable row level security;
+
+drop policy if exists "Allow public read access to tracking_events" on public.tracking_events;
+create policy "Allow public read access to tracking_events" on public.tracking_events
+  for select using (true);
+
+drop policy if exists "Allow full tracking_events access (Admin Control)" on public.tracking_events;
+create policy "Allow full tracking_events access (Admin Control)" on public.tracking_events
+  for all using (true) with check (true);
+
+
+-- 17. Delivery Logs Table (Audit Trail)
+create table if not exists public.delivery_logs (
+  id uuid default gen_random_uuid() primary key,
+  action_type text not null, -- 'approval', 'pack_status', 'dispatch', 'print', 'status_update'
+  order_id text,
+  shipment_id text,
+  admin_user text,
+  details text,
+  timestamp timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table public.delivery_logs enable row level security;
+
+drop policy if exists "Allow public read access to delivery_logs" on public.delivery_logs;
+create policy "Allow public read access to delivery_logs" on public.delivery_logs
+  for select using (true);
+
+drop policy if exists "Allow full delivery_logs access (Admin Control)" on public.delivery_logs;
+create policy "Allow full delivery_logs access (Admin Control)" on public.delivery_logs
+  for all using (true) with check (true);
+
+
+

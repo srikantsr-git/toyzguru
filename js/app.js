@@ -1512,11 +1512,24 @@ function generateOrderReceiptHTML(order) {
     const orderIdStr = order.id || 'N/A';
     const invoiceNum = `INV-${orderIdStr}`;
     const invoiceDate = new Date(order.date || Date.now()).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-    const custName = order.customer_name || order.name || order.email || 'Customer';
     const method = (order.payment_method || order.method || 'Online').toUpperCase();
     const addressParts = (order.address || '').split(" | Txn ID: ");
-    const cleanAddress = addressParts[0] || 'Address not recorded';
+    // Strip embedded [NAME:...][PHONE:...] tags (added for Supabase persistence)
+    const rawAddr = addressParts[0] || 'Address not recorded';
+    const cleanAddress = rawAddr
+      .replace(/\[NAME:[^\]]*\]/g, '')
+      .replace(/\[PHONE:[^\]]*\]/g, '')
+      .trim() || 'Address not recorded';
     const transactionId = addressParts[1] || order.receipt_url || order.transaction_id || `TXN-${orderIdStr.replace('TG-', '')}`;
+    // Parse embedded name/phone from address tags if not available as direct fields
+    const nameTagMatch = rawAddr.match(/\[NAME:([^\]]*)\]/);
+    const phoneTagMatch = rawAddr.match(/\[PHONE:([^\]]*)\]/);
+    const resolvedName = order.customer_name || order.name ||
+      (nameTagMatch ? nameTagMatch[1].trim() : '') || order.email || 'Customer';
+    const resolvedPhone = order.phone ||
+      (phoneTagMatch ? phoneTagMatch[1].trim() : '') || '';
+    const custName = resolvedName;
+
 
     const sellerGstin = order.seller_gstin || storeSettings.seller_gstin || '36AAAAA1111A1Z1';
     const buyerGstin = order.buyer_gstin || '';
@@ -1742,7 +1755,7 @@ function generateOrderReceiptHTML(order) {
     <div class="party">
       <div class="party-label">Bill To / Ship To</div>
       <div class="party-name">${custName}</div>
-      <div class="party-detail">${cleanAddress.replace(/\n/g, '<br>')}<br>Email: ${order.email || '&mdash;'}${order.phone ? `<br>Ph: ${order.phone}` : ''}${buyerGstinHTML}</div>
+      <div class="party-detail">${cleanAddress.replace(/\n/g, '<br>')}<br>Email: ${order.email || '&mdash;'}${resolvedPhone ? `<br>Ph: ${resolvedPhone}` : ''}${buyerGstinHTML}</div>
     </div>
   </div>
 
@@ -2039,6 +2052,13 @@ function setupRouting() {
       if (window.adminRenderDashboard) {
         window.adminRenderDashboard();
       }
+    } else if (viewName === "tracking") {
+      const trackId = params.id;
+      if (trackId) {
+        const inputEl = document.getElementById("tracking-search-id");
+        if (inputEl) inputEl.value = trackId;
+        searchFulfillmentOrder(trackId);
+      }
     }
   };
 
@@ -2260,6 +2280,7 @@ let catalogFilters = {
   priceMax: 49999,
   sort: "featured"
 };
+let shopShowMoreCount = 20; // products visible in shop grid; increments by 20 per "Show More" click
 
 function initCatalogView(params) {
   // Apply URL parameters if any, otherwise reset to defaults
@@ -2337,9 +2358,12 @@ function syncCategoryButtonsUI() {
   });
 }
 
-function applyFiltersAndRender() {
+function applyFiltersAndRender(appendMode = false) {
   const gridContainer = document.getElementById("catalog-grid-container");
   if (!gridContainer) return;
+  
+  // Reset visible count when filters change (not when Show More is clicked)
+  if (!appendMode) shopShowMoreCount = 20;
 
   // Dynamically update the price slider min/max attributes and label based on products in the selected category
   const catProducts = productsState.filter(prod => catalogFilters.category === "all" || prod.category === catalogFilters.category);
@@ -2393,6 +2417,11 @@ function applyFiltersAndRender() {
     filtered.sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating));
   }
 
+  // Show More: clamp visible count to actual filtered length
+  const visibleCount = Math.min(shopShowMoreCount, filtered.length);
+  const visibleProducts = filtered.slice(0, visibleCount);
+  const hasMore = filtered.length > visibleCount;
+
   // Render
   if (filtered.length === 0) {
     gridContainer.innerHTML = `
@@ -2403,17 +2432,36 @@ function applyFiltersAndRender() {
       </div>
     `;
   } else {
-    gridContainer.innerHTML = filtered.map(prod => renderProductCardHTML(prod)).join("");
+    const productCards = visibleProducts.map(prod => renderProductCardHTML(prod)).join("");
+    const showMoreBtn = hasMore ? `
+      <div class="shop-show-more-wrap">
+        <button id="shop-show-more-btn" class="shop-show-more-btn" onclick="window.shopLoadMore()">
+          Show ${Math.min(20, filtered.length - visibleCount)} More Products
+        </button>
+        <span class="shop-show-more-info">Showing ${visibleCount} of ${filtered.length} products</span>
+      </div>
+    ` : `
+      <div class="shop-show-more-wrap">
+        <span class="shop-show-more-info" style="padding-bottom:0.5rem;">All ${filtered.length} products shown</span>
+      </div>
+    `;
+    gridContainer.innerHTML = productCards + showMoreBtn;
   }
 
   // Update count text
   const countText = document.getElementById("catalog-results-text");
   if (countText) {
-    countText.textContent = `Showing ${filtered.length} of ${productsState.length} premium products`;
+    countText.textContent = `Showing ${visibleCount} of ${filtered.length} premium products`;
   }
 
   feather.replace();
 }
+
+/** Called by the Show More button — loads the next batch without resetting filters */
+window.shopLoadMore = function() {
+  shopShowMoreCount += 20;
+  applyFiltersAndRender(true); // appendMode = true → do not reset count
+};
 
 // ================= QUICK ADD TO CART =================
 function quickAddToCart(productId) {
@@ -3403,7 +3451,7 @@ async function handleCheckoutSubmit(e) {
 
     const newOrderId = `TG-${Math.floor(10000 + Math.random() * 90000)}-${Math.floor(1000 + Math.random() * 9000)}`;
     const stateStr = stateName ? `, ${stateName}` : "";
-    const fullAddress = `${address}, ${city}${stateStr}, ${zip}, ${country}`;
+    const fullAddress = `[NAME:${(`${firstName} ${lastName}`).trim()}][PHONE:${phone}] ${address}, ${city}${stateStr}, ${zip}, ${country}`;
 
     // Get current session
     const userId = userState ? userState.id : null;
@@ -3694,9 +3742,53 @@ async function handleCheckoutSubmit(e) {
 }
 
 // ================= ORDER TRACKING VIEW LOGIC =================
-function searchFulfillmentOrder(orderId) {
+async function searchFulfillmentOrder(orderId) {
   const cleanId = orderId.trim();
-  const order = ordersState.find(o => o.id.toLowerCase() === cleanId.toLowerCase());
+  
+  // 1. Fetch shipments and tracking events
+  let shipments = [];
+  let trackingEvents = [];
+  
+  if (supabase) {
+    try {
+      const { data: ships } = await supabase.from('shipments').select('*');
+      shipments = ships || [];
+      const { data: evts } = await supabase.from('tracking_events').select('*');
+      trackingEvents = evts || [];
+    } catch (err) {
+      console.warn("Failed to query tracking schema from Supabase, fallback to local:", err);
+      shipments = JSON.parse(localStorage.getItem("toyzguru_shipments")) || [];
+      trackingEvents = JSON.parse(localStorage.getItem("toyzguru_tracking_events")) || [];
+    }
+  } else {
+    shipments = JSON.parse(localStorage.getItem("toyzguru_shipments")) || [];
+    trackingEvents = JSON.parse(localStorage.getItem("toyzguru_tracking_events")) || [];
+  }
+
+  // 2. Match queried ID
+  // It could be shipment ID (e.g. SH-XXXXX), Tracking code (e.g. TG-XXXXX), or standard Order ID (e.g. TG-XXXXX-XXXXX)
+  let shipment = shipments.find(s => 
+    s.id.toLowerCase() === cleanId.toLowerCase() ||
+    s.tracking_number.toLowerCase() === cleanId.toLowerCase() ||
+    s.order_id.toLowerCase() === cleanId.toLowerCase()
+  );
+
+  let order = null;
+  if (shipment) {
+    order = ordersState.find(o => o.id === shipment.order_id);
+    if (!order) {
+      // Look in all orders registry fallback
+      const allOrders = JSON.parse(localStorage.getItem("toyzguru_orders")) || [];
+      order = allOrders.find(o => o.id === shipment.order_id);
+    }
+  } else {
+    // If no shipment record, try to look up as order ID directly
+    order = ordersState.find(o => o.id.toLowerCase() === cleanId.toLowerCase());
+    if (!order) {
+      const allOrders = JSON.parse(localStorage.getItem("toyzguru_orders")) || [];
+      order = allOrders.find(o => o.id.toLowerCase() === cleanId.toLowerCase());
+    }
+  }
 
   const resultsPanel = document.getElementById("tracking-results-panel");
   const errorPanel = document.getElementById("tracking-error-message");
@@ -3710,19 +3802,37 @@ function searchFulfillmentOrder(orderId) {
   errorPanel.style.display = "none";
   resultsPanel.style.display = "block";
 
-  // Fill details
+  // Fill details header
   document.getElementById("track-panel-order-id").textContent = order.id;
 
-  // Set est delivery (8 days after order creation date)
-  const orderDate = new Date(order.date);
-  const deliveryEst = new Date(orderDate.getTime() + 8 * 24 * 60 * 60 * 1000);
-  document.getElementById("track-panel-delivery-date").textContent = deliveryEst.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  // Compute est. delivery
+  let estDeliveryStr = "Pending Approval";
+  if (shipment && shipment.estimated_delivery_date) {
+    estDeliveryStr = new Date(shipment.estimated_delivery_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  } else {
+    const orderDate = new Date(order.date);
+    const deliveryEst = new Date(orderDate.getTime() + 8 * 24 * 60 * 60 * 1000);
+    estDeliveryStr = deliveryEst.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  }
+  document.getElementById("track-panel-delivery-date").textContent = estDeliveryStr;
 
-  // Render Timeline steps status
+  // Render timeline steps
+  // Standard stages: RECEIVED -> PROCESSING -> SHIPPED -> DELIVERED
   const steps = ["received", "processing", "shipped", "delivered"];
-  const currentStatus = order.status.toLowerCase();
+  
+  // Calculate active index based on shipment status or order status
+  let activeIdx = 0; // default order received
+  let statusText = shipment ? shipment.status : order.status;
 
-  const activeIdx = steps.indexOf(currentStatus);
+  if (statusText === "processing" || statusText === "ready_to_pack" || statusText === "packed" || statusText === "quality_checked") {
+    activeIdx = 1;
+  } else if (statusText === "shipped" || statusText === "dispatched" || statusText === "in_transit" || statusText === "out_for_delivery") {
+    activeIdx = 2;
+  } else if (statusText === "delivered") {
+    activeIdx = 3;
+  } else if (statusText === "cancelled" || statusText === "returned") {
+    activeIdx = -1; // cancelled
+  }
 
   // Clear styles
   steps.forEach(st => {
@@ -3730,13 +3840,18 @@ function searchFulfillmentOrder(orderId) {
     document.getElementById(`track-time-${st}`).textContent = "--:--";
   });
 
-  // Calculate timelines times
-  const timeReceived = orderDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
-  document.getElementById("track-time-received").textContent = timeReceived;
+  const orderDate = new Date(order.date);
+  
+  // 1. Order Received time
+  document.getElementById("track-time-received").textContent = orderDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
   document.getElementById("track-step-received").classList.add("completed");
 
-  if (activeIdx >= 1) { // processing
-    const timeProc = new Date(orderDate.getTime() + 2 * 60 * 60 * 1000).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+  // 2. Processing (Fulfillment approval) time
+  if (activeIdx >= 1) {
+    const timeProc = shipment?.approved_at 
+      ? new Date(shipment.approved_at).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })
+      : new Date(orderDate.getTime() + 2 * 60 * 60 * 1000).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+    
     document.getElementById("track-time-processing").textContent = timeProc;
     if (activeIdx > 1) {
       document.getElementById("track-step-processing").classList.add("completed");
@@ -3745,8 +3860,12 @@ function searchFulfillmentOrder(orderId) {
     }
   }
 
-  if (activeIdx >= 2) { // shipped
-    const timeShip = new Date(orderDate.getTime() + 24 * 60 * 60 * 1000).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+  // 3. Shipped (Dispatch Manifest generation) time
+  if (activeIdx >= 2) {
+    const timeShip = shipment?.dispatch_date
+      ? new Date(shipment.dispatch_date).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })
+      : new Date(orderDate.getTime() + 24 * 60 * 60 * 1000).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+    
     document.getElementById("track-time-shipped").textContent = timeShip;
     if (activeIdx > 2) {
       document.getElementById("track-step-shipped").classList.add("completed");
@@ -3755,31 +3874,80 @@ function searchFulfillmentOrder(orderId) {
     }
   }
 
-  if (activeIdx >= 3) { // delivered
-    const timeDeliv = new Date(orderDate.getTime() + 48 * 60 * 60 * 1000).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+  // 4. Delivered time
+  if (activeIdx >= 3) {
+    // Look up delivered tracking event timestamp
+    const delivEvent = trackingEvents.find(e => e.shipment_id === shipment?.id && e.status === "delivered");
+    const timeDeliv = delivEvent 
+      ? new Date(delivEvent.timestamp).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })
+      : new Date(orderDate.getTime() + 48 * 60 * 60 * 1000).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+    
     document.getElementById("track-time-delivered").textContent = timeDeliv;
     document.getElementById("track-step-delivered").classList.add("completed");
   } else {
-    // Current active indicator
     if (activeIdx >= 0) {
       document.getElementById(`track-step-${steps[activeIdx]}`).classList.add("active");
     }
   }
 
-  // Update Timeline Progress Bar Line percentage
+  // Progress bar line percentage width
   const progressPercent = activeIdx === 0 ? 0 : activeIdx === 1 ? 33 : activeIdx === 2 ? 66 : 100;
   document.getElementById("tracking-progress-bar").style.width = `${progressPercent}%`;
 
-  // Custom descriptions
+  // Custom descriptions text
   const descEl = document.getElementById("track-panel-desc");
-  if (currentStatus === "received") {
-    descEl.textContent = "Your payment has cleared. Our warehouse crew is currently matching item specs and inspecting collectibles.";
-  } else if (currentStatus === "processing") {
-    descEl.textContent = "Your premium items are boxed in secure vault cases and waiting for pickup by international shipping handlers.";
-  } else if (currentStatus === "shipped") {
-    descEl.textContent = "Vault container is in transit. Tracking number handed over to local courier. High-value cargo transit protection activated.";
-  } else if (currentStatus === "delivered") {
-    descEl.textContent = "Vault packaging successfully delivered and signed for. Thank you for collecting with ToyzGuru.";
+  let descText = "";
+
+  if (shipment) {
+    if (shipment.status === "pending") {
+      descText = "Your payment check is currently under review by our authentication desk.";
+    } else if (shipment.status === "ready_to_pack") {
+      descText = "Your order has been approved! Our warehouse logistics team is now picking scales and collectibles.";
+    } else if (shipment.status === "packed") {
+      descText = "Vault container boxed. Passed our initial packaging checkpoints.";
+    } else if (shipment.status === "quality_checked") {
+      descText = "Fulfillment quality-checked. Collectors security seal applied. Cargo container awaiting courier partner pickup.";
+    } else if (shipment.status === "dispatched") {
+      descText = `Cargo dispatched via courier partner: <strong>${shipment.courier_name}</strong>. Tracking code: <strong>${shipment.tracking_number}</strong>.`;
+    } else if (shipment.status === "in_transit") {
+      descText = `Fulfillment cargo is currently in transit between logistics hubs via <strong>${shipment.courier_name}</strong>.`;
+    } else if (shipment.status === "out_for_delivery") {
+      descText = `Good news! Your ToyzGuru container is out for delivery today via local courier agent <strong>${shipment.courier_name}</strong>.`;
+    } else if (shipment.status === "delivered") {
+      descText = "Fulfillment cargo successfully delivered and signed. Thank you for collecting with ToyzGuru.";
+    } else if (shipment.status === "returned") {
+      descText = "Cargo returned to sender (RTO). If this is an error, please contact our support desk.";
+    } else if (shipment.status === "failed") {
+      descText = "Logistics delivery attempt failed. Out for retry transit shortly.";
+    }
+  } else {
+    // Virtual fallback using order status
+    if (order.status === "pending") {
+      descText = "Your order is placed. Awaiting secure payment gateway clearance parameters.";
+    } else if (order.status === "processing") {
+      descText = "Payment cleared! Order approved. Warehouse crew matching item specs and inspecting collectibles.";
+    } else if (order.status === "shipped") {
+      descText = "Vault container dispatched. High-value cargo transit protection activated.";
+    } else if (order.status === "delivered") {
+      descText = "Fulfillment cargo successfully delivered. Thank you for collecting with ToyzGuru.";
+    } else if (order.status === "cancelled") {
+      descText = "Order cancelled. Transaction voided.";
+    }
+  }
+
+  descEl.innerHTML = descText;
+
+  // Optional POD display
+  const podContainer = document.getElementById("track-panel-pod-container");
+  const podImage = document.getElementById("track-panel-pod-image");
+  if (podContainer && podImage) {
+    if (shipment && shipment.status === "delivered" && shipment.proof_of_delivery_url) {
+      podImage.src = shipment.proof_of_delivery_url;
+      podContainer.style.display = "block";
+    } else {
+      podContainer.style.display = "none";
+      podImage.src = "";
+    }
   }
 
   feather.replace();

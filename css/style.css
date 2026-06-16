@@ -3733,3 +3733,104 @@ img {
   border-color: var(--color-brand) !important;
   color: var(--color-brand) !important;
 }
+
+/* ============================================================
+   ADMIN TABLE PAGINATION
+   ============================================================ */
+.admin-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.7rem 1rem 0.5rem;
+  margin-top: 0.25rem;
+  border-top: 1px solid var(--glass-border);
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.admin-pgn-info {
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+}
+.admin-pgn-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  flex-wrap: wrap;
+}
+.admin-pgn-btn {
+  min-width: 30px;
+  height: 30px;
+  padding: 0 0.45rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--glass-border);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  font-size: 0.76rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: var(--font-body);
+  line-height: 1;
+}
+.admin-pgn-btn:hover:not(:disabled) {
+  background: rgba(139, 92, 246, 0.12);
+  color: var(--text-primary);
+  border-color: rgba(139, 92, 246, 0.4);
+}
+.admin-pgn-btn.active {
+  background: var(--color-brand-gradient);
+  border-color: transparent;
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.35);
+}
+.admin-pgn-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+.admin-pgn-btn.nav-btn {
+  padding: 0 0.7rem;
+  font-size: 0.78rem;
+}
+.admin-pgn-ellipsis {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  padding: 0 0.1rem;
+  user-select: none;
+}
+
+/* ============================================================
+   SHOP PAGE — SHOW MORE BUTTON
+   ============================================================ */
+.shop-show-more-wrap {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 2rem 0 0.5rem;
+}
+.shop-show-more-btn {
+  padding: 0.85rem 2.5rem;
+  background: linear-gradient(135deg, #8b5cf6, #d946ef);
+  color: #fff;
+  border: none;
+  border-radius: 50px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  font-family: var(--font-body);
+  letter-spacing: 0.02em;
+  box-shadow: 0 4px 18px rgba(139, 92, 246, 0.25);
+}
+.shop-show-more-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(139, 92, 246, 0.4);
+}
+.shop-show-more-btn:active {
+  transform: translateY(0);
+}
+.shop-show-more-info {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
