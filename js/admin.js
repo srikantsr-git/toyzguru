@@ -355,6 +355,64 @@ function adminPopulateProductTaxCategoryDropdown(selectedValue) {
   }
 }
 
+function adminPopulateCategoryDropdown(selectedValue) {
+  const catSelect = document.getElementById("admin-form-category");
+  if (!catSelect) return;
+
+  // Preserve core defaults
+  const categoriesMap = new Map([
+    ["anime", "Anime Figures"],
+    ["toy-cars", "Premium Toy Cars"],
+    ["watches", "Imported Watches"]
+  ]);
+
+  // Load all unique categories from productsState
+  const products = window.productsState || [];
+  products.forEach(p => {
+    if (p.category) {
+      const slug = p.category.trim();
+      if (slug && !categoriesMap.has(slug)) {
+        // Capitalize slug for display label
+        const label = slug.split("-").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
+        categoriesMap.set(slug, label);
+      }
+    }
+  });
+
+  // Load custom categories from localStorage
+  try {
+    const savedCats = JSON.parse(localStorage.getItem("toyzguru_custom_categories") || "[]");
+    savedCats.forEach(cat => {
+      if (cat.value && !categoriesMap.has(cat.value)) {
+        categoriesMap.set(cat.value, cat.label);
+      }
+    });
+  } catch(ex) { /* ignore */ }
+
+  // Re-build select options
+  catSelect.innerHTML = "";
+  categoriesMap.forEach((label, value) => {
+    const opt = document.createElement("option");
+    opt.value = value;
+    opt.textContent = label;
+    catSelect.appendChild(opt);
+  });
+
+  // Add selectedValue if it doesn't exist
+  if (selectedValue && !categoriesMap.has(selectedValue)) {
+    const label = selectedValue.split("-").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
+    const opt = document.createElement("option");
+    opt.value = selectedValue;
+    opt.textContent = label;
+    catSelect.appendChild(opt);
+  }
+
+  // Set selected value if provided
+  if (selectedValue) {
+    catSelect.value = selectedValue;
+  }
+}
+
 // Open modal for editing product details
 function adminEditProductTrigger(productId) {
   const products = window.productsState || [];
@@ -416,6 +474,7 @@ function adminEditProductTrigger(productId) {
   if (imageUrlInput) imageUrlInput.value = "";
   const newCatWrap = document.getElementById("admin-new-category-wrap");
   const newCatToggle = document.getElementById("admin-new-category-toggle");
+  const newCatInput = document.getElementById("admin-new-category-input");
   const catSelect = document.getElementById("admin-form-category");
   if (newCatWrap) newCatWrap.style.display = "none";
   if (newCatToggle) {
@@ -423,22 +482,11 @@ function adminEditProductTrigger(productId) {
     newCatToggle.style.background = "rgba(139,92,246,0.15)";
     newCatToggle.style.color = "var(--color-brand)";
   }
+  if (newCatInput) newCatInput.value = "";
   if (catSelect) {
     catSelect.disabled = false;
     catSelect.style.opacity = "1";
-    // Restore custom categories from localStorage before setting value
-    try {
-      const savedCats = JSON.parse(localStorage.getItem("toyzguru_custom_categories") || "[]");
-      savedCats.forEach(cat => {
-        if (!Array.from(catSelect.options).some(o => o.value === cat.value)) {
-          const opt = document.createElement("option");
-          opt.value = cat.value;
-          opt.textContent = cat.label;
-          catSelect.appendChild(opt);
-        }
-      });
-    } catch(ex) { /* ignore */ }
-    catSelect.value = product.category;
+    adminPopulateCategoryDropdown(product.category);
   }
 
   // Open modal overlay
@@ -489,18 +537,7 @@ async function adminCreateProductTrigger() {
   if (catSelect) {
     catSelect.disabled = false;
     catSelect.style.opacity = "1";
-    // Restore custom categories from localStorage
-    try {
-      const savedCats = JSON.parse(localStorage.getItem("toyzguru_custom_categories") || "[]");
-      savedCats.forEach(cat => {
-        if (!Array.from(catSelect.options).some(o => o.value === cat.value)) {
-          const opt = document.createElement("option");
-          opt.value = cat.value;
-          opt.textContent = cat.label;
-          catSelect.appendChild(opt);
-        }
-      });
-    } catch(ex) { /* ignore */ }
+    adminPopulateCategoryDropdown("");
   }
 
   // Reset file upload and preview
@@ -1800,6 +1837,8 @@ async function adminDeleteFeedbackTrigger(messageId) {
 
 // ================= SETUP ADMIN EVENT LISTENERS =================
 function setupAdminEventListeners() {
+  if (window._adminEventListenersSetup) return;
+  window._adminEventListenersSetup = true;
 
   // Search box inventory input typing
   const searchInput = document.getElementById("admin-inventory-search");
@@ -2360,6 +2399,7 @@ window.adminCloseOrderModal = adminCloseOrderModal;
 window.adminDownloadExcelTemplate = adminDownloadExcelTemplate;
 window.adminHandleExcelImport = adminHandleExcelImport;
 window.handleAdminProductFormSubmit = handleAdminProductFormSubmit;
+window.adminPopulateCategoryDropdown = adminPopulateCategoryDropdown;
 
 // ================= DELIVERY & COURIER SETTINGS MANAGEMENT =================
 
