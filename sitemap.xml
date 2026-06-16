@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ToyzGuru – XML Sitemap
+  Submitted to Google Search Console at: https://search.google.com/search-console
+  ⚠ Replace all instances of https://www.toyzguru.in with your actual live domain before deploying.
+
+  How to submit:
+    1. Deploy this file to your server root (e.g. https://www.toyzguru.in/sitemap.xml)
+    2. Verify ownership in Google Search Console
+    3. Submit via Search Console → Sitemaps → Enter "sitemap.xml" → Submit
+-->
+<urlset
+  xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
+    http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+
+  <!-- ═══════════════════════════════════════════════════════════
+       HOME PAGE — Highest priority, crawled most frequently
+       ═══════════════════════════════════════════════════════════ -->
+  <url>
+    <loc>https://www.toyzguru.in/</loc>
+    <lastmod>2026-06-17</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SHOP / PRODUCT CATALOG
+       ═══════════════════════════════════════════════════════════ -->
+  <url>
+    <loc>https://www.toyzguru.in/#shop</loc>
+    <lastmod>2026-06-17</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.95</priority>
+  </url>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       ABOUT US
+       ═══════════════════════════════════════════════════════════ -->
+  <url>
+    <loc>https://www.toyzguru.in/#about</loc>
+    <lastmod>2026-06-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.80</priority>
+  </url>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       FREQUENTLY ASKED QUESTIONS
+       ═══════════════════════════════════════════════════════════ -->
+  <url>
+    <loc>https://www.toyzguru.in/#faq</loc>
+    <lastmod>2026-06-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       CONTACT US
+       ═══════════════════════════════════════════════════════════ -->
+  <url>
+    <loc>https://www.toyzguru.in/#contact</loc>
+    <lastmod>2026-06-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.70</priority>
+  </url>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       ORDER TRACKING (Public — buyers use this)
+       ═══════════════════════════════════════════════════════════ -->
+  <url>
+    <loc>https://www.toyzguru.in/#tracking</loc>
+    <lastmod>2026-06-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.65</priority>
+  </url>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       POLICY PAGES — Important for SEO trust signals
+       ═══════════════════════════════════════════════════════════ -->
+  <url>
+    <loc>https://www.toyzguru.in/#shipping-policy</loc>
+    <lastmod>2026-06-17</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.55</priority>
+  </url>
+
+  <url>
+    <loc>https://www.toyzguru.in/#refund-policy</loc>
+    <lastmod>2026-06-17</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.55</priority>
+  </url>
+
+  <url>
+    <loc>https://www.toyzguru.in/#privacy</loc>
+    <lastmod>2026-06-17</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.50</priority>
+  </url>
+
+  <url>
+    <loc>https://www.toyzguru.in/#terms</loc>
+    <lastmod>2026-06-17</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.50</priority>
+  </url>
+
+</urlset>
