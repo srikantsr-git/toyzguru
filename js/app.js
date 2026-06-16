@@ -2297,6 +2297,19 @@ function updateCategoryCountBadges() {
     "watches": "Imported Watches"
   };
 
+  // Merge custom categories created in Products (admin panel)
+  try {
+    const savedCats = JSON.parse(localStorage.getItem("toyzguru_custom_categories") || "[]");
+    savedCats.forEach(cat => {
+      if (cat.value && cat.label) {
+        categoryDisplayNames[cat.value] = cat.label;
+        if (counts[cat.value] === undefined) {
+          counts[cat.value] = 0;
+        }
+      }
+    });
+  } catch (ex) { /* ignore */ }
+
   const getCategoryDisplayName = (cat) => {
     if (categoryDisplayNames[cat]) return categoryDisplayNames[cat];
     return cat.split("-").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
