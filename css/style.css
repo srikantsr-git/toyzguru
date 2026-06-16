@@ -3320,6 +3320,10 @@ img {
   .glass-panel {
     padding: 1.25rem !important;
   }
+
+  #admin-form-original-price {
+    text-decoration: line-through;
+  }
 }
 
 @media (max-width: 480px) {
