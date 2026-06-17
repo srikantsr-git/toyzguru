@@ -2861,8 +2861,8 @@
                       placeholder="Type your reply to the customer…" onfocus="this.style.borderColor='var(--color-brand)'" onblur="this.style.borderColor='var(--glass-border)'"></textarea>
                     <div style="display:flex;gap:0.75rem;margin-top:1rem;justify-content:flex-end;">
                       <button class="admin-secondary-btn" onclick="adminCloseTicketReplyModal()">Cancel</button>
-                      <button class="admin-primary-btn" onclick="adminSubmitTicketReply()">
-                        <i data-feather="send" style="width:14px;height:14px;"></i> Send Reply & Resolve
+                      <button class="admin-primary-btn" id="admin-ticket-reply-submit-btn" onclick="adminHandleTicketReplyClick(this)">
+                        <i data-feather="send" style="width:14px;height:14px;"></i> Send Reply &amp; Resolve
                       </button>
                     </div>
                   </div>

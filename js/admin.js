@@ -5610,7 +5610,7 @@ function adminCloseTicketReplyModal() {
 }
 
 /** Save admin reply and mark ticket resolved */
-function adminSubmitTicketReply() {
+async function adminSubmitTicketReply() {
   const textEl = document.getElementById('admin-ticket-reply-text');
   const replyText = (textEl ? textEl.value.trim() : '');
   if (!replyText) {
@@ -5622,14 +5622,108 @@ function adminSubmitTicketReply() {
   const idx = tickets.findIndex(t => t.id === _adminReplyTicketId);
   if (idx === -1) return;
 
-  tickets[idx].adminReply = replyText;
-  tickets[idx].replyDate  = new Date().toISOString();
-  tickets[idx].status     = 'resolved';
+  const ticket = tickets[idx];
+
+  // Save reply & mark resolved immediately (optimistic)
+  ticket.adminReply = replyText;
+  ticket.replyDate  = new Date().toISOString();
+  ticket.status     = 'resolved';
   adminSaveTickets(tickets);
 
   adminCloseTicketReplyModal();
   adminRenderTicketsPanel();
-  adminShowToast('Reply Saved', `Ticket ${tickets[idx].id} marked as resolved.`, 'success');
+  adminShowToast('Reply Saved', `Ticket ${ticket.id} marked as resolved. Sending email…`, 'success');
+
+  // ─── Send email to visitor ───────────────────────────────────────────────
+  if (ticket.email && typeof window.sendEmailViaServer === 'function') {
+    try {
+      const html = buildTicketReplyEmailHTML(ticket, replyText);
+      await window.sendEmailViaServer({
+        to: ticket.email,
+        subject: `Re: Your Support Request [${ticket.id}] — ToyzGuru`,
+        html,
+        text: `Hi ${ticket.name || 'there'},\n\nOur support team has replied to your ticket (${ticket.id}).\n\nYour Message:\n"${ticket.description}"\n\nAdmin Reply:\n${replyText}\n\nIf you have further questions, feel free to raise a new ticket at toyzguru.in or contact us at support@toyzguru.in.\n\n— ToyzGuru Support Team`,
+      });
+      adminShowToast('Email Sent ✅', `Reply email delivered to ${ticket.email}`, 'success');
+    } catch (err) {
+      console.error('[Tickets] Failed to send reply email:', err);
+      adminShowToast('Email Failed ⚠️', `Reply saved locally but email to ${ticket.email} failed: ${err.message}. Is the email server running?`, 'warning');
+    }
+  } else if (!ticket.email) {
+    adminShowToast('No Email on Ticket', 'Reply saved but the ticket has no email address — cannot send notification.', 'warning');
+  }
+}
+
+/** Build a branded HTML email for the admin → visitor reply notification */
+function buildTicketReplyEmailHTML(ticket, replyText) {
+  const submittedDate = ticket.date
+    ? new Date(ticket.date).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })
+    : '—';
+
+  return `
+    <div style="font-family:'Inter',Arial,sans-serif;background-color:#080b11;color:#f3f4f6;padding:0;margin:0;min-height:100vh;">
+      <div style="max-width:600px;margin:0 auto;padding:2rem 1rem;">
+
+        <!-- Header -->
+        <div style="text-align:center;padding:2rem 1.5rem 1.5rem;background:linear-gradient(135deg,rgba(139,92,246,0.15) 0%,rgba(217,70,239,0.15) 100%);border-radius:16px 16px 0 0;border:1px solid rgba(139,92,246,0.2);border-bottom:none;">
+          <h1 style="font-family:'Space Grotesk',Arial,sans-serif;font-size:1.8rem;font-weight:800;color:#ffffff;margin:0 0 0.25rem;letter-spacing:-0.02em;">ToyzGuru</h1>
+          <p style="color:#8b5cf6;font-size:0.8rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;margin:0;">Premium Collector Store · Support Team</p>
+        </div>
+
+        <!-- Body card -->
+        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-top:2px solid #8b5cf6;border-radius:0 0 16px 16px;padding:2rem 2rem 1.5rem;">
+
+          <!-- Greeting -->
+          <h2 style="font-family:'Space Grotesk',Arial,sans-serif;color:#ffffff;font-size:1.25rem;font-weight:700;margin:0 0 0.75rem;">
+            👋 Hi ${ticket.name || 'there'},
+          </h2>
+          <p style="color:#9ca3af;font-size:0.92rem;line-height:1.7;margin:0 0 1.75rem;">
+            Our support team has reviewed your request and sent you a reply. Please see the details below.
+          </p>
+
+          <!-- Ticket reference box -->
+          <div style="background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:1rem 1.25rem;margin-bottom:1.5rem;">
+            <p style="margin:0 0 0.5rem;font-size:0.78rem;color:#6b7280;text-transform:uppercase;letter-spacing:0.08em;font-weight:600;">Your Original Request</p>
+            <p style="margin:0 0 0.4rem;font-size:0.82rem;color:#9ca3af;font-style:italic;line-height:1.6;">"${ticket.description || 'No message'}"</p>
+            <p style="margin:0.6rem 0 0;font-size:0.75rem;color:#4b5563;">Ticket ID: <strong style="color:#8b5cf6;">${ticket.id}</strong> &nbsp;·&nbsp; Submitted: ${submittedDate}</p>
+          </div>
+
+          <!-- Admin reply box -->
+          <div style="background:linear-gradient(135deg,rgba(139,92,246,0.08) 0%,rgba(217,70,239,0.08) 100%);border:1px solid rgba(139,92,246,0.25);border-left:4px solid #8b5cf6;border-radius:10px;padding:1.25rem 1.5rem;margin-bottom:2rem;">
+            <p style="margin:0 0 0.75rem;font-size:0.78rem;color:#8b5cf6;text-transform:uppercase;letter-spacing:0.08em;font-weight:700;display:flex;align-items:center;gap:0.4rem;">
+              ↩ Admin Reply
+            </p>
+            <p style="margin:0;font-size:0.95rem;color:#e5e7eb;line-height:1.75;white-space:pre-line;">${replyText}</p>
+          </div>
+
+          <!-- CTA -->
+          <div style="text-align:center;margin-bottom:1.75rem;">
+            <a href="https://toyzguru.in" style="display:inline-block;padding:0.85rem 2rem;background:linear-gradient(135deg,#8b5cf6 0%,#d946ef 100%);color:#ffffff;text-decoration:none;font-weight:700;border-radius:8px;font-size:0.9rem;box-shadow:0 4px 15px rgba(139,92,246,0.4);">
+              Visit ToyzGuru Store →
+            </a>
+          </div>
+
+          <p style="color:#6b7280;font-size:0.82rem;line-height:1.6;margin:0 0 0.5rem;">
+            If you have further questions, simply reply to this email or raise a new support ticket via the chat widget on our website.
+          </p>
+
+          <hr style="border:none;border-top:1px solid rgba(255,255,255,0.07);margin:1.5rem 0;">
+
+          <!-- Footer -->
+          <div style="text-align:center;">
+            <p style="color:#4b5563;font-size:0.75rem;line-height:1.6;margin:0;">
+              This email was sent from <strong style="color:#8b5cf6;">ToyzGuru Support</strong>.<br>
+              © ${new Date().getFullYear()} ToyzGuru · Hyderabad, Telangana, India<br>
+              <a href="mailto:support@toyzguru.in" style="color:#8b5cf6;text-decoration:none;">support@toyzguru.in</a>
+              &nbsp;·&nbsp;
+              <a href="https://toyzguru.in" style="color:#8b5cf6;text-decoration:none;">toyzguru.in</a>
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  `;
 }
 
 /** Mark ticket resolved without a reply */
@@ -5704,11 +5798,25 @@ document.addEventListener('DOMContentLoaded', () => {
   setTimeout(adminUpdateTicketsBadge, 1500);
 });
 
-// Window bindings for ticket functions
+// Helper to handle reply button click with UI feedback
+function adminHandleTicketReplyClick(btn) {
+  if (!btn) return;
+  const originalHTML = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = "<span style='opacity:0.7;'>⏳ Sending…</span>";
+  // Call the async reply function and restore button state afterwards
+  adminSubmitTicketReply().finally(() => {
+    btn.disabled = false;
+    btn.innerHTML = originalHTML;
+    if (window.feather) feather.replace();
+  });
+}
+
 window.adminRenderTicketsPanel      = adminRenderTicketsPanel;
 window.adminOpenTicketReplyModal    = adminOpenTicketReplyModal;
 window.adminCloseTicketReplyModal   = adminCloseTicketReplyModal;
 window.adminSubmitTicketReply       = adminSubmitTicketReply;
+window.adminHandleTicketReplyClick  = adminHandleTicketReplyClick;
 window.adminMarkTicketResolved      = adminMarkTicketResolved;
 window.adminDeleteTicket            = adminDeleteTicket;
 window.adminClearResolvedTickets    = adminClearResolvedTickets;

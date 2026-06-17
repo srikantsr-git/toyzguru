@@ -13,7 +13,14 @@ const PORT = 3001;
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'https://toyzguru.in'],
+  origin: [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://localhost:8080',
+    'http://127.0.0.1:8080',
+    'https://toyzguru.in',
+    'https://www.toyzguru.in',
+  ],
   methods: ['POST', 'GET'],
 }));
 app.use(express.json());
