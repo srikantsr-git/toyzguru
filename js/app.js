@@ -1601,7 +1601,7 @@ function generateOrderReceiptHTML(order) {
       const cgstPct = item.cgst_pct !== undefined ? parseFloat(item.cgst_pct) : (orderIgst > 0 ? 0 : 9); // default 9% cgst
       const sgstPct = item.sgst_pct !== undefined ? parseFloat(item.sgst_pct) : (orderIgst > 0 ? 0 : 9); // default 9% sgst
       const igstPct = item.igst_pct !== undefined ? parseFloat(item.igst_pct) : (orderIgst > 0 ? 18 : 0); // default 18% igst
-      
+
       const cgstAmt = item.cgst_amount !== undefined ? parseFloat(item.cgst_amount) : (isIntra ? taxableVal * (cgstPct / 100) : 0);
       const sgstAmt = item.sgst_amount !== undefined ? parseFloat(item.sgst_amount) : (isIntra ? taxableVal * (sgstPct / 100) : 0);
       const igstAmt = item.igst_amount !== undefined ? parseFloat(item.igst_amount) : (isIntra ? 0 : taxableVal * (igstPct / 100));
@@ -1620,7 +1620,7 @@ function generateOrderReceiptHTML(order) {
           totalGst: 0
         };
       }
-      
+
       taxSummaryMap[key].taxableVal += taxableVal;
       taxSummaryMap[key].cgstAmt += cgstAmt;
       taxSummaryMap[key].sgstAmt += sgstAmt;
@@ -1629,14 +1629,14 @@ function generateOrderReceiptHTML(order) {
     });
 
     const taxSummaryRows = Object.values(taxSummaryMap).map(row => {
-      const cgstCell = row.cgstAmt > 0 || row.cgstPct > 0 
-        ? `${row.cgstPct}%<br><span class="muted">&#8377;${row.cgstAmt.toFixed(2)}</span>` 
+      const cgstCell = row.cgstAmt > 0 || row.cgstPct > 0
+        ? `${row.cgstPct}%<br><span class="muted">&#8377;${row.cgstAmt.toFixed(2)}</span>`
         : '0%<br><span class="muted">&#8377;0.00</span>';
-      const sgstCell = row.sgstAmt > 0 || row.sgstPct > 0 
-        ? `${row.sgstPct}%<br><span class="muted">&#8377;${row.sgstAmt.toFixed(2)}</span>` 
+      const sgstCell = row.sgstAmt > 0 || row.sgstPct > 0
+        ? `${row.sgstPct}%<br><span class="muted">&#8377;${row.sgstAmt.toFixed(2)}</span>`
         : '0%<br><span class="muted">&#8377;0.00</span>';
-      const igstCell = row.igstAmt > 0 || row.igstPct > 0 
-        ? `${row.igstPct}%<br><span class="muted">&#8377;${row.igstAmt.toFixed(2)}</span>` 
+      const igstCell = row.igstAmt > 0 || row.igstPct > 0
+        ? `${row.igstPct}%<br><span class="muted">&#8377;${row.igstAmt.toFixed(2)}</span>`
         : '0%<br><span class="muted">&#8377;0.00</span>';
 
       return `
@@ -2139,19 +2139,19 @@ function renderFooterCollections() {
 function getProductTaxPercentage(product) {
   if (!storeSettings.gst_enabled) return 0;
   if (product.tax_applicable === false || product.tax_applicable === 'false') return 0;
-  
+
   let catId = product.gst_category_id;
   if (!catId) {
     catId = storeSettings.default_tax_category_id;
   }
-  
+
   if (catId) {
     const rate = taxRatesState.find(r => r.id === catId);
     if (rate && rate.is_active) {
       return parseFloat(rate.total_tax_pct) || 0;
     }
   }
-  
+
   return 0; // fallback
 }
 
@@ -2160,11 +2160,11 @@ function getProductDisplayPrices(product) {
   const taxPct = getProductTaxPercentage(product);
   const taxAmount = basePrice * (taxPct / 100);
   const inclPrice = basePrice + taxAmount;
-  
-  const origBasePrice = product.original_price !== undefined && product.original_price !== null 
-    ? Number(product.original_price) 
+
+  const origBasePrice = product.original_price !== undefined && product.original_price !== null
+    ? Number(product.original_price)
     : (product.originalPrice !== undefined ? Number(product.originalPrice) : null);
-  
+
   let origInclPrice = null;
   if (origBasePrice) {
     origInclPrice = origBasePrice * (1 + taxPct / 100);
@@ -2361,7 +2361,7 @@ function syncCategoryButtonsUI() {
 function applyFiltersAndRender(appendMode = false) {
   const gridContainer = document.getElementById("catalog-grid-container");
   if (!gridContainer) return;
-  
+
   // Reset visible count when filters change (not when Show More is clicked)
   if (!appendMode) shopShowMoreCount = 20;
 
@@ -2375,7 +2375,7 @@ function applyFiltersAndRender(appendMode = false) {
   if (priceSlider) {
     priceSlider.min = minPrice;
     priceSlider.max = maxPrice;
-    
+
     // Clamp priceMax if it exceeds bounds or is at default placeholder value
     if (catalogFilters.priceMax > maxPrice || catalogFilters.priceMax === 50000 || catalogFilters.priceMax === 49999) {
       catalogFilters.priceMax = maxPrice;
@@ -2383,7 +2383,7 @@ function applyFiltersAndRender(appendMode = false) {
     if (catalogFilters.priceMax < minPrice) {
       catalogFilters.priceMax = minPrice;
     }
-    
+
     priceSlider.value = catalogFilters.priceMax;
 
     // Update min price label in the sidebar (first span in .price-labels)
@@ -2458,7 +2458,7 @@ function applyFiltersAndRender(appendMode = false) {
 }
 
 /** Called by the Show More button — loads the next batch without resetting filters */
-window.shopLoadMore = function() {
+window.shopLoadMore = function () {
   shopShowMoreCount += 20;
   applyFiltersAndRender(true); // appendMode = true → do not reset count
 };
@@ -2490,7 +2490,12 @@ function openProductModal(productId) {
   document.getElementById("modal-product-image").alt = product.title;
   document.getElementById("modal-product-category").textContent = product.category.replace("-", " ");
   document.getElementById("modal-product-title").textContent = product.title;
-  document.getElementById("modal-product-price").innerHTML = renderProductPriceHTML(product);
+  const basePrice = Number(product.price);
+  let taxNote = "";
+  if (storeSettings.gst_enabled && product.tax_applicable !== false) {
+    taxNote = `<span style="font-size: 0.68rem; color: var(--text-muted); font-weight: 400; margin-left: 2px;">+ taxes</span>`;
+  }
+  document.getElementById("modal-product-price").innerHTML = `₹${basePrice.toFixed(2)}${taxNote}`;
   document.getElementById("modal-product-desc").textContent = product.description;
   document.getElementById("modal-qty-val").textContent = modalSelectedQty;
 
@@ -2511,7 +2516,15 @@ function openProductModal(productId) {
   // Original Price
   const originalPriceEl = document.getElementById("modal-product-original-price");
   if (originalPriceEl) {
-    originalPriceEl.style.display = "none";
+    const origPrice = product.original_price !== undefined && product.original_price !== null
+      ? Number(product.original_price)
+      : (product.originalPrice !== undefined ? Number(product.originalPrice) : null);
+    if (origPrice && origPrice > basePrice) {
+      originalPriceEl.textContent = `₹${origPrice.toFixed(2)}`;
+      originalPriceEl.style.display = "inline";
+    } else {
+      originalPriceEl.style.display = "none";
+    }
   }
 
   // Stars
@@ -3093,19 +3106,19 @@ function calculateCheckoutGST(subtotal, discount, stateName) {
 
   cartState.forEach(item => {
     const product = productsState.find(p => p.id === item.productId);
-    
+
     let taxPct = 0;
     let cgstPct = 0;
     let sgstPct = 0;
     let igstPct = 0;
     let hsn = "";
     let sac = "";
-    
+
     if (storeSettings.gst_enabled) {
       const isTaxApplicable = product ? (product.tax_applicable !== false && product.tax_applicable !== "false") : true;
       hsn = product?.hsn_code || "";
       sac = product?.sac_code || "";
-      
+
       if (isTaxApplicable) {
         let catId = product?.gst_category_id || storeSettings.default_tax_category_id;
         if (catId) {
@@ -3516,12 +3529,12 @@ async function handleCheckoutSubmit(e) {
 
           // Retry 1: If GST columns are missing in remote DB, strip them and retry
           if (retryGstStrip && (
-            error.code === '42703' || 
+            error.code === '42703' ||
             (error.message && (
-              error.message.includes("buyer_gstin") || 
-              error.message.includes("cgst_amount") || 
-              error.message.includes("sgst_amount") || 
-              error.message.includes("igst_amount") || 
+              error.message.includes("buyer_gstin") ||
+              error.message.includes("cgst_amount") ||
+              error.message.includes("sgst_amount") ||
+              error.message.includes("igst_amount") ||
               error.message.includes("total_tax_amount") ||
               error.message.includes("column")
             ))
@@ -3744,11 +3757,11 @@ async function handleCheckoutSubmit(e) {
 // ================= ORDER TRACKING VIEW LOGIC =================
 async function searchFulfillmentOrder(orderId) {
   const cleanId = orderId.trim();
-  
+
   // 1. Fetch shipments and tracking events
   let shipments = [];
   let trackingEvents = [];
-  
+
   if (supabase) {
     try {
       const { data: ships } = await supabase.from('shipments').select('*');
@@ -3767,7 +3780,7 @@ async function searchFulfillmentOrder(orderId) {
 
   // 2. Match queried ID
   // It could be shipment ID (e.g. SH-XXXXX), Tracking code (e.g. TG-XXXXX), or standard Order ID (e.g. TG-XXXXX-XXXXX)
-  let shipment = shipments.find(s => 
+  let shipment = shipments.find(s =>
     s.id.toLowerCase() === cleanId.toLowerCase() ||
     s.tracking_number.toLowerCase() === cleanId.toLowerCase() ||
     s.order_id.toLowerCase() === cleanId.toLowerCase()
@@ -3819,7 +3832,7 @@ async function searchFulfillmentOrder(orderId) {
   // Render timeline steps
   // Standard stages: RECEIVED -> PROCESSING -> SHIPPED -> DELIVERED
   const steps = ["received", "processing", "shipped", "delivered"];
-  
+
   // Calculate active index based on shipment status or order status
   let activeIdx = 0; // default order received
   let statusText = shipment ? shipment.status : order.status;
@@ -3841,17 +3854,17 @@ async function searchFulfillmentOrder(orderId) {
   });
 
   const orderDate = new Date(order.date);
-  
+
   // 1. Order Received time
   document.getElementById("track-time-received").textContent = orderDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
   document.getElementById("track-step-received").classList.add("completed");
 
   // 2. Processing (Fulfillment approval) time
   if (activeIdx >= 1) {
-    const timeProc = shipment?.approved_at 
+    const timeProc = shipment?.approved_at
       ? new Date(shipment.approved_at).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })
       : new Date(orderDate.getTime() + 2 * 60 * 60 * 1000).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
-    
+
     document.getElementById("track-time-processing").textContent = timeProc;
     if (activeIdx > 1) {
       document.getElementById("track-step-processing").classList.add("completed");
@@ -3865,7 +3878,7 @@ async function searchFulfillmentOrder(orderId) {
     const timeShip = shipment?.dispatch_date
       ? new Date(shipment.dispatch_date).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })
       : new Date(orderDate.getTime() + 24 * 60 * 60 * 1000).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
-    
+
     document.getElementById("track-time-shipped").textContent = timeShip;
     if (activeIdx > 2) {
       document.getElementById("track-step-shipped").classList.add("completed");
@@ -3878,10 +3891,10 @@ async function searchFulfillmentOrder(orderId) {
   if (activeIdx >= 3) {
     // Look up delivered tracking event timestamp
     const delivEvent = trackingEvents.find(e => e.shipment_id === shipment?.id && e.status === "delivered");
-    const timeDeliv = delivEvent 
+    const timeDeliv = delivEvent
       ? new Date(delivEvent.timestamp).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })
       : new Date(orderDate.getTime() + 48 * 60 * 60 * 1000).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
-    
+
     document.getElementById("track-time-delivered").textContent = timeDeliv;
     document.getElementById("track-step-delivered").classList.add("completed");
   } else {
@@ -5331,7 +5344,7 @@ function setupEventListeners() {
         } catch (e) {
           console.warn("Could not write message to local storage fallback:", e);
         }
-        
+
         showToast("Message Transmitted (Demo)", `Thank you, ${name}. Your ticket regarding "${subject}" has been queued in offline simulation. We will reply to ${email} within 12 hours.`, "success");
         contactForm.reset();
       }
