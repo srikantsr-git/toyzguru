@@ -105,6 +105,7 @@
 
   <!-- CSS Styling -->
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/bot.css">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="assets/images/favicon.png">
@@ -1831,6 +1832,8 @@
                   style="width: 18px;"></i> Tax & Finance</button>
               <button class="admin-nav-btn" data-panel="admin-newsletter-panel"><i data-feather="send"
                   style="width: 18px;"></i> Newsletter Subs</button>
+              <button class="admin-nav-btn" data-panel="admin-tickets-panel"><i data-feather="message-circle"
+                  style="width: 18px;"></i> Bot Support Tickets <span id="admin-tickets-badge" class="admin-nav-badge" style="display:none;"></span></button>
               <button class="admin-nav-btn" id="admin-signout-btn"
                 style="color: var(--color-danger); margin-top: 1.5rem; border-top: 1px solid var(--glass-border); border-radius: 0; padding-top: 1rem;"><i
                   data-feather="log-out" style="width: 18px; color: var(--color-danger);"></i> Exit Terminal</button>
@@ -1956,6 +1959,17 @@
                   <h4 class="dash-card-title">Newsletter Subs</h4>
                   <p class="dash-card-desc">View, manage and export database list entries for email marketing
                     subscriptions.</p>
+                  <span class="dash-card-arrow"><i data-feather="arrow-right"
+                      style="width:15px;height:15px;"></i></span>
+                </button>
+
+                <button class="dash-card" style="--dc-clr:#d946ef;"
+                  onclick="window._adminGoToPanel('admin-tickets-panel')">
+                  <div class="dash-card-icon-wrap" style="--dc-clr:#d946ef;">
+                    <i data-feather="message-circle" style="width:26px;height:26px;"></i>
+                  </div>
+                  <h4 class="dash-card-title">Bot Support Tickets</h4>
+                  <p class="dash-card-desc">Review, reply and resolve visitor support tickets raised through the AI bot chat widget.</p>
                   <span class="dash-card-arrow"><i data-feather="arrow-right"
                       style="width:15px;height:15px;"></i></span>
                 </button>
@@ -2769,6 +2783,90 @@
                     <!-- Dynamically populated via admin.js -->
                   </tbody>
                 </table>
+              </div>
+            </div>
+
+            <!-- ====== BOT SUPPORT TICKETS PANEL ====== -->
+            <div class="admin-panel" id="admin-tickets-panel">
+              <div class="profile-panel-header">
+                <button class="panel-back-btn" onclick="window._adminGoToPanel('admin-home-panel')"><i
+                    data-feather="arrow-left" style="width:14px;height:14px;"></i> Dashboard</button>
+                <h3 class="profile-panel-title">Bot Support Tickets</h3>
+              </div>
+              <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1.5rem;">
+                Visitor support requests submitted via the AI Chat Bot. Reply, resolve or delete tickets below.
+              </p>
+
+              <!-- Toolbar -->
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem;">
+                <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
+                  <!-- Stats badge -->
+                  <div class="glass-panel" style="padding:0.5rem 1rem; border-radius:8px; display:flex; align-items:center; gap:0.5rem;">
+                    <i data-feather="message-circle" style="width:16px;height:16px;color:var(--color-brand);"></i>
+                    <span style="font-size:0.85rem;font-weight:700;">Total: <span id="admin-tickets-count">—</span></span>
+                  </div>
+                  <div class="glass-panel" style="padding:0.5rem 1rem; border-radius:8px; display:flex; align-items:center; gap:0.5rem;">
+                    <i data-feather="clock" style="width:16px;height:16px;color:#f59e0b;"></i>
+                    <span style="font-size:0.85rem;font-weight:700;">Open: <span id="admin-tickets-open-count" style="color:#f59e0b;">—</span></span>
+                  </div>
+                </div>
+                <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
+                  <!-- Filter dropdown -->
+                  <select id="admin-tickets-filter" class="admin-search-input" style="padding:0.5rem 0.75rem; min-width:130px;" onchange="adminRenderTicketsPanel()">
+                    <option value="all">All Tickets</option>
+                    <option value="open">Open Only</option>
+                    <option value="resolved">Resolved</option>
+                  </select>
+                  <!-- Search -->
+                  <div class="admin-search-box" style="position:relative;">
+                    <input type="text" id="admin-tickets-search" placeholder="Search name, email..."
+                      class="admin-search-input" oninput="adminRenderTicketsPanel()">
+                    <i data-feather="search" style="position:absolute;left:0.75rem;top:50%;transform:translateY(-50%);color:var(--text-muted);width:14px;pointer-events:none;"></i>
+                  </div>
+                  <!-- Export -->
+                  <button class="admin-primary-btn" onclick="adminExportTicketsCSV()" title="Export all tickets as CSV">
+                    <i data-feather="download"></i> Export CSV
+                  </button>
+                  <!-- Clear all resolved -->
+                  <button class="admin-primary-btn" style="background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.3);color:var(--color-danger);"
+                    onclick="adminClearResolvedTickets()" title="Delete all resolved tickets">
+                    <i data-feather="trash-2"></i> Clear Resolved
+                  </button>
+                </div>
+              </div>
+
+              <!-- Tickets list -->
+              <div id="admin-tickets-list" style="display:flex;flex-direction:column;gap:1rem;">
+                <!-- Dynamically populated by admin.js adminRenderTicketsPanel() -->
+                <div style="text-align:center;color:var(--text-secondary);padding:3rem 1rem;">
+                  <i data-feather="inbox" style="width:40px;height:40px;margin-bottom:1rem;opacity:0.3;"></i>
+                  <p>Loading support tickets…</p>
+                </div>
+              </div>
+
+              <!-- Reply modal overlay -->
+              <div id="admin-ticket-reply-overlay" class="modal-overlay" style="display:none; z-index: 20001;">
+                <div class="modal-container" style="max-width:560px;">
+                  <div class="modal-header">
+                    <h3 class="modal-title" id="admin-ticket-reply-title">Reply to Ticket</h3>
+                    <button class="modal-close-btn" onclick="adminCloseTicketReplyModal()">
+                      <i data-feather="x"></i>
+                    </button>
+                  </div>
+                  <div class="modal-body" style="padding:1.5rem;">
+                    <div id="admin-ticket-reply-info" style="background:rgba(255,255,255,0.03);border:1px solid var(--glass-border);border-radius:8px;padding:1rem;margin-bottom:1.25rem;font-size:0.82rem;line-height:1.7;"></div>
+                    <label style="font-size:0.8rem;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:0.4rem;">Admin Reply</label>
+                    <textarea id="admin-ticket-reply-text" rows="5"
+                      style="width:100%;background:rgba(8,11,17,0.5);border:1px solid var(--glass-border);border-radius:8px;padding:0.75rem;color:var(--text-primary);font-size:0.84rem;outline:none;resize:vertical;transition:border-color 0.2s;box-sizing:border-box;"
+                      placeholder="Type your reply to the customer…" onfocus="this.style.borderColor='var(--color-brand)'" onblur="this.style.borderColor='var(--glass-border)'"></textarea>
+                    <div style="display:flex;gap:0.75rem;margin-top:1rem;justify-content:flex-end;">
+                      <button class="admin-secondary-btn" onclick="adminCloseTicketReplyModal()">Cancel</button>
+                      <button class="admin-primary-btn" onclick="adminSubmitTicketReply()">
+                        <i data-feather="send" style="width:14px;height:14px;"></i> Send Reply & Resolve
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -3807,6 +3905,7 @@
       <script src="js/products.js"></script>
       <script src="js/app.js?v=11"></script>
       <script src="js/admin.js?v=13"></script>
+      <script src="js/bot.js" defer></script>
 
 </body>
 

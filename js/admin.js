@@ -191,6 +191,8 @@ function setupAdminNavigation() {
       adminRenderTaxPanel();
     } else if (adminCurrentPanel === "admin-newsletter-panel") {
       adminRenderNewsletterPanel();
+    } else if (adminCurrentPanel === "admin-tickets-panel") {
+      adminRenderTicketsPanel();
     }
   };
 
@@ -5420,3 +5422,294 @@ window.adminDeleteNewsletterSubscriber = adminDeleteNewsletterSubscriber;
 window.adminFilterNewsletterTable = adminFilterNewsletterTable;
 window.adminExportNewsletterCSV = adminExportNewsletterCSV;
 
+
+// ===============================================================
+//   BOT SUPPORT TICKETS ADMIN MODULE
+//   Manages tickets stored in localStorage under key:
+//   'toyzguru_chat_tickets'
+// ===============================================================
+
+const TICKETS_KEY = 'toyzguru_chat_tickets';
+
+/** Retrieve all tickets from localStorage */
+function adminGetTickets() {
+  try {
+    return JSON.parse(localStorage.getItem(TICKETS_KEY) || '[]');
+  } catch (e) {
+    return [];
+  }
+}
+
+/** Persist tickets array back to localStorage */
+function adminSaveTickets(tickets) {
+  localStorage.setItem(TICKETS_KEY, JSON.stringify(tickets));
+}
+
+/** Update the sidebar badge count for open tickets */
+function adminUpdateTicketsBadge() {
+  const tickets = adminGetTickets();
+  const openCount = tickets.filter(t => t.status !== 'resolved').length;
+  const badge = document.getElementById('admin-tickets-badge');
+  if (!badge) return;
+  if (openCount > 0) {
+    badge.textContent = openCount;
+    badge.style.display = 'inline-flex';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+/** Main render: loads, filters, and displays the ticket cards */
+function adminRenderTicketsPanel() {
+  const list = document.getElementById('admin-tickets-list');
+  if (!list) return;
+
+  let tickets = adminGetTickets();
+
+  // Sort: newest first
+  tickets.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  // Update stat counts
+  const totalEl = document.getElementById('admin-tickets-count');
+  const openEl  = document.getElementById('admin-tickets-open-count');
+  if (totalEl) totalEl.textContent = tickets.length;
+  if (openEl)  openEl.textContent  = tickets.filter(t => t.status !== 'resolved').length;
+  adminUpdateTicketsBadge();
+
+  // Apply filter
+  const filterVal = (document.getElementById('admin-tickets-filter') || {}).value || 'all';
+  const searchVal = ((document.getElementById('admin-tickets-search') || {}).value || '').toLowerCase();
+
+  let filtered = tickets;
+  if (filterVal === 'open')     filtered = filtered.filter(t => t.status !== 'resolved');
+  if (filterVal === 'resolved') filtered = filtered.filter(t => t.status === 'resolved');
+  if (searchVal) {
+    filtered = filtered.filter(t =>
+      (t.name  || '').toLowerCase().includes(searchVal) ||
+      (t.email || '').toLowerCase().includes(searchVal) ||
+      (t.description || '').toLowerCase().includes(searchVal) ||
+      (t.id || '').toLowerCase().includes(searchVal)
+    );
+  }
+
+  if (filtered.length === 0) {
+    list.innerHTML = `
+      <div style="text-align:center;color:var(--text-secondary);padding:3rem 1rem;">
+        <i data-feather="inbox" style="width:40px;height:40px;margin-bottom:1rem;opacity:0.3;display:block;margin:0 auto 1rem;"></i>
+        <p style="font-size:0.9rem;">No tickets found matching your criteria.</p>
+      </div>`;
+    feather.replace();
+    return;
+  }
+
+  list.innerHTML = filtered.map(ticket => {
+    const isResolved = ticket.status === 'resolved';
+    const dateStr = ticket.date
+      ? new Date(ticket.date).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })
+      : '—';
+    const statusColor = isResolved ? '#10b981' : '#f59e0b';
+    const statusLabel = isResolved ? 'Resolved' : 'Open';
+    const statusIcon  = isResolved ? 'check-circle' : 'clock';
+
+    const replySection = ticket.adminReply
+      ? `<div class="admin-ticket-reply-preview">
+           <strong style="color:var(--color-brand);font-size:0.75rem;display:flex;align-items:center;gap:0.35rem;">
+             <i data-feather="corner-down-right" style="width:12px;height:12px;"></i> Admin Reply
+           </strong>
+           <p style="margin:0.35rem 0 0; font-size:0.82rem; color:var(--text-secondary);">${ticket.adminReply}</p>
+           <span style="font-size:0.72rem;color:var(--text-muted);">${ticket.replyDate ? new Date(ticket.replyDate).toLocaleString('en-IN', {dateStyle:'medium',timeStyle:'short'}) : ''}</span>
+         </div>`
+      : '';
+
+    return `
+      <div class="admin-ticket-card ${isResolved ? 'resolved' : 'open'}" id="ticket-card-${ticket.id}">
+        <div class="admin-ticket-card-header">
+          <div style="display:flex;align-items:center;gap:0.75rem;flex:1;min-width:0;">
+            <div class="admin-ticket-avatar">${(ticket.name || 'U').charAt(0).toUpperCase()}</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-weight:700;font-size:0.9rem;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${ticket.name || 'Anonymous'}</div>
+              <div style="font-size:0.78rem;color:var(--text-secondary);">${ticket.email || '—'}</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.75rem;flex-shrink:0;">
+            <span class="admin-ticket-status-pill" style="background:${statusColor}22;color:${statusColor};border:1px solid ${statusColor}44;">
+              <i data-feather="${statusIcon}" style="width:12px;height:12px;"></i> ${statusLabel}
+            </span>
+            <span style="font-size:0.75rem;color:var(--text-muted);">${ticket.id || ''}</span>
+          </div>
+        </div>
+
+        <div class="admin-ticket-card-body">
+          <p style="font-size:0.84rem;color:var(--text-secondary);line-height:1.6;margin:0;">${ticket.description || 'No message provided.'}</p>
+          ${replySection}
+        </div>
+
+        <div class="admin-ticket-card-footer">
+          <span style="font-size:0.75rem;color:var(--text-muted);display:flex;align-items:center;gap:0.3rem;">
+            <i data-feather="calendar" style="width:12px;height:12px;"></i> ${dateStr}
+          </span>
+          <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+            ${!isResolved ? `
+              <button class="admin-ticket-btn reply" onclick="adminOpenTicketReplyModal('${ticket.id}')">
+                <i data-feather="corner-down-right" style="width:13px;height:13px;"></i> Reply & Resolve
+              </button>
+              <button class="admin-ticket-btn resolve" onclick="adminMarkTicketResolved('${ticket.id}')">
+                <i data-feather="check" style="width:13px;height:13px;"></i> Mark Resolved
+              </button>
+            ` : ''}
+            <button class="admin-ticket-btn delete" onclick="adminDeleteTicket('${ticket.id}')">
+              <i data-feather="trash-2" style="width:13px;height:13px;"></i> Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  feather.replace();
+}
+
+/** Open the reply modal for a specific ticket */
+let _adminReplyTicketId = null;
+function adminOpenTicketReplyModal(ticketId) {
+  _adminReplyTicketId = ticketId;
+  const tickets = adminGetTickets();
+  const ticket = tickets.find(t => t.id === ticketId);
+  if (!ticket) return;
+
+  const overlay = document.getElementById('admin-ticket-reply-overlay');
+  const titleEl = document.getElementById('admin-ticket-reply-title');
+  const infoEl  = document.getElementById('admin-ticket-reply-info');
+  const textEl  = document.getElementById('admin-ticket-reply-text');
+
+  if (titleEl) titleEl.textContent = `Reply to ${ticket.name || 'Visitor'}`;
+  if (infoEl) {
+    infoEl.innerHTML = `
+      <strong style="color:var(--text-primary);">${ticket.name || '—'}</strong>
+      &nbsp;<span style="color:var(--text-muted);font-size:0.78rem;">&lt;${ticket.email || '—'}&gt;</span>
+      <span style="float:right;font-size:0.75rem;color:var(--text-muted);">${ticket.id}</span><br>
+      <span style="color:var(--text-muted);font-size:0.75rem;">${ticket.date ? new Date(ticket.date).toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'}) : ''}</span>
+      <hr style="border:none;border-top:1px solid var(--glass-border);margin:0.6rem 0;">
+      <em style="color:var(--text-secondary);">"${ticket.description || ''}"</em>
+    `;
+  }
+  if (textEl) textEl.value = ticket.adminReply || '';
+
+  if (overlay) {
+    overlay.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+  feather.replace();
+}
+
+function adminCloseTicketReplyModal() {
+  const overlay = document.getElementById('admin-ticket-reply-overlay');
+  if (overlay) overlay.style.display = 'none';
+  document.body.style.overflow = '';
+  _adminReplyTicketId = null;
+}
+
+/** Save admin reply and mark ticket resolved */
+function adminSubmitTicketReply() {
+  const textEl = document.getElementById('admin-ticket-reply-text');
+  const replyText = (textEl ? textEl.value.trim() : '');
+  if (!replyText) {
+    adminShowToast('Reply Required', 'Please type a reply message before submitting.', 'warning');
+    return;
+  }
+
+  const tickets = adminGetTickets();
+  const idx = tickets.findIndex(t => t.id === _adminReplyTicketId);
+  if (idx === -1) return;
+
+  tickets[idx].adminReply = replyText;
+  tickets[idx].replyDate  = new Date().toISOString();
+  tickets[idx].status     = 'resolved';
+  adminSaveTickets(tickets);
+
+  adminCloseTicketReplyModal();
+  adminRenderTicketsPanel();
+  adminShowToast('Reply Saved', `Ticket ${tickets[idx].id} marked as resolved.`, 'success');
+}
+
+/** Mark ticket resolved without a reply */
+function adminMarkTicketResolved(ticketId) {
+  const tickets = adminGetTickets();
+  const idx = tickets.findIndex(t => t.id === ticketId);
+  if (idx === -1) return;
+  tickets[idx].status = 'resolved';
+  adminSaveTickets(tickets);
+  adminRenderTicketsPanel();
+  adminShowToast('Ticket Resolved', `Ticket ${ticketId} marked as resolved.`, 'success');
+}
+
+/** Delete a single ticket */
+async function adminDeleteTicket(ticketId) {
+  const ok = await window.showCustomDialog('Delete Ticket', `Are you sure you want to permanently delete ticket ${ticketId}?`, 'danger', true);
+  if (!ok) return;
+  let tickets = adminGetTickets();
+  tickets = tickets.filter(t => t.id !== ticketId);
+  adminSaveTickets(tickets);
+  adminRenderTicketsPanel();
+  adminShowToast('Ticket Deleted', `Ticket ${ticketId} removed.`, 'danger');
+}
+
+/** Delete all resolved tickets */
+async function adminClearResolvedTickets() {
+  const tickets = adminGetTickets();
+  const resolvedCount = tickets.filter(t => t.status === 'resolved').length;
+  if (resolvedCount === 0) {
+    adminShowToast('Nothing to Clear', 'There are no resolved tickets to remove.', 'warning');
+    return;
+  }
+  const ok = await window.showCustomDialog('Clear Resolved', `This will permanently delete all ${resolvedCount} resolved ticket(s). Continue?`, 'danger', true);
+  if (!ok) return;
+  const remaining = tickets.filter(t => t.status !== 'resolved');
+  adminSaveTickets(remaining);
+  adminRenderTicketsPanel();
+  adminShowToast('Resolved Cleared', `Removed ${resolvedCount} resolved ticket(s).`, 'success');
+}
+
+/** Export all tickets as CSV */
+function adminExportTicketsCSV() {
+  const tickets = adminGetTickets();
+  if (tickets.length === 0) {
+    adminShowToast('Nothing to Export', 'No tickets found.', 'warning');
+    return;
+  }
+  const headers = ['ID', 'Name', 'Email', 'Description', 'Status', 'Date Submitted', 'Admin Reply', 'Reply Date'];
+  const rows = tickets.map(t => [
+    t.id || '',
+    `"${(t.name || '').replace(/"/g, '""')}"`,
+    t.email || '',
+    `"${(t.description || '').replace(/"/g, '""')}"`,
+    t.status || 'open',
+    t.date ? new Date(t.date).toLocaleString('en-IN') : '',
+    `"${(t.adminReply || '').replace(/"/g, '""')}"`,
+    t.replyDate ? new Date(t.replyDate).toLocaleString('en-IN') : ''
+  ]);
+  const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = `toyzguru_tickets_${Date.now()}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  adminShowToast('Exported', `${tickets.length} ticket(s) exported as CSV.`, 'success');
+}
+
+// Call badge update on page load so the sidebar badge appears immediately
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(adminUpdateTicketsBadge, 1500);
+});
+
+// Window bindings for ticket functions
+window.adminRenderTicketsPanel      = adminRenderTicketsPanel;
+window.adminOpenTicketReplyModal    = adminOpenTicketReplyModal;
+window.adminCloseTicketReplyModal   = adminCloseTicketReplyModal;
+window.adminSubmitTicketReply       = adminSubmitTicketReply;
+window.adminMarkTicketResolved      = adminMarkTicketResolved;
+window.adminDeleteTicket            = adminDeleteTicket;
+window.adminClearResolvedTickets    = adminClearResolvedTickets;
+window.adminExportTicketsCSV        = adminExportTicketsCSV;
