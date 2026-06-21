@@ -229,9 +229,9 @@
             <img src="assets/images/hero_watches.png" alt="Imported Watches collection" class="slide-img">
             <div class="slide-overlay"></div>
             <div class="slide-content">
-              <span class="slide-tag tag-watches">Imported Luxury</span>
-              <h1 class="slide-title">Luxary Watches</h1>
-              <p class="slide-desc">GWorld-class craftsmanship meets impeccable style,Bringing global luxury straight to
+              <span class="slide-tag tag-watches">Imported Luxary</span>
+              <h1 class="slide-title">Luxury Watches</h1>
+              <p class="slide-desc">World-class craftsmanship meets impeccable style,Bringing global luxury straight to
                 your wrist!</p>
               <a href="#catalog?category=watches" class="cta-btn cta-btn-watches">View Watches <i
                   data-feather="arrow-right"></i></a>
@@ -1833,7 +1833,8 @@
               <button class="admin-nav-btn" data-panel="admin-newsletter-panel"><i data-feather="send"
                   style="width: 18px;"></i> Newsletter Subs</button>
               <button class="admin-nav-btn" data-panel="admin-tickets-panel"><i data-feather="message-circle"
-                  style="width: 18px;"></i> Bot Support Tickets <span id="admin-tickets-badge" class="admin-nav-badge" style="display:none;"></span></button>
+                  style="width: 18px;"></i> Bot Support Tickets <span id="admin-tickets-badge" class="admin-nav-badge"
+                  style="display:none;"></span></button>
               <button class="admin-nav-btn" id="admin-signout-btn"
                 style="color: var(--color-danger); margin-top: 1.5rem; border-top: 1px solid var(--glass-border); border-radius: 0; padding-top: 1rem;"><i
                   data-feather="log-out" style="width: 18px; color: var(--color-danger);"></i> Exit Terminal</button>
@@ -1969,7 +1970,8 @@
                     <i data-feather="message-circle" style="width:26px;height:26px;"></i>
                   </div>
                   <h4 class="dash-card-title">Bot Support Tickets</h4>
-                  <p class="dash-card-desc">Review, reply and resolve visitor support tickets raised through the AI bot chat widget.</p>
+                  <p class="dash-card-desc">Review, reply and resolve visitor support tickets raised through the AI bot
+                    chat widget.</p>
                   <span class="dash-card-arrow"><i data-feather="arrow-right"
                       style="width:15px;height:15px;"></i></span>
                 </button>
@@ -2798,21 +2800,27 @@
               </p>
 
               <!-- Toolbar -->
-              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem;">
+              <div
+                style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem;">
                 <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
                   <!-- Stats badge -->
-                  <div class="glass-panel" style="padding:0.5rem 1rem; border-radius:8px; display:flex; align-items:center; gap:0.5rem;">
+                  <div class="glass-panel"
+                    style="padding:0.5rem 1rem; border-radius:8px; display:flex; align-items:center; gap:0.5rem;">
                     <i data-feather="message-circle" style="width:16px;height:16px;color:var(--color-brand);"></i>
-                    <span style="font-size:0.85rem;font-weight:700;">Total: <span id="admin-tickets-count">—</span></span>
+                    <span style="font-size:0.85rem;font-weight:700;">Total: <span
+                        id="admin-tickets-count">—</span></span>
                   </div>
-                  <div class="glass-panel" style="padding:0.5rem 1rem; border-radius:8px; display:flex; align-items:center; gap:0.5rem;">
+                  <div class="glass-panel"
+                    style="padding:0.5rem 1rem; border-radius:8px; display:flex; align-items:center; gap:0.5rem;">
                     <i data-feather="clock" style="width:16px;height:16px;color:#f59e0b;"></i>
-                    <span style="font-size:0.85rem;font-weight:700;">Open: <span id="admin-tickets-open-count" style="color:#f59e0b;">—</span></span>
+                    <span style="font-size:0.85rem;font-weight:700;">Open: <span id="admin-tickets-open-count"
+                        style="color:#f59e0b;">—</span></span>
                   </div>
                 </div>
                 <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
                   <!-- Filter dropdown -->
-                  <select id="admin-tickets-filter" class="admin-search-input" style="padding:0.5rem 0.75rem; min-width:130px;" onchange="adminRenderTicketsPanel()">
+                  <select id="admin-tickets-filter" class="admin-search-input"
+                    style="padding:0.5rem 0.75rem; min-width:130px;" onchange="adminRenderTicketsPanel()">
                     <option value="all">All Tickets</option>
                     <option value="open">Open Only</option>
                     <option value="resolved">Resolved</option>
@@ -2821,14 +2829,16 @@
                   <div class="admin-search-box" style="position:relative;">
                     <input type="text" id="admin-tickets-search" placeholder="Search name, email..."
                       class="admin-search-input" oninput="adminRenderTicketsPanel()">
-                    <i data-feather="search" style="position:absolute;left:0.75rem;top:50%;transform:translateY(-50%);color:var(--text-muted);width:14px;pointer-events:none;"></i>
+                    <i data-feather="search"
+                      style="position:absolute;left:0.75rem;top:50%;transform:translateY(-50%);color:var(--text-muted);width:14px;pointer-events:none;"></i>
                   </div>
                   <!-- Export -->
                   <button class="admin-primary-btn" onclick="adminExportTicketsCSV()" title="Export all tickets as CSV">
                     <i data-feather="download"></i> Export CSV
                   </button>
                   <!-- Clear all resolved -->
-                  <button class="admin-primary-btn" style="background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.3);color:var(--color-danger);"
+                  <button class="admin-primary-btn"
+                    style="background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.3);color:var(--color-danger);"
                     onclick="adminClearResolvedTickets()" title="Delete all resolved tickets">
                     <i data-feather="trash-2"></i> Clear Resolved
                   </button>
@@ -2854,14 +2864,21 @@
                     </button>
                   </div>
                   <div class="modal-body" style="padding:1.5rem;">
-                    <div id="admin-ticket-reply-info" style="background:rgba(255,255,255,0.03);border:1px solid var(--glass-border);border-radius:8px;padding:1rem;margin-bottom:1.25rem;font-size:0.82rem;line-height:1.7;"></div>
-                    <label style="font-size:0.8rem;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:0.4rem;">Admin Reply</label>
+                    <div id="admin-ticket-reply-info"
+                      style="background:rgba(255,255,255,0.03);border:1px solid var(--glass-border);border-radius:8px;padding:1rem;margin-bottom:1.25rem;font-size:0.82rem;line-height:1.7;">
+                    </div>
+                    <label
+                      style="font-size:0.8rem;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:0.4rem;">Admin
+                      Reply</label>
                     <textarea id="admin-ticket-reply-text" rows="5"
                       style="width:100%;background:rgba(8,11,17,0.5);border:1px solid var(--glass-border);border-radius:8px;padding:0.75rem;color:var(--text-primary);font-size:0.84rem;outline:none;resize:vertical;transition:border-color 0.2s;box-sizing:border-box;"
-                      placeholder="Type your reply to the customer…" onfocus="this.style.borderColor='var(--color-brand)'" onblur="this.style.borderColor='var(--glass-border)'"></textarea>
+                      placeholder="Type your reply to the customer…"
+                      onfocus="this.style.borderColor='var(--color-brand)'"
+                      onblur="this.style.borderColor='var(--glass-border)'"></textarea>
                     <div style="display:flex;gap:0.75rem;margin-top:1rem;justify-content:flex-end;">
                       <button class="admin-secondary-btn" onclick="adminCloseTicketReplyModal()">Cancel</button>
-                      <button class="admin-primary-btn" id="admin-ticket-reply-submit-btn" onclick="adminHandleTicketReplyClick(this)">
+                      <button class="admin-primary-btn" id="admin-ticket-reply-submit-btn"
+                        onclick="adminHandleTicketReplyClick(this)">
                         <i data-feather="send" style="width:14px;height:14px;"></i> Send Reply &amp; Resolve
                       </button>
                     </div>
