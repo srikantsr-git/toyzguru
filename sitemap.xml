@@ -16,94 +16,14 @@
     http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
 
   <!-- ═══════════════════════════════════════════════════════════
-       HOME PAGE — Highest priority, crawled most frequently
+       HOME PAGE — The single entry point for this Single Page Application (SPA).
+       All section routes (e.g., #catalog, #about) are loaded client-side from this root URL.
        ═══════════════════════════════════════════════════════════ -->
   <url>
     <loc>https://www.toyzguru.in/</loc>
-    <lastmod>2026-06-17</lastmod>
+    <lastmod>2026-07-06</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
-  </url>
-
-  <!-- ═══════════════════════════════════════════════════════════
-       SHOP / PRODUCT CATALOG
-       ═══════════════════════════════════════════════════════════ -->
-  <url>
-    <loc>https://www.toyzguru.in/#shop</loc>
-    <lastmod>2026-06-17</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.95</priority>
-  </url>
-
-  <!-- ═══════════════════════════════════════════════════════════
-       ABOUT US
-       ═══════════════════════════════════════════════════════════ -->
-  <url>
-    <loc>https://www.toyzguru.in/#about</loc>
-    <lastmod>2026-06-17</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.80</priority>
-  </url>
-
-  <!-- ═══════════════════════════════════════════════════════════
-       FREQUENTLY ASKED QUESTIONS
-       ═══════════════════════════════════════════════════════════ -->
-  <url>
-    <loc>https://www.toyzguru.in/#faq</loc>
-    <lastmod>2026-06-17</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.75</priority>
-  </url>
-
-  <!-- ═══════════════════════════════════════════════════════════
-       CONTACT US
-       ═══════════════════════════════════════════════════════════ -->
-  <url>
-    <loc>https://www.toyzguru.in/#contact</loc>
-    <lastmod>2026-06-17</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.70</priority>
-  </url>
-
-  <!-- ═══════════════════════════════════════════════════════════
-       ORDER TRACKING (Public — buyers use this)
-       ═══════════════════════════════════════════════════════════ -->
-  <url>
-    <loc>https://www.toyzguru.in/#tracking</loc>
-    <lastmod>2026-06-17</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.65</priority>
-  </url>
-
-  <!-- ═══════════════════════════════════════════════════════════
-       POLICY PAGES — Important for SEO trust signals
-       ═══════════════════════════════════════════════════════════ -->
-  <url>
-    <loc>https://www.toyzguru.in/#shipping-policy</loc>
-    <lastmod>2026-06-17</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.55</priority>
-  </url>
-
-  <url>
-    <loc>https://www.toyzguru.in/#refund-policy</loc>
-    <lastmod>2026-06-17</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.55</priority>
-  </url>
-
-  <url>
-    <loc>https://www.toyzguru.in/#privacy</loc>
-    <lastmod>2026-06-17</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.50</priority>
-  </url>
-
-  <url>
-    <loc>https://www.toyzguru.in/#terms</loc>
-    <lastmod>2026-06-17</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.50</priority>
   </url>
 
 </urlset>

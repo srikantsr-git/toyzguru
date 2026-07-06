@@ -1,34 +1,12 @@
 # ================================================================
 # ToyzGuru – robots.txt
-# Update the Sitemap URL below when deploying to your live domain.
 # ================================================================
 
 # Allow all compliant web crawlers
 User-agent: *
 Allow: /
 
-# Public pages (SPA hash routes — informational)
-Allow: /#home
-Allow: /#shop
-Allow: /#about
-Allow: /#faq
-Allow: /#contact
-Allow: /#tracking
-Allow: /#shipping-policy
-Allow: /#refund-policy
-Allow: /#privacy
-Allow: /#terms
-
-# Private / non-indexable pages — block crawlers
-Disallow: /#admin
-Disallow: /#auth
-Disallow: /#checkout
-Disallow: /#success
-Disallow: /#profile
-Disallow: /#wishlist
-Disallow: /#reset-password
-
-# Block common bot flood paths
+# Private / non-indexable server-side directories — block crawlers
 Disallow: /scratch/
 Disallow: /email-server/
 
@@ -36,5 +14,4 @@ Disallow: /email-server/
 Crawl-delay: 10
 
 # ——— Sitemap location ———
-# ⚠ Replace with your actual live domain before deploying
 Sitemap: https://www.toyzguru.in/sitemap.xml
