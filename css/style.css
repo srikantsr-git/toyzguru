@@ -1593,7 +1593,7 @@ img {
 
 .detail-gallery {
   background: var(--bg-tertiary);
-  display: flex;
+
   align-items: center;
   justify-content: center;
   position: relative;
