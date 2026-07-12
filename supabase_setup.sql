@@ -38,6 +38,8 @@ create table if not exists public.products (
   category text not null,
   price numeric(12, 2) not null,
   original_price numeric(12, 2),
+  normal_box_price numeric(12, 2) default 0.00 not null,
+  original_box_price numeric(12, 2) default 0.00 not null,
   image text not null,
   rating numeric(3, 2) default 5.00 not null,
   reviews_count integer default 1 not null,
@@ -400,11 +402,13 @@ on conflict (code) do update set
   igst_pct = excluded.igst_pct,
   total_tax_pct = excluded.total_tax_pct;
 
--- 11. Add GST fields to public.products
+-- 11. Add GST and Packaging fields to public.products
 alter table public.products add column if not exists tax_applicable boolean default true;
 alter table public.products add column if not exists gst_category_id uuid references public.gst_tax_rates(id) on delete set null;
 alter table public.products add column if not exists hsn_code text;
 alter table public.products add column if not exists sac_code text;
+alter table public.products add column if not exists normal_box_price numeric(12, 2) default 0.00;
+alter table public.products add column if not exists original_box_price numeric(12, 2) default 0.00;
 
 -- 12. Add dynamic GST settings columns to public.store_settings
 alter table public.store_settings add column if not exists seller_gstin text;

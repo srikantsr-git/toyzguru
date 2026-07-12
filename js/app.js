@@ -2477,6 +2477,8 @@ function quickAddToCart(productId) {
 let modalActiveProduct = null;
 let modalSelectedOption = "";
 let modalSelectedQty = 1;
+let modalSelectedPackaging = "default";
+let modalSelectedPackagingPrice = 0;
 
 function openProductModal(productId) {
   const product = productsState.find(p => p.id === productId);
@@ -2559,6 +2561,16 @@ function openProductModal(productId) {
     optionsTitle.textContent = "Options";
   }
 
+  const updateModalPriceDisplay = () => {
+    const basePrice = Number(product.price);
+    const displayedPrice = basePrice + modalSelectedPackagingPrice;
+    let taxNote = "";
+    if (storeSettings.gst_enabled && product.tax_applicable !== false) {
+      taxNote = `<span style="font-size: 0.68rem; color: var(--text-muted); font-weight: 400; margin-left: 2px;">+ taxes</span>`;
+    }
+    document.getElementById("modal-product-price").innerHTML = `₹${displayedPrice.toFixed(2)}${taxNote}`;
+  };
+
   optionsSelectors.innerHTML = "";
   if (product.options && product.options.length > 0) {
     modalSelectedOption = product.options[0];
@@ -2578,6 +2590,47 @@ function openProductModal(productId) {
   } else {
     modalSelectedOption = "Standard";
     document.getElementById("modal-product-options-wrap").style.display = "none";
+  }
+
+  // Dynamic Packaging Options (Normal Box, Original Box)
+  const packagingWrap = document.getElementById("modal-product-packaging-wrap");
+  const packagingSelectors = document.getElementById("modal-product-packaging-selectors");
+  
+  modalSelectedPackaging = "default";
+  modalSelectedPackagingPrice = 0;
+
+  if (packagingWrap && packagingSelectors) {
+    const nPrice = Number(product.normal_box_price || 0);
+    const oPrice = Number(product.original_box_price || 0);
+
+    if (nPrice > 0 || oPrice > 0) {
+      packagingSelectors.innerHTML = "";
+      
+      const pkgs = [
+        { key: "default", label: "Default Packing (Free)", price: 0 },
+        ...(nPrice > 0 ? [{ key: "normal", label: `Normal Box (+₹${nPrice.toFixed(2)})`, price: nPrice }] : []),
+        ...(oPrice > 0 ? [{ key: "original", label: `Original Box (+₹${oPrice.toFixed(2)})`, price: oPrice }] : [])
+      ];
+
+      pkgs.forEach((pkg, idx) => {
+        const btn = document.createElement("button");
+        btn.className = `selector-option ${idx === 0 ? "active" : ""}`;
+        btn.textContent = pkg.label;
+        btn.onclick = () => {
+          const sibs = packagingSelectors.querySelectorAll(".selector-option");
+          sibs.forEach(s => s.classList.remove("active"));
+          btn.classList.add("active");
+          modalSelectedPackaging = pkg.key;
+          modalSelectedPackagingPrice = pkg.price;
+          updateModalPriceDisplay();
+        };
+        packagingSelectors.appendChild(btn);
+      });
+      
+      packagingWrap.style.display = "block";
+    } else {
+      packagingWrap.style.display = "none";
+    }
   }
 
   // Technical Specs list
@@ -2660,7 +2713,7 @@ function toggleCartDrawer(open) {
 }
 window.toggleCartDrawer = toggleCartDrawer;
 
-async function addToCart(productId, qty, option) {
+async function addToCart(productId, qty, option, packaging = "default", packagingPrice = 0) {
   const product = productsState.find(p => p.id === productId);
   if (!product) return;
 
@@ -2669,8 +2722,8 @@ async function addToCart(productId, qty, option) {
     return;
   }
 
-  // Check if option is already in cart
-  const existingItem = cartState.find(item => item.productId === productId && item.option === option);
+  // Check if option and packaging are already in cart
+  const existingItem = cartState.find(item => item.productId === productId && item.option === option && (item.packaging || 'default') === packaging);
   if (existingItem) {
     // check stock
     if (existingItem.quantity + qty > product.stock) {
@@ -2678,7 +2731,8 @@ async function addToCart(productId, qty, option) {
       existingItem.quantity = product.stock;
     } else {
       existingItem.quantity += qty;
-      await showCustomDialog("Product Added Successfully", `"${product.title}" (${option}) quantity updated to ${existingItem.quantity} in your vault cart.`, "success");
+      const displayOpt = option + (packaging !== "default" ? ` - ${packaging === "normal" ? "Normal Box" : "Original Box"}` : "");
+      await showCustomDialog("Product Added Successfully", `"${product.title}" (${displayOpt}) quantity updated to ${existingItem.quantity} in your vault cart.`, "success");
     }
   } else {
     if (qty > product.stock) {
@@ -2688,12 +2742,15 @@ async function addToCart(productId, qty, option) {
     cartState.push({
       productId: product.id,
       title: product.title,
-      price: product.price,
+      price: Number(product.price) + packagingPrice,
       image: product.image,
       option: option,
+      packaging: packaging,
+      packagingPrice: packagingPrice,
       quantity: qty
     });
-    await showCustomDialog("Product Added Successfully", `"${product.title}" (${option}) has been successfully added to your vault cart.`, "success");
+    const displayOpt = option + (packaging !== "default" ? ` - ${packaging === "normal" ? "Normal Box" : "Original Box"}` : "");
+    await showCustomDialog("Product Added Successfully", `"${product.title}" (${displayOpt}) has been successfully added to your vault cart.`, "success");
   }
 
   saveCart();
@@ -2710,14 +2767,14 @@ async function addToCart(productId, qty, option) {
   }
 }
 
-function updateCartQuantity(productId, option, change) {
-  const item = cartState.find(i => i.productId === productId && i.option === option);
+function updateCartQuantity(productId, option, packaging, change) {
+  const item = cartState.find(i => i.productId === productId && i.option === option && (i.packaging || 'default') === packaging);
   if (!item) return;
 
   const product = productsState.find(p => p.id === productId);
 
   if (item.quantity + change <= 0) {
-    removeFromCart(productId, option);
+    removeFromCart(productId, option, packaging);
   } else {
     if (product && item.quantity + change > product.stock) {
       showToast("Inventory Limit", `Cannot exceed available vault stock of ${product.stock} units.`, "warning");
@@ -2729,21 +2786,22 @@ function updateCartQuantity(productId, option, change) {
   }
 }
 
-function removeFromCart(productId, option) {
-  const item = cartState.find(i => i.productId === productId && i.option === option);
+function removeFromCart(productId, option, packaging) {
+  const item = cartState.find(i => i.productId === productId && i.option === option && (i.packaging || 'default') === packaging);
   const title = item ? item.title : "Product";
   const image = item ? item.image : "";
 
-  cartState = cartState.filter(item => !(item.productId === productId && item.option === option));
+  cartState = cartState.filter(item => !(item.productId === productId && item.option === option && (item.packaging || 'default') === packaging));
   saveCart();
   renderCartDrawer();
 
+  const displayOpt = option + (packaging !== "default" ? ` (${packaging === "normal" ? "Normal Box" : "Original Box"})` : "");
   showToast("Removed Item", `
     <div style="display: flex; align-items: center; gap: 0.75rem; margin-top: 0.25rem;">
       ${image ? `<img src="${image}" style="width: 32px; height: 32px; object-fit: cover; border-radius: 4px; border: 1px solid var(--glass-border);" alt="${title}">` : ''}
       <div>
         <div style="font-weight: 600; color: #fff; font-size: 0.82rem; line-height: 1.2;">${title}</div>
-        <div style="font-size: 0.72rem; color: var(--text-secondary);">${option} removed from cart drawer.</div>
+        <div style="font-size: 0.72rem; color: var(--text-secondary);">${displayOpt} removed from cart drawer.</div>
       </div>
     </div>
   `, "info");
@@ -2819,20 +2877,21 @@ function renderCartDrawer() {
   }
 
   container.innerHTML = cartState.map(item => {
+    const displayOpt = item.option + (item.packaging && item.packaging !== 'default' ? ` | Packing: ${item.packaging === 'normal' ? 'Normal Box' : 'Original Box'} (+₹${item.packagingPrice.toFixed(2)})` : '');
     return `
       <div class="cart-item">
         <img src="${item.image}" alt="${item.title}" class="cart-item-img">
         <div class="cart-item-details">
           <div class="cart-item-name">${item.title}</div>
-          <div class="cart-item-option">Option: ${item.option}</div>
+          <div class="cart-item-option">Option: ${displayOpt}</div>
           <div class="cart-item-price">₹${item.price.toFixed(2)}</div>
           <div class="cart-item-actions">
-            <button class="qty-btn" onclick="updateCartQuantity('${item.productId}', '${item.option}', -1)">-</button>
+            <button class="qty-btn" onclick="updateCartQuantity('${item.productId}', '${item.option}', '${item.packaging || 'default'}', -1)">-</button>
             <span class="cart-item-qty">${item.quantity}</span>
-            <button class="qty-btn" onclick="updateCartQuantity('${item.productId}', '${item.option}', 1)">+</button>
+            <button class="qty-btn" onclick="updateCartQuantity('${item.productId}', '${item.option}', '${item.packaging || 'default'}', 1)">+</button>
           </div>
         </div>
-        <div class="cart-item-remove" onclick="removeFromCart('${item.productId}', '${item.option}')">
+        <div class="cart-item-remove" onclick="removeFromCart('${item.productId}', '${item.option}', '${item.packaging || 'default'}')">
           <i data-feather="trash-2" style="width: 14px; height: 14px;"></i>
         </div>
       </div>
@@ -3158,6 +3217,7 @@ function calculateCheckoutGST(subtotal, discount, stateName) {
     items_tax_details.push({
       productId: item.productId,
       option: item.option,
+      packaging: item.packaging || "default",
       hsn_code: hsn,
       sac_code: sac,
       cgst_pct: cgstPct,
@@ -3192,15 +3252,23 @@ function renderCheckoutSummary() {
   const container = document.getElementById("checkout-summary-items");
   if (!container) return;
 
-  container.innerHTML = cartState.map(item => `
-    <div class="summary-item">
-      <div>
-        <span class="summary-item-name">${item.title}</span>
-        <span class="summary-item-qty">x${item.quantity}</span>
+  container.innerHTML = cartState.map(item => {
+    const displayOpt = item.option + (item.packaging && item.packaging !== 'default' ? ` | Packing: ${item.packaging === 'normal' ? 'Normal Box' : 'Original Box'} (+₹${item.packagingPrice.toFixed(2)})` : '');
+    return `
+      <div class="summary-item" style="flex-direction: column; align-items: flex-start; gap: 0.25rem;">
+        <div style="display: flex; justify-content: space-between; width: 100%;">
+          <div>
+            <span class="summary-item-name">${item.title}</span>
+            <span class="summary-item-qty">x${item.quantity}</span>
+          </div>
+          <strong>₹${(item.price * item.quantity).toFixed(2)}</strong>
+        </div>
+        <div style="font-size: 0.72rem; color: var(--text-muted); padding-left: 0.1rem;">
+          Option: ${displayOpt}
+        </div>
       </div>
-      <strong>₹${(item.price * item.quantity).toFixed(2)}</strong>
-    </div>
-  `).join("");
+    `;
+  }).join("");
 
   // Calculation parameters
   const subtotal = cartState.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -3477,7 +3545,7 @@ async function handleCheckoutSubmit(e) {
       email: email,
       items: cartState.map(item => {
         const product = productsState.find(p => p.id === item.productId);
-        const taxDetails = taxes.items_tax_details.find(td => td.productId === item.productId && td.option === item.option) || {};
+        const taxDetails = taxes.items_tax_details.find(td => td.productId === item.productId && td.option === item.option && (td.packaging || 'default') === (item.packaging || 'default')) || {};
         return {
           ...item,
           hsn_code: product?.hsn_code || "",
@@ -4406,7 +4474,9 @@ function setupEventListeners() {
   // Modal add to cart
   document.getElementById("modal-add-cart-btn").addEventListener("click", () => {
     if (modalActiveProduct) {
-      addToCart(modalActiveProduct.id, modalSelectedQty, modalSelectedOption);
+      const selectedPackaging = modalSelectedPackaging || "default";
+      const packagingPrice = modalSelectedPackagingPrice || 0;
+      addToCart(modalActiveProduct.id, modalSelectedQty, modalSelectedOption, selectedPackaging, packagingPrice);
       closeProductModal();
     }
   });

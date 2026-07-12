@@ -597,6 +597,12 @@ function adminEditProductTrigger(productId) {
 
   const origPrice = product.original_price !== undefined ? product.original_price : product.originalPrice;
   document.getElementById("admin-form-original-price").value = origPrice || "";
+  
+  const normalBoxPrice = product.normal_box_price !== undefined ? product.normal_box_price : 0;
+  document.getElementById("admin-form-normal-box-price").value = normalBoxPrice || "";
+  const originalBoxPrice = product.original_box_price !== undefined ? product.original_box_price : 0;
+  document.getElementById("admin-form-original-box-price").value = originalBoxPrice || "";
+
   document.getElementById("admin-form-stock").value = product.stock;
   document.getElementById("admin-form-image").value = product.image;
   document.getElementById("admin-form-desc").value = product.description;
@@ -768,6 +774,12 @@ async function handleAdminProductFormSubmit(e) {
   const price = parseFloat(document.getElementById("admin-form-price").value);
   const origPriceVal = document.getElementById("admin-form-original-price").value;
   const originalPrice = origPriceVal ? parseFloat(origPriceVal) : null;
+
+  const normalBoxPriceVal = document.getElementById("admin-form-normal-box-price").value;
+  const normalBoxPrice = normalBoxPriceVal ? parseFloat(normalBoxPriceVal) : 0.00;
+  const originalBoxPriceVal = document.getElementById("admin-form-original-box-price").value;
+  const originalBoxPrice = originalBoxPriceVal ? parseFloat(originalBoxPriceVal) : 0.00;
+
   const stock = parseInt(document.getElementById("admin-form-stock").value);
   const desc = document.getElementById("admin-form-desc").value.trim();
 
@@ -821,8 +833,8 @@ async function handleAdminProductFormSubmit(e) {
   const hsn_code = document.getElementById("admin-form-hsn-code").value.trim() || null;
   const sac_code = document.getElementById("admin-form-sac-code").value.trim() || null;
 
-  // Helper to attempt Supabase operation, retrying without GST fields on schema errors
-  async function supabaseUpsertWithRetry(operation, payloadFull, payloadStripped) {
+  // Helper to attempt Supabase operation, retrying without new/optional columns on schema errors
+  async function supabaseUpsertWithRetry(operation, payloadFull, payloadNoBox, payloadStripped) {
     let result = await operation(payloadFull);
     if (result.error) {
       const errMsg = result.error.message || "";
@@ -830,8 +842,12 @@ async function handleAdminProductFormSubmit(e) {
                           errMsg.includes("invalid input") || errMsg.includes("uuid") ||
                           errMsg.includes("does not exist");
       if (isSchemaErr) {
-        console.warn("Retrying without GST fields due to schema error:", result.error);
-        result = await operation(payloadStripped);
+        console.warn("Retrying without box price fields due to schema error:", result.error);
+        result = await operation(payloadNoBox);
+        if (result.error) {
+          console.warn("Retrying without GST or box price fields due to schema error:", result.error);
+          result = await operation(payloadStripped);
+        }
       }
     }
     return result;
@@ -842,6 +858,14 @@ async function handleAdminProductFormSubmit(e) {
       if (adminEditingProductId) {
         // Edit existing product details in Supabase
         const updateDataFull = {
+          title, category, badge, price,
+          original_price: originalPrice, stock, image, description: desc,
+          rating, reviews_count, options, specs,
+          tax_applicable, gst_category_id, hsn_code, sac_code,
+          normal_box_price: normalBoxPrice,
+          original_box_price: originalBoxPrice
+        };
+        const updateDataNoBox = {
           title, category, badge, price,
           original_price: originalPrice, stock, image, description: desc,
           rating, reviews_count, options, specs,
@@ -856,6 +880,7 @@ async function handleAdminProductFormSubmit(e) {
         const { error } = await supabaseUpsertWithRetry(
           (payload) => supabase.from('products').update(payload).eq('id', adminEditingProductId),
           updateDataFull,
+          updateDataNoBox,
           updateDataStripped
         );
         if (error) throw error;
@@ -871,6 +896,14 @@ async function handleAdminProductFormSubmit(e) {
           id: newId, title, category, price,
           original_price: originalPrice, image, rating, reviews_count,
           badge, description: desc, options, specs, stock,
+          tax_applicable, gst_category_id, hsn_code, sac_code,
+          normal_box_price: normalBoxPrice,
+          original_box_price: originalBoxPrice
+        };
+        const newProdNoBox = {
+          id: newId, title, category, price,
+          original_price: originalPrice, image, rating, reviews_count,
+          badge, description: desc, options, specs, stock,
           tax_applicable, gst_category_id, hsn_code, sac_code
         };
         const newProdStripped = {
@@ -882,6 +915,7 @@ async function handleAdminProductFormSubmit(e) {
         const { error } = await supabaseUpsertWithRetry(
           (payload) => supabase.from('products').insert(payload),
           newProdFull,
+          newProdNoBox,
           newProdStripped
         );
         if (error) throw error;
@@ -902,6 +936,8 @@ async function handleAdminProductFormSubmit(e) {
           match.price = price;
           match.original_price = originalPrice;
           match.originalPrice = originalPrice;
+          match.normal_box_price = normalBoxPrice;
+          match.original_box_price = originalBoxPrice;
           match.stock = stock;
           match.image = image;
           match.description = desc;
@@ -929,6 +965,8 @@ async function handleAdminProductFormSubmit(e) {
           price: price,
           original_price: originalPrice,
           originalPrice: originalPrice,
+          normal_box_price: normalBoxPrice,
+          original_box_price: originalBoxPrice,
           image: image,
           rating: rating,
           reviews_count: reviews_count,
