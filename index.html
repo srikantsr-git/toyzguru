@@ -2903,16 +2903,16 @@
             <!-- =========== POPUP BANNER PANEL =========== -->
             <div class="admin-panel" id="admin-popup-panel">
               <div class="profile-panel-header">
-                <button class="panel-back-btn" onclick="window._adminGoToPanel('admin-home-panel')"><i
+                <button type="button" class="panel-back-btn" onclick="window._adminGoToPanel('admin-home-panel')"><i
                     data-feather="arrow-left" style="width:14px;height:14px;"></i> Dashboard</button>
                 <h3 class="profile-panel-title">Popup Banner Manager</h3>
               </div>
               <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1.5rem;">
-                Upload a <strong>500×500 px</strong> image (JPG/PNG/GIF/WebP) or video (MP4/WebM) to display as a welcome
+                Upload a <strong>500&#x00D7;500 px</strong> image (JPG/PNG/GIF/WebP) or video (MP4/WebM) to display as a welcome
                 popup to first-time homepage visitors. Use the toggle to enable or disable it at any time.
               </p>
 
-              <!-- Status row -->
+              <!-- Status toggle row -->
               <div style="display:flex; align-items:center; gap:1.5rem; flex-wrap:wrap; margin-bottom:2rem; padding:1.25rem; background:rgba(255,255,255,0.03); border:1px solid var(--glass-border); border-radius:12px;">
                 <div class="popup-toggle-switch-wrap">
                   <label class="popup-toggle-switch" id="popup-toggle-label">
@@ -2921,7 +2921,7 @@
                   </label>
                   <div>
                     <div style="font-weight:700; font-size:0.95rem; margin-bottom:0.2rem;">Show Popup on Homepage</div>
-                    <div style="font-size:0.78rem; color:var(--text-secondary);">Visitors see the popup only on their first visit</div>
+                    <div style="font-size:0.78rem; color:var(--text-secondary);">Visitors see the popup only on their first visit per session</div>
                   </div>
                 </div>
                 <span class="popup-status-badge off" id="popup-status-badge">
@@ -2929,65 +2929,78 @@
                 </span>
               </div>
 
-              <!-- Layout: preview + upload side by side -->
-              <div style="display:grid; grid-template-columns:1fr 1fr; gap:2rem; align-items:start;">
+              <!-- Two column layout -->
+              <div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:2rem; align-items:start;">
 
                 <!-- Left: Live preview -->
                 <div>
-                  <h4 style="font-size:0.9rem; font-weight:700; margin-bottom:1rem; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.05em;">Current Media Preview</h4>
+                  <h4 style="font-size:0.85rem; font-weight:700; margin-bottom:0.85rem; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.05em;">Current Media Preview</h4>
                   <div class="popup-banner-preview-wrap" id="popup-preview-wrap">
                     <div class="popup-banner-preview-empty" id="popup-preview-empty">
                       <i data-feather="image" style="width:48px;height:48px;opacity:0.3;"></i>
                       <span style="font-size:0.82rem;">No media uploaded yet</span>
                     </div>
                   </div>
-                  <p style="font-size:0.72rem; color:var(--text-muted); margin-top:0.6rem; text-align:center;">Displays at 500×500 px on site</p>
+                  <p style="font-size:0.72rem; color:var(--text-muted); margin-top:0.6rem; text-align:center;">Displays at 500x500 px on site</p>
                 </div>
 
-                <!-- Right: Upload + controls -->
-                <div style="display:flex; flex-direction:column; gap:1.5rem;">
+                <!-- Right: Controls -->
+                <div style="display:flex; flex-direction:column; gap:1.25rem;">
+
+                  <!-- Upload zone -->
                   <div>
-                    <h4 style="font-size:0.9rem; font-weight:700; margin-bottom:1rem; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.05em;">Upload New Media</h4>
-                    <label class="popup-upload-zone" for="popup-file-input" id="popup-upload-zone-label">
-                      <input type="file" id="popup-file-input" accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm" onchange="adminHandlePopupFileSelect(this)">
-                      <i data-feather="upload-cloud" style="width:36px;height:36px;opacity:0.5;margin-bottom:0.5rem;"></i>
-                      <div style="font-size:0.85rem; font-weight:600; margin-bottom:0.3rem;">Click to browse or drag & drop</div>
-                      <div style="font-size:0.75rem; color:var(--text-muted);">Image: JPG, PNG, GIF, WebP · Video: MP4, WebM</div>
-                      <div style="font-size:0.72rem; color:var(--text-muted); margin-top:0.25rem;">Recommended: 500×500 px</div>
-                    </label>
+                    <h4 style="font-size:0.85rem; font-weight:700; margin-bottom:0.85rem; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.05em;">Upload Media File</h4>
+                    <div class="popup-upload-zone" id="popup-upload-zone-label" style="cursor:pointer;" onclick="document.getElementById('popup-file-input').click()">
+                      <input type="file" id="popup-file-input" accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm" onchange="adminHandlePopupFileSelect(this)" style="display:none;">
+                      <i data-feather="upload-cloud" style="width:36px;height:36px;opacity:0.5;margin-bottom:0.5rem;display:block;margin-left:auto;margin-right:auto;"></i>
+                      <div style="font-size:0.85rem; font-weight:600; margin-bottom:0.3rem;">Click to browse file</div>
+                      <div style="font-size:0.75rem; color:var(--text-muted);">Image: JPG, PNG, GIF, WebP &nbsp;&#xB7;&nbsp; Video: MP4, WebM</div>
+                      <div style="font-size:0.72rem; color:var(--text-muted); margin-top:0.2rem;">Recommended: 500x500 px</div>
+                    </div>
                   </div>
 
                   <!-- File info -->
-                  <div id="popup-file-info" style="display:none; background:rgba(255,255,255,0.03); border:1px solid var(--glass-border); border-radius:10px; padding:1rem; font-size:0.82rem;">
-                    <div style="font-weight:700; margin-bottom:0.35rem;">Selected File</div>
+                  <div id="popup-file-info" style="display:none; background:rgba(52,211,153,0.07); border:1px solid rgba(52,211,153,0.25); border-radius:10px; padding:0.85rem; font-size:0.82rem;">
+                    <div style="font-weight:700; margin-bottom:0.3rem; color:#34d399;">&#10003; File Selected</div>
                     <div id="popup-file-info-name" style="color:var(--text-secondary); word-break:break-all;"></div>
-                    <div id="popup-file-info-size" style="color:var(--text-muted); font-size:0.76rem; margin-top:0.2rem;"></div>
+                    <div id="popup-file-info-size" style="color:var(--text-muted); font-size:0.76rem; margin-top:0.15rem;"></div>
                   </div>
 
-                  <!-- URL input -->
+                  <!-- OR URL input -->
                   <div>
-                    <label style="font-size:0.8rem; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:0.5rem;">Or paste media URL</label>
+                    <label style="font-size:0.8rem; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:0.4rem;">Or paste media URL</label>
                     <input type="url" id="popup-url-input" class="admin-search-input"
-                      style="width:100%; padding:0.65rem 0.85rem; border-radius:8px;"
+                      style="width:100%; padding:0.65rem 0.85rem; border-radius:8px; box-sizing:border-box;"
                       placeholder="https://example.com/banner.jpg"
                       oninput="adminHandlePopupUrlInput(this.value)">
                   </div>
 
+                  <!-- Product link -->
+                  <div>
+                    <label style="font-size:0.8rem; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:0.4rem;">
+                      Link to Product / Page <span style="font-size:0.72rem; font-weight:400; opacity:0.6;">(optional)</span>
+                    </label>
+                    <input type="text" id="popup-link-input" class="admin-search-input"
+                      style="width:100%; padding:0.65rem 0.85rem; border-radius:8px; box-sizing:border-box;"
+                      placeholder="e.g. #catalog or https://...">
+                    <div style="font-size:0.72rem; color:var(--text-muted); margin-top:0.3rem;">Clicking the popup image will navigate to this link.</div>
+                  </div>
+
                   <!-- Action buttons -->
-                  <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
-                    <button class="admin-primary-btn" id="popup-save-btn" onclick="adminSavePopupBanner()">
-                      <i data-feather="save" style="width:14px;height:14px;"></i> Save & Apply
+                  <div style="display:flex; gap:0.75rem; flex-wrap:wrap; padding-top:0.25rem;">
+                    <button type="button" class="admin-primary-btn" id="popup-save-btn" onclick="adminSavePopupBanner()">
+                      <i data-feather="save" style="width:14px;height:14px;"></i> Save &amp; Apply
                     </button>
-                    <button class="admin-secondary-btn" onclick="adminClearPopupBanner()">
+                    <button type="button" class="admin-secondary-btn" onclick="adminClearPopupBanner()">
                       <i data-feather="trash-2" style="width:14px;height:14px;"></i> Clear Popup
                     </button>
                   </div>
 
                   <!-- Info box -->
-                  <div style="background:rgba(139,92,246,0.08); border:1px solid rgba(139,92,246,0.25); border-radius:10px; padding:1rem; font-size:0.78rem; color:var(--text-secondary); line-height:1.6;">
-                    <strong style="color:var(--color-brand);">ℹ How it works:</strong><br>
-                    When <em>ON</em>, a full-screen popup appears once per browser session on the homepage.
-                    Visitors can close it with the ✕ button. The popup will not reappear until they clear their browser storage.
+                  <div style="background:rgba(139,92,246,0.08); border:1px solid rgba(139,92,246,0.25); border-radius:10px; padding:0.9rem; font-size:0.78rem; color:var(--text-secondary); line-height:1.6;">
+                    <strong style="color:var(--color-brand);">&#x2139; How it works:</strong><br>
+                    Toggle <em>ON</em> &#8594; popup appears once per browser session on the homepage.<br>
+                    Visitors close it with &#10005;. Clicking the image opens the product link (if set).
                   </div>
                 </div>
               </div>
@@ -4035,16 +4048,22 @@
       <script src="js/supabase.js"></script>
       <script src="js/products.js"></script>
       <script src="js/app.js?v=11"></script>
-      <script src="js/admin.js?v=14"></script>
+      <script src="js/admin.js?v=15"></script>
       <script src="js/bot.js" defer></script>
       <script>
-        // Homepage welcome popup — runs after all scripts are loaded
-        window.addEventListener('load', function() {
-          if (window.initHomePagePopup) {
-            // Small delay so page rendering completes first
-            setTimeout(window.initHomePagePopup, 600);
+        // Homepage welcome popup — trigger after page fully loads
+        (function() {
+          function tryShowPopup() {
+            if (window.initHomePagePopup) {
+              setTimeout(window.initHomePagePopup, 500);
+            }
           }
-        });
+          if (document.readyState === 'complete') {
+            tryShowPopup();
+          } else {
+            window.addEventListener('load', tryShowPopup);
+          }
+        })();
       </script>
 
 </body>

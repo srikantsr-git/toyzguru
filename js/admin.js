@@ -5824,44 +5824,21 @@ window.adminExportTicketsCSV        = adminExportTicketsCSV;
 
 
 // ================= POPUP BANNER MANAGEMENT =================
-const POPUP_STORAGE_KEY   = 'toyzguru_popup_banner';   // { enabled, url, type }
-const POPUP_SEEN_KEY      = 'toyzguru_popup_seen';     // sessionStorage flag
+const POPUP_STORAGE_KEY = 'toyzguru_popup_banner'; // { enabled, url, type, link }
+const POPUP_SEEN_KEY    = 'toyzguru_popup_seen';   // sessionStorage flag
 
-/** Called when the popup panel becomes visible — hydrates the UI */
-function adminRenderPopupBannerPanel() {
-  const settings = _getPopupSettings();
-
-  // Toggle
-  const toggle = document.getElementById('popup-enabled-toggle');
-  if (toggle) toggle.checked = !!settings.enabled;
-
-  // Status badge
-  _adminUpdatePopupStatusBadge(!!settings.enabled);
-
-  // Preview
-  if (settings.url) {
-    _adminSetPopupPreview(settings.url, settings.type || 'image');
-  } else {
-    _adminClearPopupPreview();
-  }
-
-  // URL input field
-  const urlInput = document.getElementById('popup-url-input');
-  if (urlInput) urlInput.value = settings.url || '';
-
-  if (window.feather) feather.replace();
-}
-
+/** Reads saved popup settings from localStorage */
 function _getPopupSettings() {
-  try {
-    return JSON.parse(localStorage.getItem(POPUP_STORAGE_KEY) || '{}');
-  } catch { return {}; }
+  try { return JSON.parse(localStorage.getItem(POPUP_STORAGE_KEY) || '{}'); }
+  catch (e) { return {}; }
 }
 
+/** Persists popup settings to localStorage */
 function _savePopupSettings(obj) {
   localStorage.setItem(POPUP_STORAGE_KEY, JSON.stringify(obj));
 }
 
+/** Updates the ON/OFF status badge */
 function _adminUpdatePopupStatusBadge(enabled) {
   const badge = document.getElementById('popup-status-badge');
   if (!badge) return;
@@ -5875,267 +5852,318 @@ function _adminUpdatePopupStatusBadge(enabled) {
   if (window.feather) feather.replace();
 }
 
+/** Sets preview in the admin panel */
 function _adminSetPopupPreview(url, type) {
-  const wrap = document.getElementById('popup-preview-wrap');
+  const wrap  = document.getElementById('popup-preview-wrap');
   const empty = document.getElementById('popup-preview-empty');
   if (!wrap) return;
-
   if (empty) empty.style.display = 'none';
   wrap.classList.add('has-media');
-
-  // Remove old media
-  wrap.querySelectorAll('img, video').forEach(el => el.remove());
+  wrap.querySelectorAll('img, video').forEach(function(el) { el.remove(); });
 
   if (type === 'video') {
-    const v = document.createElement('video');
-    v.src = url;
-    v.autoplay = true;
-    v.loop = true;
-    v.muted = true;
-    v.playsInline = true;
+    var v = document.createElement('video');
+    v.src = url; v.autoplay = true; v.loop = true; v.muted = true; v.playsInline = true;
     v.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
     wrap.appendChild(v);
   } else {
-    const img = document.createElement('img');
-    img.src = url;
-    img.alt = 'Popup banner preview';
+    var img = document.createElement('img');
+    img.src = url; img.alt = 'Popup banner preview';
     img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+    img.onerror = function() {
+      img.style.display = 'none';
+      if (empty) empty.style.display = 'flex';
+      wrap.classList.remove('has-media');
+    };
     wrap.appendChild(img);
   }
 }
 
+/** Clears preview in the admin panel */
 function _adminClearPopupPreview() {
-  const wrap = document.getElementById('popup-preview-wrap');
-  const empty = document.getElementById('popup-preview-empty');
+  var wrap  = document.getElementById('popup-preview-wrap');
+  var empty = document.getElementById('popup-preview-empty');
   if (!wrap) return;
   wrap.classList.remove('has-media');
-  wrap.querySelectorAll('img, video').forEach(el => el.remove());
+  wrap.querySelectorAll('img, video').forEach(function(el) { el.remove(); });
   if (empty) empty.style.display = 'flex';
+}
+
+/** Hydrates the admin popup panel UI from saved settings */
+function adminRenderPopupBannerPanel() {
+  var settings = _getPopupSettings();
+
+  var toggle = document.getElementById('popup-enabled-toggle');
+  if (toggle) toggle.checked = !!settings.enabled;
+
+  _adminUpdatePopupStatusBadge(!!settings.enabled);
+
+  if (settings.url) {
+    _adminSetPopupPreview(settings.url, settings.type || 'image');
+    var urlInput = document.getElementById('popup-url-input');
+    if (urlInput && !urlInput.value) urlInput.value = settings.url;
+  } else {
+    _adminClearPopupPreview();
+  }
+
+  var linkInput = document.getElementById('popup-link-input');
+  if (linkInput) linkInput.value = settings.link || '';
+
+  if (window.feather) feather.replace();
 }
 
 /** Toggle switch changed */
 window.adminHandlePopupToggle = function(checked) {
-  const settings = _getPopupSettings();
+  var settings = _getPopupSettings();
   settings.enabled = checked;
   _savePopupSettings(settings);
   _adminUpdatePopupStatusBadge(checked);
-
-  adminShowToast(
-    checked ? 'Popup Enabled' : 'Popup Disabled',
-    checked ? 'The welcome popup will appear to first-time visitors.' : 'The popup banner has been turned off.',
-    checked ? 'success' : 'warning'
-  );
+  if (window.toyzToast) {
+    window.toyzToast(
+      checked ? 'Popup Enabled' : 'Popup Disabled',
+      checked ? 'Visitors will now see the popup on homepage.' : 'Popup is now hidden from visitors.',
+      checked ? 'success' : 'warning'
+    );
+  }
 };
 
 /** File chosen via file picker */
 window.adminHandlePopupFileSelect = function(input) {
-  const file = input.files && input.files[0];
+  var file = input.files && input.files[0];
   if (!file) return;
 
-  // Show file info
-  const info = document.getElementById('popup-file-info');
-  const nameEl = document.getElementById('popup-file-info-name');
-  const sizeEl = document.getElementById('popup-file-info-size');
-  if (info) info.style.display = 'block';
+  var info   = document.getElementById('popup-file-info');
+  var nameEl = document.getElementById('popup-file-info-name');
+  var sizeEl = document.getElementById('popup-file-info-size');
+  if (info)   info.style.display = 'block';
   if (nameEl) nameEl.textContent = file.name;
-  if (sizeEl) sizeEl.textContent = (file.size / 1024).toFixed(1) + ' KB';
+  if (sizeEl) sizeEl.textContent = (file.size / 1024).toFixed(1) + ' KB  (' + file.type + ')';
 
-  // Clear URL input
-  const urlInput = document.getElementById('popup-url-input');
+  // Clear URL input when file is selected
+  var urlInput = document.getElementById('popup-url-input');
   if (urlInput) urlInput.value = '';
 
-  // Read as data URL for preview
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const dataUrl = e.target.result;
-    const type = file.type.startsWith('video') ? 'video' : 'image';
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var dataUrl = e.target.result;
+    var type = file.type.startsWith('video') ? 'video' : 'image';
     _adminSetPopupPreview(dataUrl, type);
-
-    // Temporarily store in state (saved on button click)
     window._popupPendingDataUrl = dataUrl;
-    window._popupPendingType = type;
+    window._popupPendingType    = type;
   };
   reader.readAsDataURL(file);
 };
 
-/** URL pasted / typed */
+/** URL input changed */
 window.adminHandlePopupUrlInput = function(val) {
   window._popupPendingDataUrl = null;
-  window._popupPendingType = null;
-
-  if (!val) {
-    _adminClearPopupPreview();
-    return;
-  }
-
-  // Guess type from extension
-  const isVideo = /\.(mp4|webm|ogg)(\?.*)?$/i.test(val);
+  window._popupPendingType    = null;
+  if (!val) { _adminClearPopupPreview(); return; }
+  var isVideo = /\.(mp4|webm|ogg)(\?.*)?$/i.test(val);
   _adminSetPopupPreview(val, isVideo ? 'video' : 'image');
 };
 
 /** Save & Apply button */
-window.adminSavePopupBanner = async function() {
-  const btn = document.getElementById('popup-save-btn');
+window.adminSavePopupBanner = function() {
+  var btn = document.getElementById('popup-save-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
 
-  // Determine URL + type
-  let url = '';
-  let type = 'image';
+  var url  = '';
+  var type = 'image';
 
   if (window._popupPendingDataUrl) {
     url  = window._popupPendingDataUrl;
     type = window._popupPendingType || 'image';
   } else {
-    const urlInput = document.getElementById('popup-url-input');
+    var urlInput = document.getElementById('popup-url-input');
     url = urlInput ? urlInput.value.trim() : '';
     if (url) {
-      const isVideo = /\.(mp4|webm|ogg)(\?.*)?$/i.test(url);
+      var isVideo = /\.(mp4|webm|ogg)(\?.*)?$/i.test(url);
       type = isVideo ? 'video' : 'image';
     }
   }
 
+  // Re-enable button
+  setTimeout(function() {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i data-feather="save" style="width:14px;height:14px;"></i> Save &amp; Apply';
+      if (window.feather) feather.replace();
+    }
+  }, 800);
+
   if (!url) {
-    adminShowToast('No Media Selected', 'Please upload a file or paste a URL first.', 'warning');
+    if (window.toyzToast) window.toyzToast('No Media Selected', 'Please upload a file or paste a media URL first.', 'warning');
+    else alert('Please upload a file or paste a media URL first.');
     return;
   }
 
-  // Save
-  const settings = _getPopupSettings();
+  // Read link
+  var linkInput = document.getElementById('popup-link-input');
+  var link = linkInput ? linkInput.value.trim() : '';
+
+  // Save settings
+  var settings = _getPopupSettings();
   settings.url  = url;
   settings.type = type;
+  settings.link = link;
+  // Auto-enable on save
+  settings.enabled = true;
   _savePopupSettings(settings);
 
-  // Also reset the "seen" flag so admin can preview popup immediately
-  sessionStorage.removeItem(POPUP_SEEN_KEY);
+  // Update toggle + badge to reflect auto-enable
+  var toggle = document.getElementById('popup-enabled-toggle');
+  if (toggle) toggle.checked = true;
+  _adminUpdatePopupStatusBadge(true);
 
-  adminShowToast('Popup Saved', 'Popup banner has been saved. Toggle ON to activate it for visitors.', 'success');
-  if (window.feather) feather.replace();
+  // Reset seen flag so popup shows immediately for testing
+  try { sessionStorage.removeItem(POPUP_SEEN_KEY); } catch(e) {}
+
+  // Show SUCCESS dialog
+  if (window.showCustomDialog) {
+    window.showCustomDialog(
+      'Popup Banner Saved!',
+      'Your popup banner has been saved and is now ACTIVE. Visitors will see it on their next homepage visit.\n\n' +
+      (link ? 'Product link set to: ' + link : 'No product link set (visitors can just close the popup).'),
+      'success',
+      false
+    );
+  } else {
+    alert('SUCCESS!\nPopup banner saved and activated.\n' + (link ? 'Link: ' + link : ''));
+  }
 };
 
 /** Clear popup */
-window.adminClearPopupBanner = async function() {
-  const confirmed = await window.showCustomDialog(
+window.adminClearPopupBanner = function() {
+  if (!window.showCustomDialog) {
+    if (!confirm('Remove the current popup banner? This will disable the popup.')) return;
+    _doAdminClearPopup();
+    return;
+  }
+  window.showCustomDialog(
     'Clear Popup Banner',
-    'This will remove the current popup media. The popup will no longer appear until you upload new media.',
+    'This will remove the current popup media and disable the popup for visitors.',
     'danger',
     true
-  );
-  if (!confirmed) return;
+  ).then(function(confirmed) {
+    if (confirmed) _doAdminClearPopup();
+  });
+};
 
+function _doAdminClearPopup() {
   _savePopupSettings({ enabled: false });
   window._popupPendingDataUrl = null;
-  window._popupPendingType = null;
+  window._popupPendingType    = null;
 
-  const toggle = document.getElementById('popup-enabled-toggle');
+  var toggle = document.getElementById('popup-enabled-toggle');
   if (toggle) toggle.checked = false;
   _adminUpdatePopupStatusBadge(false);
   _adminClearPopupPreview();
 
-  const urlInput = document.getElementById('popup-url-input');
+  var urlInput  = document.getElementById('popup-url-input');
   if (urlInput) urlInput.value = '';
-  const info = document.getElementById('popup-file-info');
-  if (info) info.style.display = 'none';
-  const fileInput = document.getElementById('popup-file-input');
+  var linkInput = document.getElementById('popup-link-input');
+  if (linkInput) linkInput.value = '';
+  var info      = document.getElementById('popup-file-info');
+  if (info)     info.style.display = 'none';
+  var fileInput = document.getElementById('popup-file-input');
   if (fileInput) fileInput.value = '';
 
-  sessionStorage.removeItem(POPUP_SEEN_KEY);
-  adminShowToast('Popup Cleared', 'The popup banner has been removed.', 'success');
-};
+  try { sessionStorage.removeItem(POPUP_SEEN_KEY); } catch(e) {}
 
-// Hook popup panel render into navigation
-(function patchAdminNavForPopup() {
-  const origGoToPanel = window._adminGoToPanel;
-  if (!origGoToPanel) {
-    // Will be set up after adminInit; patch lazily
-    const origSetup = window.setupAdminNavigation;
-    return;
-  }
-  window._adminGoToPanel = function(panelId) {
-    origGoToPanel(panelId);
-    if (panelId === 'admin-popup-panel') {
-      adminRenderPopupBannerPanel();
-    }
-  };
-})();
-
-// Patch after DOM is ready so the navigation is already set up
-document.addEventListener('DOMContentLoaded', function() {
-  const checkNav = setInterval(function() {
-    if (window._adminGoToPanel) {
-      clearInterval(checkNav);
-      const orig = window._adminGoToPanel;
-      window._adminGoToPanel = function(panelId) {
-        orig(panelId);
-        if (panelId === 'admin-popup-panel') {
-          setTimeout(adminRenderPopupBannerPanel, 50);
-        }
-      };
-    }
-  }, 200);
-});
+  if (window.toyzToast) window.toyzToast('Popup Cleared', 'The popup banner has been removed and disabled.', 'success');
+}
 
 window.adminRenderPopupBannerPanel = adminRenderPopupBannerPanel;
 
+// Patch _adminGoToPanel after it's set up to auto-render popup panel
+document.addEventListener('DOMContentLoaded', function() {
+  var patchInterval = setInterval(function() {
+    if (window._adminGoToPanel) {
+      clearInterval(patchInterval);
+      var _origGoTo = window._adminGoToPanel;
+      window._adminGoToPanel = function(panelId) {
+        _origGoTo(panelId);
+        if (panelId === 'admin-popup-panel') {
+          setTimeout(adminRenderPopupBannerPanel, 60);
+        }
+      };
+    }
+  }, 150);
+});
+
 
 // ================= HOMEPAGE POPUP (FRONTEND) =================
-/** Shows the popup overlay. Called from app.js on page load. */
 window.initHomePagePopup = function() {
-  const settings = _getPopupSettings();
+  var settings;
+  try {
+    settings = JSON.parse(localStorage.getItem(POPUP_STORAGE_KEY) || '{}');
+  } catch(e) { return; }
+
   if (!settings.enabled || !settings.url) return;
 
-  // Show only once per session
-  if (sessionStorage.getItem(POPUP_SEEN_KEY)) return;
-  sessionStorage.setItem(POPUP_SEEN_KEY, '1');
+  // Show only once per browser session
+  try {
+    if (sessionStorage.getItem(POPUP_SEEN_KEY)) return;
+    sessionStorage.setItem(POPUP_SEEN_KEY, '1');
+  } catch(e) {}
 
-  const overlay = document.getElementById('homepage-popup-overlay');
-  const box     = document.getElementById('homepage-popup-box');
+  var overlay = document.getElementById('homepage-popup-overlay');
+  var box     = document.getElementById('homepage-popup-box');
   if (!overlay || !box) return;
 
-  // Inject media (keep close btn)
-  box.querySelectorAll('img, video').forEach(el => el.remove());
+  // Remove old media from previous calls
+  box.querySelectorAll('img, video, a').forEach(function(el) { el.remove(); });
 
+  var mediaEl;
   if (settings.type === 'video') {
-    const v = document.createElement('video');
-    v.src = settings.url;
-    v.autoplay = true;
-    v.loop = true;
-    v.muted = true;
-    v.playsInline = true;
-    v.controls = true;
-    v.style.cssText = 'width:100%;max-height:500px;display:block;';
-    box.appendChild(v);
+    mediaEl = document.createElement('video');
+    mediaEl.src = settings.url;
+    mediaEl.autoplay = true; mediaEl.loop = true;
+    mediaEl.muted = true; mediaEl.playsInline = true; mediaEl.controls = true;
+    mediaEl.style.cssText = 'width:100%;max-height:500px;display:block;';
   } else {
-    const img = document.createElement('img');
-    img.src = settings.url;
-    img.alt = 'Welcome to ToyzGuru';
-    box.appendChild(img);
+    mediaEl = document.createElement('img');
+    mediaEl.src = settings.url;
+    mediaEl.alt = 'Welcome to ToyzGuru';
+    mediaEl.style.cssText = 'width:100%;display:block;cursor:' + (settings.link ? 'pointer' : 'default') + ';';
+  }
+
+  // Wrap in link if admin set one
+  if (settings.link) {
+    var anchor = document.createElement('a');
+    anchor.href = settings.link;
+    if (settings.link.startsWith('http')) anchor.target = '_blank';
+    anchor.rel = 'noopener noreferrer';
+    anchor.style.cssText = 'display:block;text-decoration:none;';
+    anchor.addEventListener('click', function() { window.closeHomePagePopup(); });
+    anchor.appendChild(mediaEl);
+    box.appendChild(anchor);
+  } else {
+    box.appendChild(mediaEl);
   }
 
   overlay.style.display = 'flex';
 
-  // Close on overlay click (outside box)
+  // Close on backdrop click
   overlay.addEventListener('click', function(e) {
     if (e.target === overlay) window.closeHomePagePopup();
   });
 
   // Close on Escape key
-  document.addEventListener('keydown', function escHandler(e) {
-    if (e.key === 'Escape') {
-      window.closeHomePagePopup();
-      document.removeEventListener('keydown', escHandler);
-    }
-  });
+  function escHandler(e) {
+    if (e.key === 'Escape') { window.closeHomePagePopup(); document.removeEventListener('keydown', escHandler); }
+  }
+  document.addEventListener('keydown', escHandler);
 };
 
-/** Closes the popup with animation */
 window.closeHomePagePopup = function() {
-  const overlay = document.getElementById('homepage-popup-overlay');
+  var overlay = document.getElementById('homepage-popup-overlay');
   if (!overlay) return;
   overlay.classList.add('closing');
-  setTimeout(() => {
+  setTimeout(function() {
     overlay.style.display = 'none';
     overlay.classList.remove('closing');
-    // Stop any playing video
-    overlay.querySelectorAll('video').forEach(v => v.pause());
+    overlay.querySelectorAll('video').forEach(function(v) { v.pause(); });
   }, 350);
 };
-
