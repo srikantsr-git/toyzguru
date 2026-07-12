@@ -534,6 +534,7 @@ async function initDatabase() {
     business_state: "Telangana",
     default_tax_category_id: "1-5",
     gst_enabled: true,
+    packaging_enabled: true,
     display_prices_including_tax: true,
     display_prices_excluding_tax: false,
     tax_enabled: true,
@@ -2592,46 +2593,11 @@ function openProductModal(productId) {
     document.getElementById("modal-product-options-wrap").style.display = "none";
   }
 
-  // Dynamic Packaging Options (Normal Box, Original Box)
+  // Hide product packaging selectors (now handled globally at checkout)
   const packagingWrap = document.getElementById("modal-product-packaging-wrap");
-  const packagingSelectors = document.getElementById("modal-product-packaging-selectors");
-  
+  if (packagingWrap) packagingWrap.style.display = "none";
   modalSelectedPackaging = "default";
   modalSelectedPackagingPrice = 0;
-
-  if (packagingWrap && packagingSelectors) {
-    const nPrice = Number(product.normal_box_price || 0);
-    const oPrice = Number(product.original_box_price || 0);
-
-    if (nPrice > 0 || oPrice > 0) {
-      packagingSelectors.innerHTML = "";
-      
-      const pkgs = [
-        { key: "default", label: "Default Packing (Free)", price: 0 },
-        ...(nPrice > 0 ? [{ key: "normal", label: `Normal Box (+₹${nPrice.toFixed(2)})`, price: nPrice }] : []),
-        ...(oPrice > 0 ? [{ key: "original", label: `Original Box (+₹${oPrice.toFixed(2)})`, price: oPrice }] : [])
-      ];
-
-      pkgs.forEach((pkg, idx) => {
-        const btn = document.createElement("button");
-        btn.className = `selector-option ${idx === 0 ? "active" : ""}`;
-        btn.textContent = pkg.label;
-        btn.onclick = () => {
-          const sibs = packagingSelectors.querySelectorAll(".selector-option");
-          sibs.forEach(s => s.classList.remove("active"));
-          btn.classList.add("active");
-          modalSelectedPackaging = pkg.key;
-          modalSelectedPackagingPrice = pkg.price;
-          updateModalPriceDisplay();
-        };
-        packagingSelectors.appendChild(btn);
-      });
-      
-      packagingWrap.style.display = "block";
-    } else {
-      packagingWrap.style.display = "none";
-    }
-  }
 
   // Technical Specs list
   const specsList = document.getElementById("modal-product-specs-list");
@@ -2713,7 +2679,7 @@ function toggleCartDrawer(open) {
 }
 window.toggleCartDrawer = toggleCartDrawer;
 
-async function addToCart(productId, qty, option, packaging = "default", packagingPrice = 0) {
+async function addToCart(productId, qty, option) {
   const product = productsState.find(p => p.id === productId);
   if (!product) return;
 
@@ -2722,8 +2688,8 @@ async function addToCart(productId, qty, option, packaging = "default", packagin
     return;
   }
 
-  // Check if option and packaging are already in cart
-  const existingItem = cartState.find(item => item.productId === productId && item.option === option && (item.packaging || 'default') === packaging);
+  // Check if option is already in cart
+  const existingItem = cartState.find(item => item.productId === productId && item.option === option);
   if (existingItem) {
     // check stock
     if (existingItem.quantity + qty > product.stock) {
@@ -2731,8 +2697,7 @@ async function addToCart(productId, qty, option, packaging = "default", packagin
       existingItem.quantity = product.stock;
     } else {
       existingItem.quantity += qty;
-      const displayOpt = option + (packaging !== "default" ? ` - ${packaging === "normal" ? "Normal Box" : "Original Box"}` : "");
-      await showCustomDialog("Product Added Successfully", `"${product.title}" (${displayOpt}) quantity updated to ${existingItem.quantity} in your vault cart.`, "success");
+      await showCustomDialog("Product Added Successfully", `"${product.title}" (${option}) quantity updated to ${existingItem.quantity} in your vault cart.`, "success");
     }
   } else {
     if (qty > product.stock) {
@@ -2742,15 +2707,12 @@ async function addToCart(productId, qty, option, packaging = "default", packagin
     cartState.push({
       productId: product.id,
       title: product.title,
-      price: Number(product.price) + packagingPrice,
+      price: Number(product.price),
       image: product.image,
       option: option,
-      packaging: packaging,
-      packagingPrice: packagingPrice,
       quantity: qty
     });
-    const displayOpt = option + (packaging !== "default" ? ` - ${packaging === "normal" ? "Normal Box" : "Original Box"}` : "");
-    await showCustomDialog("Product Added Successfully", `"${product.title}" (${displayOpt}) has been successfully added to your vault cart.`, "success");
+    await showCustomDialog("Product Added Successfully", `"${product.title}" (${option}) has been successfully added to your vault cart.`, "success");
   }
 
   saveCart();
@@ -2767,14 +2729,14 @@ async function addToCart(productId, qty, option, packaging = "default", packagin
   }
 }
 
-function updateCartQuantity(productId, option, packaging, change) {
-  const item = cartState.find(i => i.productId === productId && i.option === option && (i.packaging || 'default') === packaging);
+function updateCartQuantity(productId, option, change) {
+  const item = cartState.find(i => i.productId === productId && i.option === option);
   if (!item) return;
 
   const product = productsState.find(p => p.id === productId);
 
   if (item.quantity + change <= 0) {
-    removeFromCart(productId, option, packaging);
+    removeFromCart(productId, option);
   } else {
     if (product && item.quantity + change > product.stock) {
       showToast("Inventory Limit", `Cannot exceed available vault stock of ${product.stock} units.`, "warning");
@@ -2786,22 +2748,21 @@ function updateCartQuantity(productId, option, packaging, change) {
   }
 }
 
-function removeFromCart(productId, option, packaging) {
-  const item = cartState.find(i => i.productId === productId && i.option === option && (i.packaging || 'default') === packaging);
+function removeFromCart(productId, option) {
+  const item = cartState.find(i => i.productId === productId && i.option === option);
   const title = item ? item.title : "Product";
   const image = item ? item.image : "";
 
-  cartState = cartState.filter(item => !(item.productId === productId && item.option === option && (item.packaging || 'default') === packaging));
+  cartState = cartState.filter(item => !(item.productId === productId && item.option === option));
   saveCart();
   renderCartDrawer();
 
-  const displayOpt = option + (packaging !== "default" ? ` (${packaging === "normal" ? "Normal Box" : "Original Box"})` : "");
   showToast("Removed Item", `
     <div style="display: flex; align-items: center; gap: 0.75rem; margin-top: 0.25rem;">
       ${image ? `<img src="${image}" style="width: 32px; height: 32px; object-fit: cover; border-radius: 4px; border: 1px solid var(--glass-border);" alt="${title}">` : ''}
       <div>
         <div style="font-weight: 600; color: #fff; font-size: 0.82rem; line-height: 1.2;">${title}</div>
-        <div style="font-size: 0.72rem; color: var(--text-secondary);">${displayOpt} removed from cart drawer.</div>
+        <div style="font-size: 0.72rem; color: var(--text-secondary);">${option} removed from cart drawer.</div>
       </div>
     </div>
   `, "info");
@@ -2877,21 +2838,20 @@ function renderCartDrawer() {
   }
 
   container.innerHTML = cartState.map(item => {
-    const displayOpt = item.option + (item.packaging && item.packaging !== 'default' ? ` | Packing: ${item.packaging === 'normal' ? 'Normal Box' : 'Original Box'} (+₹${item.packagingPrice.toFixed(2)})` : '');
     return `
       <div class="cart-item">
         <img src="${item.image}" alt="${item.title}" class="cart-item-img">
         <div class="cart-item-details">
           <div class="cart-item-name">${item.title}</div>
-          <div class="cart-item-option">Option: ${displayOpt}</div>
+          <div class="cart-item-option">Option: ${item.option}</div>
           <div class="cart-item-price">₹${item.price.toFixed(2)}</div>
           <div class="cart-item-actions">
-            <button class="qty-btn" onclick="updateCartQuantity('${item.productId}', '${item.option}', '${item.packaging || 'default'}', -1)">-</button>
+            <button class="qty-btn" onclick="updateCartQuantity('${item.productId}', '${item.option}', -1)">-</button>
             <span class="cart-item-qty">${item.quantity}</span>
-            <button class="qty-btn" onclick="updateCartQuantity('${item.productId}', '${item.option}', '${item.packaging || 'default'}', 1)">+</button>
+            <button class="qty-btn" onclick="updateCartQuantity('${item.productId}', '${item.option}', 1)">+</button>
           </div>
         </div>
-        <div class="cart-item-remove" onclick="removeFromCart('${item.productId}', '${item.option}', '${item.packaging || 'default'}')">
+        <div class="cart-item-remove" onclick="removeFromCart('${item.productId}', '${item.option}')">
           <i data-feather="trash-2" style="width: 14px; height: 14px;"></i>
         </div>
       </div>
@@ -3045,6 +3005,12 @@ function initCheckoutView() {
 
   const modeRadios = document.querySelectorAll('input[name="shipping-mode"]');
   modeRadios.forEach(radio => {
+    radio.removeEventListener("change", renderCheckoutSummary);
+    radio.addEventListener("change", renderCheckoutSummary);
+  });
+
+  const packagingRadios = document.querySelectorAll('input[name="checkout-packaging"]');
+  packagingRadios.forEach(radio => {
     radio.removeEventListener("change", renderCheckoutSummary);
     radio.addEventListener("change", renderCheckoutSummary);
   });
@@ -3252,23 +3218,20 @@ function renderCheckoutSummary() {
   const container = document.getElementById("checkout-summary-items");
   if (!container) return;
 
-  container.innerHTML = cartState.map(item => {
-    const displayOpt = item.option + (item.packaging && item.packaging !== 'default' ? ` | Packing: ${item.packaging === 'normal' ? 'Normal Box' : 'Original Box'} (+₹${item.packagingPrice.toFixed(2)})` : '');
-    return `
-      <div class="summary-item" style="flex-direction: column; align-items: flex-start; gap: 0.25rem;">
-        <div style="display: flex; justify-content: space-between; width: 100%;">
-          <div>
-            <span class="summary-item-name">${item.title}</span>
-            <span class="summary-item-qty">x${item.quantity}</span>
-          </div>
-          <strong>₹${(item.price * item.quantity).toFixed(2)}</strong>
+  container.innerHTML = cartState.map(item => `
+    <div class="summary-item" style="flex-direction: column; align-items: flex-start; gap: 0.25rem;">
+      <div style="display: flex; justify-content: space-between; width: 100%;">
+        <div>
+          <span class="summary-item-name">${item.title}</span>
+          <span class="summary-item-qty">x${item.quantity}</span>
         </div>
-        <div style="font-size: 0.72rem; color: var(--text-muted); padding-left: 0.1rem;">
-          Option: ${displayOpt}
-        </div>
+        <strong>₹${(item.price * item.quantity).toFixed(2)}</strong>
       </div>
-    `;
-  }).join("");
+      <div style="font-size: 0.72rem; color: var(--text-muted); padding-left: 0.1rem;">
+        Option: ${item.option}
+      </div>
+    </div>
+  `).join("");
 
   // Calculation parameters
   const subtotal = cartState.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -3327,12 +3290,60 @@ function renderCheckoutSummary() {
     shipping = subtotal > 12000 ? 0.00 : 1000.00;
   }
 
+  // Calculate packaging costs dynamically based on cart items
+  let normalBoxTotal = 0;
+  let originalBoxTotal = 0;
+  cartState.forEach(item => {
+    const prod = productsState.find(p => p.id === item.productId);
+    if (prod) {
+      normalBoxTotal += (parseFloat(prod.normal_box_price) || 0) * item.quantity;
+      originalBoxTotal += (parseFloat(prod.original_box_price) || 0) * item.quantity;
+    }
+  });
+
+  // Update packaging labels in UI and show/hide the packaging group based on store settings
+  const packagingGroup = document.getElementById("checkout-packaging-group");
+  const isPackagingEnabled = (storeSettings.packaging_enabled !== false);
+  if (packagingGroup) {
+    packagingGroup.style.display = isPackagingEnabled ? "block" : "none";
+  }
+
+  const normalBoxLbl = document.getElementById("checkout-normal-box-cost-lbl");
+  const originalBoxLbl = document.getElementById("checkout-original-box-cost-lbl");
+  if (normalBoxLbl) normalBoxLbl.textContent = `+₹${normalBoxTotal.toFixed(2)}`;
+  if (originalBoxLbl) originalBoxLbl.textContent = `+₹${originalBoxTotal.toFixed(2)}`;
+
+  // Get selected packaging option
+  const packagingMode = isPackagingEnabled ? (document.querySelector('input[name="checkout-packaging"]:checked')?.value || "default") : "default";
+  let packagingFee = 0;
+  if (packagingMode === "normal") {
+    packagingFee = normalBoxTotal;
+  } else if (packagingMode === "original") {
+    packagingFee = originalBoxTotal;
+  }
+
+  // Display packaging fee in final purchase summary
+  const packagingRow = document.getElementById("checkout-packaging-row");
+  const packagingVal = document.getElementById("checkout-packaging-val");
+  if (packagingRow && packagingVal) {
+    if (packagingFee > 0) {
+      packagingRow.style.display = "flex";
+      packagingVal.textContent = `₹${packagingFee.toFixed(2)}`;
+      const labelSpan = packagingRow.querySelector("span:first-child") || packagingRow.children[0];
+      if (labelSpan) {
+        labelSpan.textContent = `Packaging (${packagingMode === 'normal' ? 'Normal Box' : 'Original Box'})`;
+      }
+    } else {
+      packagingRow.style.display = "none";
+    }
+  }
+
   const stateName = country === "IN" ? (document.getElementById("ship-state")?.value || "") : "";
   const taxes = calculateCheckoutGST(subtotal, discount, stateName);
   currentCheckoutTaxes = taxes;
 
   const tax = taxes.total_tax_amount;
-  const total = (subtotal - discount) + shipping + tax;
+  const total = (subtotal - discount) + shipping + tax + packagingFee;
 
   const taxContainer = document.getElementById("checkout-tax-container");
   if (taxContainer) {
@@ -3527,12 +3538,34 @@ async function handleCheckoutSubmit(e) {
     const stateName = country === "IN" ? document.getElementById("ship-state").value : "";
     const taxes = calculateCheckoutGST(subtotal, discount, stateName);
     const tax = taxes.total_tax_amount;
-    const total = (subtotal - discount) + shipping + tax;
+
+    // Calculate packaging fee
+    let normalBoxTotal = 0;
+    let originalBoxTotal = 0;
+    cartState.forEach(item => {
+      const prod = productsState.find(p => p.id === item.productId);
+      if (prod) {
+        normalBoxTotal += (parseFloat(prod.normal_box_price) || 0) * item.quantity;
+        originalBoxTotal += (parseFloat(prod.original_box_price) || 0) * item.quantity;
+      }
+    });
+
+    const isPackagingEnabled = (storeSettings.packaging_enabled !== false);
+    const packagingMode = isPackagingEnabled ? (document.querySelector('input[name="checkout-packaging"]:checked')?.value || "default") : "default";
+    let packagingFee = 0;
+    if (packagingMode === "normal") {
+      packagingFee = normalBoxTotal;
+    } else if (packagingMode === "original") {
+      packagingFee = originalBoxTotal;
+    }
+
+    const total = (subtotal - discount) + shipping + tax + packagingFee;
     const buyerGstin = document.getElementById("ship-gstin")?.value || "";
 
     const newOrderId = `TG-${Math.floor(10000 + Math.random() * 90000)}-${Math.floor(1000 + Math.random() * 9000)}`;
     const stateStr = stateName ? `, ${stateName}` : "";
-    const fullAddress = `[NAME:${(`${firstName} ${lastName}`).trim()}][PHONE:${phone}] ${address}, ${city}${stateStr}, ${zip}, ${country}`;
+    const packagingDesc = packagingMode === 'normal' ? 'Normal Box' : (packagingMode === 'original' ? 'Original Box' : 'Default Packing');
+    const fullAddress = `[NAME:${(`${firstName} ${lastName}`).trim()}][PHONE:${phone}] ${address}, ${city}${stateStr}, ${zip}, ${country} | Packaging: ${packagingDesc} (₹${packagingFee.toFixed(2)})`;
 
     // Get current session
     const userId = userState ? userState.id : null;
@@ -3545,7 +3578,7 @@ async function handleCheckoutSubmit(e) {
       email: email,
       items: cartState.map(item => {
         const product = productsState.find(p => p.id === item.productId);
-        const taxDetails = taxes.items_tax_details.find(td => td.productId === item.productId && td.option === item.option && (td.packaging || 'default') === (item.packaging || 'default')) || {};
+        const taxDetails = taxes.items_tax_details.find(td => td.productId === item.productId && td.option === item.option) || {};
         return {
           ...item,
           hsn_code: product?.hsn_code || "",
@@ -3569,6 +3602,8 @@ async function handleCheckoutSubmit(e) {
       sgst_amount: taxes.sgst_amount,
       igst_amount: taxes.igst_amount,
       total_tax_amount: taxes.total_tax_amount,
+      packaging_option: packagingMode,
+      packaging_fee: packagingFee,
       buyer_gstin: buyerGstin,
       total: total,
       status: "processing",
@@ -3607,7 +3642,7 @@ async function handleCheckoutSubmit(e) {
               error.message.includes("column")
             ))
           )) {
-            console.log("Retrying order insertion with GST columns stripped...");
+            console.log("Retrying order insertion with GST and packaging columns stripped...");
             const stripped = { ...payload };
             delete stripped.cgst_amount;
             delete stripped.sgst_amount;
@@ -3616,6 +3651,8 @@ async function handleCheckoutSubmit(e) {
             delete stripped.buyer_gstin;
             delete stripped.name;
             delete stripped.phone;
+            delete stripped.packaging_option;
+            delete stripped.packaging_fee;
             return insertWithRetry(stripped, false, retryUserIdNull);
           }
 
@@ -4474,9 +4511,7 @@ function setupEventListeners() {
   // Modal add to cart
   document.getElementById("modal-add-cart-btn").addEventListener("click", () => {
     if (modalActiveProduct) {
-      const selectedPackaging = modalSelectedPackaging || "default";
-      const packagingPrice = modalSelectedPackagingPrice || 0;
-      addToCart(modalActiveProduct.id, modalSelectedQty, modalSelectedOption, selectedPackaging, packagingPrice);
+      addToCart(modalActiveProduct.id, modalSelectedQty, modalSelectedOption);
       closeProductModal();
     }
   });

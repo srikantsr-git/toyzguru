@@ -415,6 +415,7 @@ alter table public.store_settings add column if not exists seller_gstin text;
 alter table public.store_settings add column if not exists business_state text default 'Telangana';
 alter table public.store_settings add column if not exists default_tax_category_id uuid references public.gst_tax_rates(id) on delete set null;
 alter table public.store_settings add column if not exists gst_enabled boolean default true;
+alter table public.store_settings add column if not exists packaging_enabled boolean default true;
 alter table public.store_settings add column if not exists display_prices_including_tax boolean default true;
 alter table public.store_settings add column if not exists display_prices_excluding_tax boolean default false;
 
@@ -424,6 +425,8 @@ alter table public.orders add column if not exists sgst_amount numeric(12, 2) de
 alter table public.orders add column if not exists igst_amount numeric(12, 2) default 0.00;
 alter table public.orders add column if not exists total_tax_amount numeric(12, 2) default 0.00;
 alter table public.orders add column if not exists buyer_gstin text;
+alter table public.orders add column if not exists packaging_option text default 'default';
+alter table public.orders add column if not exists packaging_fee numeric(12, 2) default 0.00;
 
 
 -- ================= DELIVERY MANAGEMENT SCHEMAS =================

@@ -989,6 +989,31 @@
                       Delivered via: Delhivery
                     </div>
                   </div>
+
+                  <div class="form-group full-width" id="checkout-packaging-group"
+                    style="border-top: 1px dashed var(--glass-border); padding-top: 1rem; margin-top: 0.5rem;">
+                    <label class="form-label">Packaging Options *</label>
+                    <div style="display: flex; gap: 2rem; margin-top: 0.25rem;">
+                      <label
+                        style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.9rem;">
+                        <input type="radio" name="checkout-packaging" value="default" checked
+                          style="accent-color: var(--color-brand);">
+                        <span>Default Packing (Free)</span>
+                      </label>
+                      <label
+                        style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.9rem;">
+                        <input type="radio" name="checkout-packaging" value="normal"
+                          style="accent-color: var(--color-brand);">
+                        <span>With Normal Box/Packing (<span id="checkout-normal-box-cost-lbl">+₹0.00</span>)</span>
+                      </label>
+                      <label
+                        style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.9rem;">
+                        <input type="radio" name="checkout-packaging" value="original"
+                          style="accent-color: var(--color-brand);">
+                        <span>With Original Box/Packing (<span id="checkout-original-box-cost-lbl">+₹0.00</span>)</span>
+                      </label>
+                    </div>
+                  </div>
                 </div>
               </form>
             </div>
@@ -1075,6 +1100,10 @@
               <div class="cart-summary-row">
                 <span>Shipping</span>
                 <span id="checkout-shipping">₹0.00</span>
+              </div>
+              <div class="cart-summary-row" id="checkout-packaging-row" style="display: none;">
+                <span>Packaging</span>
+                <span id="checkout-packaging-val">₹0.00</span>
               </div>
               <div id="checkout-tax-container">
                 <div class="cart-summary-row">
@@ -2657,12 +2686,18 @@
                   </h4>
 
                   <form id="admin-gst-settings-form" class="horizontal-scroll-form">
-                    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem;">
+                    <div style="display: flex; flex-wrap: wrap; gap: 1.5rem; margin-bottom: 1.25rem;">
                       <label
                         style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.9rem; font-weight: 600; color: var(--text-primary);">
                         <input type="checkbox" id="admin-gst-enabled" checked
                           style="accent-color: var(--color-brand); width: 16px; height: 16px; cursor: pointer;">
                         <span>Enable GST Calculation</span>
+                      </label>
+                      <label
+                        style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.9rem; font-weight: 600; color: var(--text-primary);">
+                        <input type="checkbox" id="admin-packaging-enabled" checked
+                          style="accent-color: var(--color-brand); width: 16px; height: 16px; cursor: pointer;">
+                        <span>Enable Packaging Options</span>
                       </label>
                     </div>
 

@@ -4942,7 +4942,10 @@ async function adminLoadGSTSettings() {
         const displayInclusiveEl = document.getElementById('admin-gst-display-inclusive');
         const displayExclusiveEl = document.getElementById('admin-gst-display-exclusive');
 
+        const packagingEnabledEl = document.getElementById('admin-packaging-enabled');
+
         if (gstEnabledEl) gstEnabledEl.checked = data.gst_enabled !== false;
+        if (packagingEnabledEl) packagingEnabledEl.checked = data.packaging_enabled !== false;
         if (sellerGstinEl) sellerGstinEl.value = data.seller_gstin || "";
         if (data.business_state && stateSelect) stateSelect.value = data.business_state;
         if (data.default_tax_category_id && defaultCategorySelect) defaultCategorySelect.value = data.default_tax_category_id;
@@ -4953,6 +4956,7 @@ async function adminLoadGSTSettings() {
         window.storeSettings = {
           ...window.storeSettings,
           gst_enabled: data.gst_enabled !== false,
+          packaging_enabled: data.packaging_enabled !== false,
           seller_gstin: data.seller_gstin || "",
           business_state: data.business_state || "Telangana",
           default_tax_category_id: data.default_tax_category_id || "",
@@ -5020,6 +5024,7 @@ async function handleGSTSettingsSubmit(e) {
 
   const payload = {
     gst_enabled: document.getElementById('admin-gst-enabled').checked,
+    packaging_enabled: document.getElementById('admin-packaging-enabled').checked,
     seller_gstin: document.getElementById('admin-gst-seller-gstin').value.trim(),
     business_state: document.getElementById('admin-gst-business-state').value,
     default_tax_category_id: document.getElementById('admin-gst-default-category').value || null,
@@ -5029,7 +5034,14 @@ async function handleGSTSettingsSubmit(e) {
   };
 
   try {
-    const { error } = await supabase.from('store_settings').upsert({ id: 1, ...payload });
+    let { error } = await supabase.from('store_settings').upsert({ id: 1, ...payload });
+    if (error && (error.code === '42703' || (error.message && error.message.includes("packaging_enabled")))) {
+      console.warn("Saving packaging_enabled failed. Retrying without it...");
+      const fallbackPayload = { ...payload };
+      delete fallbackPayload.packaging_enabled;
+      const res = await supabase.from('store_settings').upsert({ id: 1, ...fallbackPayload });
+      error = res.error;
+    }
     if (error) throw error;
 
     window.storeSettings = {
