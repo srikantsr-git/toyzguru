@@ -261,7 +261,7 @@ create policy "Allow full delivery_charges access (Admin Control)" on public.del
 
 -- 7. Courier Agencies Table
 create table if not exists public.couriers (
-  id uuid default gen_random_uuid() primary key,
+  id text primary key,
   name text not null,
   assigned_states text[] default '{}'::text[] not null,
   is_active boolean default true not null,
@@ -429,7 +429,7 @@ create table if not exists public.shipments (
   id text primary key, -- SH-XXXXX format
   order_id text references public.orders(id) on delete cascade,
   tracking_number text not null unique, -- TG-XXXXX format
-  courier_id uuid references public.couriers(id) on delete set null,
+  courier_id text references public.couriers(id) on delete set null,
   courier_name text,
   weight numeric(6, 2) default 1.50,
   status text not null default 'pending', -- 'pending', 'ready_to_pack', 'packed', 'quality_checked', 'dispatched', 'in_transit', 'out_for_delivery', 'delivered', 'failed', 'returned'

@@ -4454,16 +4454,17 @@ async function handleAdminCourierFormSubmit(e) {
       };
 
       if (window.supabase) {
-        const { data, error } = await supabase.from('couriers').insert(newCourierObj).select();
-        if (error) throw error;
-        if (data && data[0]) {
-          window.couriersState.push(data[0]);
-        } else {
-          window.couriersState.push(newCourierObj);
+        try {
+          const { data, error } = await supabase.from('couriers').insert(newCourierObj).select();
+          if (error) throw error;
+          if (data && data[0]) {
+            newCourierObj.id = data[0].id;
+          }
+        } catch (supaErr) {
+          console.warn("Failed to insert courier into Supabase, saving locally:", supaErr);
         }
-      } else {
-        window.couriersState.push(newCourierObj);
       }
+      window.couriersState.push(newCourierObj);
       adminShowToast("Courier Created", `Added courier agency: ${name}`, "success");
     }
 
@@ -4484,8 +4485,12 @@ async function adminDeleteCourierTrigger(courierId) {
   if (isConfirmed) {
     try {
       if (window.supabase) {
-        const { error } = await supabase.from('couriers').delete().eq('id', courierId);
-        if (error) throw error;
+        try {
+          const { error } = await supabase.from('couriers').delete().eq('id', courierId);
+          if (error) throw error;
+        } catch (supaErr) {
+          console.warn("Failed to delete courier from Supabase, removing locally:", supaErr);
+        }
       }
       window.couriersState = window.couriersState.filter(c => c.id !== courierId);
       await window.saveCouriers();
