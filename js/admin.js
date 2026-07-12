@@ -5821,3 +5821,321 @@ window.adminMarkTicketResolved      = adminMarkTicketResolved;
 window.adminDeleteTicket            = adminDeleteTicket;
 window.adminClearResolvedTickets    = adminClearResolvedTickets;
 window.adminExportTicketsCSV        = adminExportTicketsCSV;
+
+
+// ================= POPUP BANNER MANAGEMENT =================
+const POPUP_STORAGE_KEY   = 'toyzguru_popup_banner';   // { enabled, url, type }
+const POPUP_SEEN_KEY      = 'toyzguru_popup_seen';     // sessionStorage flag
+
+/** Called when the popup panel becomes visible — hydrates the UI */
+function adminRenderPopupBannerPanel() {
+  const settings = _getPopupSettings();
+
+  // Toggle
+  const toggle = document.getElementById('popup-enabled-toggle');
+  if (toggle) toggle.checked = !!settings.enabled;
+
+  // Status badge
+  _adminUpdatePopupStatusBadge(!!settings.enabled);
+
+  // Preview
+  if (settings.url) {
+    _adminSetPopupPreview(settings.url, settings.type || 'image');
+  } else {
+    _adminClearPopupPreview();
+  }
+
+  // URL input field
+  const urlInput = document.getElementById('popup-url-input');
+  if (urlInput) urlInput.value = settings.url || '';
+
+  if (window.feather) feather.replace();
+}
+
+function _getPopupSettings() {
+  try {
+    return JSON.parse(localStorage.getItem(POPUP_STORAGE_KEY) || '{}');
+  } catch { return {}; }
+}
+
+function _savePopupSettings(obj) {
+  localStorage.setItem(POPUP_STORAGE_KEY, JSON.stringify(obj));
+}
+
+function _adminUpdatePopupStatusBadge(enabled) {
+  const badge = document.getElementById('popup-status-badge');
+  if (!badge) return;
+  if (enabled) {
+    badge.className = 'popup-status-badge on';
+    badge.innerHTML = '<i data-feather="check-circle" style="width:12px;height:12px;"></i> ON';
+  } else {
+    badge.className = 'popup-status-badge off';
+    badge.innerHTML = '<i data-feather="power" style="width:12px;height:12px;"></i> OFF';
+  }
+  if (window.feather) feather.replace();
+}
+
+function _adminSetPopupPreview(url, type) {
+  const wrap = document.getElementById('popup-preview-wrap');
+  const empty = document.getElementById('popup-preview-empty');
+  if (!wrap) return;
+
+  if (empty) empty.style.display = 'none';
+  wrap.classList.add('has-media');
+
+  // Remove old media
+  wrap.querySelectorAll('img, video').forEach(el => el.remove());
+
+  if (type === 'video') {
+    const v = document.createElement('video');
+    v.src = url;
+    v.autoplay = true;
+    v.loop = true;
+    v.muted = true;
+    v.playsInline = true;
+    v.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+    wrap.appendChild(v);
+  } else {
+    const img = document.createElement('img');
+    img.src = url;
+    img.alt = 'Popup banner preview';
+    img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+    wrap.appendChild(img);
+  }
+}
+
+function _adminClearPopupPreview() {
+  const wrap = document.getElementById('popup-preview-wrap');
+  const empty = document.getElementById('popup-preview-empty');
+  if (!wrap) return;
+  wrap.classList.remove('has-media');
+  wrap.querySelectorAll('img, video').forEach(el => el.remove());
+  if (empty) empty.style.display = 'flex';
+}
+
+/** Toggle switch changed */
+window.adminHandlePopupToggle = function(checked) {
+  const settings = _getPopupSettings();
+  settings.enabled = checked;
+  _savePopupSettings(settings);
+  _adminUpdatePopupStatusBadge(checked);
+
+  adminShowToast(
+    checked ? 'Popup Enabled' : 'Popup Disabled',
+    checked ? 'The welcome popup will appear to first-time visitors.' : 'The popup banner has been turned off.',
+    checked ? 'success' : 'warning'
+  );
+};
+
+/** File chosen via file picker */
+window.adminHandlePopupFileSelect = function(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+
+  // Show file info
+  const info = document.getElementById('popup-file-info');
+  const nameEl = document.getElementById('popup-file-info-name');
+  const sizeEl = document.getElementById('popup-file-info-size');
+  if (info) info.style.display = 'block';
+  if (nameEl) nameEl.textContent = file.name;
+  if (sizeEl) sizeEl.textContent = (file.size / 1024).toFixed(1) + ' KB';
+
+  // Clear URL input
+  const urlInput = document.getElementById('popup-url-input');
+  if (urlInput) urlInput.value = '';
+
+  // Read as data URL for preview
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const dataUrl = e.target.result;
+    const type = file.type.startsWith('video') ? 'video' : 'image';
+    _adminSetPopupPreview(dataUrl, type);
+
+    // Temporarily store in state (saved on button click)
+    window._popupPendingDataUrl = dataUrl;
+    window._popupPendingType = type;
+  };
+  reader.readAsDataURL(file);
+};
+
+/** URL pasted / typed */
+window.adminHandlePopupUrlInput = function(val) {
+  window._popupPendingDataUrl = null;
+  window._popupPendingType = null;
+
+  if (!val) {
+    _adminClearPopupPreview();
+    return;
+  }
+
+  // Guess type from extension
+  const isVideo = /\.(mp4|webm|ogg)(\?.*)?$/i.test(val);
+  _adminSetPopupPreview(val, isVideo ? 'video' : 'image');
+};
+
+/** Save & Apply button */
+window.adminSavePopupBanner = async function() {
+  const btn = document.getElementById('popup-save-btn');
+
+  // Determine URL + type
+  let url = '';
+  let type = 'image';
+
+  if (window._popupPendingDataUrl) {
+    url  = window._popupPendingDataUrl;
+    type = window._popupPendingType || 'image';
+  } else {
+    const urlInput = document.getElementById('popup-url-input');
+    url = urlInput ? urlInput.value.trim() : '';
+    if (url) {
+      const isVideo = /\.(mp4|webm|ogg)(\?.*)?$/i.test(url);
+      type = isVideo ? 'video' : 'image';
+    }
+  }
+
+  if (!url) {
+    adminShowToast('No Media Selected', 'Please upload a file or paste a URL first.', 'warning');
+    return;
+  }
+
+  // Save
+  const settings = _getPopupSettings();
+  settings.url  = url;
+  settings.type = type;
+  _savePopupSettings(settings);
+
+  // Also reset the "seen" flag so admin can preview popup immediately
+  sessionStorage.removeItem(POPUP_SEEN_KEY);
+
+  adminShowToast('Popup Saved', 'Popup banner has been saved. Toggle ON to activate it for visitors.', 'success');
+  if (window.feather) feather.replace();
+};
+
+/** Clear popup */
+window.adminClearPopupBanner = async function() {
+  const confirmed = await window.showCustomDialog(
+    'Clear Popup Banner',
+    'This will remove the current popup media. The popup will no longer appear until you upload new media.',
+    'danger',
+    true
+  );
+  if (!confirmed) return;
+
+  _savePopupSettings({ enabled: false });
+  window._popupPendingDataUrl = null;
+  window._popupPendingType = null;
+
+  const toggle = document.getElementById('popup-enabled-toggle');
+  if (toggle) toggle.checked = false;
+  _adminUpdatePopupStatusBadge(false);
+  _adminClearPopupPreview();
+
+  const urlInput = document.getElementById('popup-url-input');
+  if (urlInput) urlInput.value = '';
+  const info = document.getElementById('popup-file-info');
+  if (info) info.style.display = 'none';
+  const fileInput = document.getElementById('popup-file-input');
+  if (fileInput) fileInput.value = '';
+
+  sessionStorage.removeItem(POPUP_SEEN_KEY);
+  adminShowToast('Popup Cleared', 'The popup banner has been removed.', 'success');
+};
+
+// Hook popup panel render into navigation
+(function patchAdminNavForPopup() {
+  const origGoToPanel = window._adminGoToPanel;
+  if (!origGoToPanel) {
+    // Will be set up after adminInit; patch lazily
+    const origSetup = window.setupAdminNavigation;
+    return;
+  }
+  window._adminGoToPanel = function(panelId) {
+    origGoToPanel(panelId);
+    if (panelId === 'admin-popup-panel') {
+      adminRenderPopupBannerPanel();
+    }
+  };
+})();
+
+// Patch after DOM is ready so the navigation is already set up
+document.addEventListener('DOMContentLoaded', function() {
+  const checkNav = setInterval(function() {
+    if (window._adminGoToPanel) {
+      clearInterval(checkNav);
+      const orig = window._adminGoToPanel;
+      window._adminGoToPanel = function(panelId) {
+        orig(panelId);
+        if (panelId === 'admin-popup-panel') {
+          setTimeout(adminRenderPopupBannerPanel, 50);
+        }
+      };
+    }
+  }, 200);
+});
+
+window.adminRenderPopupBannerPanel = adminRenderPopupBannerPanel;
+
+
+// ================= HOMEPAGE POPUP (FRONTEND) =================
+/** Shows the popup overlay. Called from app.js on page load. */
+window.initHomePagePopup = function() {
+  const settings = _getPopupSettings();
+  if (!settings.enabled || !settings.url) return;
+
+  // Show only once per session
+  if (sessionStorage.getItem(POPUP_SEEN_KEY)) return;
+  sessionStorage.setItem(POPUP_SEEN_KEY, '1');
+
+  const overlay = document.getElementById('homepage-popup-overlay');
+  const box     = document.getElementById('homepage-popup-box');
+  if (!overlay || !box) return;
+
+  // Inject media (keep close btn)
+  box.querySelectorAll('img, video').forEach(el => el.remove());
+
+  if (settings.type === 'video') {
+    const v = document.createElement('video');
+    v.src = settings.url;
+    v.autoplay = true;
+    v.loop = true;
+    v.muted = true;
+    v.playsInline = true;
+    v.controls = true;
+    v.style.cssText = 'width:100%;max-height:500px;display:block;';
+    box.appendChild(v);
+  } else {
+    const img = document.createElement('img');
+    img.src = settings.url;
+    img.alt = 'Welcome to ToyzGuru';
+    box.appendChild(img);
+  }
+
+  overlay.style.display = 'flex';
+
+  // Close on overlay click (outside box)
+  overlay.addEventListener('click', function(e) {
+    if (e.target === overlay) window.closeHomePagePopup();
+  });
+
+  // Close on Escape key
+  document.addEventListener('keydown', function escHandler(e) {
+    if (e.key === 'Escape') {
+      window.closeHomePagePopup();
+      document.removeEventListener('keydown', escHandler);
+    }
+  });
+};
+
+/** Closes the popup with animation */
+window.closeHomePagePopup = function() {
+  const overlay = document.getElementById('homepage-popup-overlay');
+  if (!overlay) return;
+  overlay.classList.add('closing');
+  setTimeout(() => {
+    overlay.style.display = 'none';
+    overlay.classList.remove('closing');
+    // Stop any playing video
+    overlay.querySelectorAll('video').forEach(v => v.pause());
+  }, 350);
+};
+
