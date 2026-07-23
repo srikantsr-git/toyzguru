@@ -4,12 +4,13 @@
  * Runs on port 3001 alongside the static frontend on port 3000.
  */
 
+require('dotenv').config();
 const express = require('express');
 const nodemailer = require('nodemailer');
 const cors = require('cors');
 
 const app = express();
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
 app.use(cors({
@@ -27,12 +28,12 @@ app.use(express.json());
 
 // ─── Zoho SMTP Transporter ───────────────────────────────────────────────────
 const transporter = nodemailer.createTransport({
-  host: 'smtp.zoho.in',
-  port: 465,
+  host: process.env.SMTP_HOST || 'smtp.zoho.in',
+  port: parseInt(process.env.SMTP_PORT || '465', 10),
   secure: true,   // SSL
   auth: {
-    user: 'support@toyzguru.in',
-    pass: 'Akash@007',
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
   },
   tls: {
     rejectUnauthorized: false,
