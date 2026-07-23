@@ -42,6 +42,32 @@ async function hashPassword(plaintext) {
   return Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
+// ── Security Helpers ──────────────────────────────────────────────────────────
+// Escapes a value for safe insertion into HTML content or attribute contexts.
+// Prevents XSS from DB-sourced strings (product names, badges, categories, etc.)
+function sanitize(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
+
+// Validates that a URL uses a safe scheme (http or https) before injecting into
+// src attributes. Prevents javascript: and data: URI attacks.
+function isSafeUrl(url) {
+  if (!url || typeof url !== 'string') return false;
+  try {
+    const u = new URL(url);
+    return u.protocol === 'https:' || u.protocol === 'http:';
+  } catch {
+    // Relative URLs (e.g. /assets/...) are inherently safe
+    return /^\/[^/]/.test(url) || /^\.\.?\//.test(url);
+  }
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 // Expose states to the window object as live getter/setter properties
 Object.defineProperty(window, 'productsState', {
@@ -2214,10 +2240,16 @@ function renderProductCardHTML(product) {
 
   const isSoldOut = product.stock <= 0;
 
+  // Sanitize DB-sourced fields to prevent stored XSS
+  const safeBadge = sanitize(product.badge);
+  const safeTitle = sanitize(product.title);
+  const safeCategory = sanitize(product.category);
+  const safeImg = isSafeUrl(product.image) ? product.image : '/assets/images/placeholder.jpg';
+
   const displayBadge = isSoldOut
     ? `<span class="product-card-badge badge-soldout">Sold Out</span>`
-    : (product.badge
-      ? `<span class="product-card-badge badge-${product.badge.toLowerCase()}">${product.badge}</span>`
+    : (safeBadge
+      ? `<span class="product-card-badge badge-${safeBadge.toLowerCase()}">${safeBadge}</span>`
       : "");
 
   const imgStyle = isSoldOut ? 'style="filter: grayscale(80%); opacity: 0.6;"' : '';
@@ -2248,7 +2280,7 @@ function renderProductCardHTML(product) {
       ${displayBadge}
       <div class="product-card-img-wrap">
         ${wishlistBtnHTML}
-        <img src="${product.image}" alt="${product.title}" class="product-card-img" ${imgStyle} loading="lazy">
+        <img src="${safeImg}" alt="${safeTitle}" class="product-card-img" ${imgStyle} loading="lazy">
         <div class="product-card-overlay">
           <button class="product-action-btn" onclick="openProductModal('${product.id}')" title="Quick View">
             <i data-feather="eye"></i>
@@ -2257,8 +2289,8 @@ function renderProductCardHTML(product) {
         </div>
       </div>
       <div class="product-card-info">
-        <div class="product-card-cat">${product.category.replace("-", " ")}</div>
-        <h3 class="product-card-title" onclick="openProductModal('${product.id}')">${product.title}</h3>
+        <div class="product-card-cat">${safeCategory.replace("-", " ")}</div>
+        <h3 class="product-card-title" onclick="openProductModal('${product.id}')">${safeTitle}</h3>
         <div class="product-rating">
           <i data-feather="star" class="star-icon" style="width: 14px; height: 14px;"></i>
           <span class="product-card-rating-val">${rating.toFixed(1)} (${reviewsCount})</span>
@@ -2273,6 +2305,7 @@ function renderProductCardHTML(product) {
     </article>
   `;
 }
+
 
 // ================= CATALOG LOGIC =================
 let catalogFilters = {
@@ -2343,7 +2376,9 @@ function updateCategoryCountBadges() {
   const uniqueCats = Object.keys(counts).filter(k => k !== 'all').sort();
   uniqueCats.forEach(cat => {
     const activeClass = catalogFilters.category === cat ? 'active' : '';
-    html += `<button class="filter-cat-btn ${activeClass}" data-cat="${cat}">${getCategoryDisplayName(cat)} <span class="filter-cat-count" id="count-${cat}">${counts[cat]}</span></button>`;
+    const safeCat = sanitize(cat);
+    const safeCatDisplay = sanitize(getCategoryDisplayName(cat));
+    html += `<button class="filter-cat-btn ${activeClass}" data-cat="${safeCat}">${safeCatDisplay} <span class="filter-cat-count" id="count-${safeCat}">${counts[cat]}</span></button>`;
   });
 
   catList.innerHTML = html;
@@ -5051,6 +5086,19 @@ function setupEventListeners() {
         return;
       }
 
+      // Validate name length to prevent oversized inputs
+      if (name.length < 2 || name.length > 100) {
+        await showCustomDialog("Invalid Name", "Name must be between 2 and 100 characters.", "warning");
+        return;
+      }
+
+      // Validate email format before any DB operations
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        await showCustomDialog("Invalid Email", "Please enter a valid email address.", "warning");
+        return;
+      }
+
       if (password.length < 6) {
         await showCustomDialog("Weak Password", "Security protocols require your password to be at least 6 characters in length to protect your account details.", "warning");
         return;
@@ -5065,13 +5113,14 @@ function setupEventListeners() {
         return;
       }
 
-      // Check if email already exists in Supabase profiles database first (case-insensitive)
+      // Check if email already exists in Supabase profiles database (exact match, case-insensitive)
+      // Uses .eq() instead of .ilike() to prevent LIKE wildcard injection (e.g. %@gmail.com matching all users)
       if (supabase) {
         try {
           const { data: dbMems, error: checkError } = await supabase
             .from('profiles')
             .select('id')
-            .ilike('email', email);
+            .eq('email', email.toLowerCase());
 
           if (!checkError && dbMems && dbMems.length > 0) {
             await showCustomDialog("Email Exists", "Email ID already exists!", "warning");

@@ -1846,7 +1846,15 @@ async function handleAdminMemberFormSubmit(e) {
     return;
   }
 
+  // Validate email format before any DB operations
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const saveBtn = document.getElementById("admin-member-save-btn");
+  if (!emailRegex.test(email)) {
+    adminShowToast("Invalid Email", "Please enter a valid email address.", "warning");
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = isCreateMode ? "Create Member" : "Save Changes"; }
+    return;
+  }
+
   if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = isCreateMode ? "Creating..." : "Saving..."; }
 
   const profilePayload = {
@@ -1876,13 +1884,14 @@ async function handleAdminMemberFormSubmit(e) {
         return;
       }
 
-      // Check if email already exists in Supabase database first (case-insensitive)
+      // Check if email already exists in Supabase database (exact match, case-insensitive)
+      // Uses .eq() instead of .ilike() to prevent LIKE wildcard injection (e.g. %@gmail.com)
       if (supabase) {
         try {
           const { data: dbMems, error: checkError } = await supabase
             .from('profiles')
             .select('id')
-            .ilike('email', email);
+            .eq('email', email.toLowerCase());
           
           if (!checkError && dbMems && dbMems.length > 0) {
             if (window.showCustomDialog) {
